@@ -1,0 +1,356 @@
+// 状态
+let preferences = ["healthy", "quick"]
+let currentMeal = nil
+let shoppingList = []
+let step = 0
+let loading = false
+
+// 配色
+let primary = #x6366f1
+let primaryLight = #x818cf8
+let secondary = #x8b5cf6
+let accent = #xf59e0b
+let success = #x10b981
+let danger = #xef4444
+let ink = #x1e1b4b
+let muted = #x6b7280
+let surface = #xffffff
+let background = #xf8fafc
+
+// 偏好标签
+let tags = [
+    {name: "🥬 清淡", key: "light"},
+    {name: "🌶️ 微辣", key: "spicy"},
+    {name: "🍖 高蛋白", key: "protein"},
+    {name: "🥗 健康", key: "healthy"},
+    {name: "⚡ 快手菜", key: "quick"},
+    {name: "🎯 低卡", key: "lowcal"},
+    {name: "🍜 面食", key: "noodle"},
+    {name: "🥘 炖菜", key: "stew"}
+]
+
+// 菜谱数据
+let recipes = {
+    breakfast: [
+        {name: "牛油果吐司配水波蛋", cal: 380, protein: 18, time: "15分钟", tags: ["healthy", "quick"]},
+        {name: "希腊酸奶配莓果坚果", cal: 320, protein: 15, time: "5分钟", tags: ["light", "healthy"]},
+        {name: "菠菜蘑菇蛋饼", cal: 290, protein: 22, time: "12分钟", tags: ["protein", "lowcal"]}
+    ],
+    lunch: [
+        {name: "藜麦鸡胸肉沙拉", cal: 450, protein: 35, time: "20分钟", tags: ["healthy", "protein", "lowcal"]},
+        {name: "三文鱼牛油果盖饭", cal: 520, protein: 28, time: "25分钟", tags: ["healthy", "protein"]},
+        {name: "番茄牛肉意面", cal: 580, protein: 32, time: "30分钟", tags: ["stew"]}
+    ],
+    dinner: [
+        {name: "清蒸鲈鱼配时蔬", cal: 380, protein: 38, time: "25分钟", tags: ["light", "healthy", "protein"]},
+        {name: "日式咖喱鸡肉饭", cal: 550, protein: 28, time: "35分钟", tags: ["stew", "spicy"]},
+        {name: "虾仁豆腐煲", cal: 320, protein: 25, time: "20分钟", tags: ["light", "quick"]}
+    ]
+}
+
+// 采购清单模板
+let shoppingTemplate = [
+    {name: "鸡蛋", amount: "10个", category: "🥚 蛋奶", checked: false},
+    {name: "鸡胸肉", amount: "500g", category: "🥩 肉类", checked: false},
+    {name: "三文鱼", amount: "300g", category: "🐟 海鲜", checked: false},
+    {name: "牛油果", amount: "3个", category: "🥬 蔬果", checked: false},
+    {name: "菠菜", amount: "200g", category: "🥬 蔬果", checked: false},
+    {name: "西红柿", amount: "500g", category: "🥬 蔬果", checked: false},
+    {name: "藜麦", amount: "200g", category: "🌾 主食", checked: false},
+    {name: "酸奶", amount: "500ml", category: "🥚 蛋奶", checked: false}
+]
+
+fn toggle_tag(key){
+    let idx = preferences.index_of(key)
+    if idx >= 0 {
+        preferences.remove(idx)
+    } else {
+        preferences.push(key)
+    }
+    ui.tags.render()
+}
+
+fn start_planning(){
+    if preferences.len() == 0 {
+        ui.toast.set_text("请至少选择一个偏好")
+        start_timeout(2.0, || ui.toast.set_text(""))
+        return
+    }
+    
+    step = 1
+    loading = true
+    ui.main.render()
+    
+    start_timeout(1.2, || {
+        step = 2
+        ui.main.render()
+        
+        start_timeout(1.2, || {
+            step = 3
+            loading = false
+            shoppingList = shoppingTemplate
+            ui.main.render()
+        })
+    })
+}
+
+fn toggle_item(i){
+    shoppingList[i].checked = !shoppingList[i].checked
+    ui.main.render()
+}
+
+fn go_back(){
+    if step > 0 {
+        step = step - 1
+    }
+    ui.main.render()
+}
+
+fn restart(){
+    step = 0
+    preferences = []
+    shoppingList = []
+    ui.main.render()
+}
+
+// 选择推荐菜
+fn select_recipe(meal, i){
+    currentMeal = recipes[meal][i]
+    ui.detail.render()
+}
+
+fn dismiss_detail(){
+    currentMeal = nil
+    ui.detail.render()
+}
+
+start_timeout(0.05, || ui.main.render())
+
+// ============ UI ============
+
+SolidView{width: Fill height: Fill flow: Down padding: 0 draw_bg.color: background
+    
+    // 顶部导航
+    View{width: Fill height: 72 padding: Inset{left: 20 right: 20 top: 12 bottom: 12} align: Align{y: 0.5}
+        View{width: Fill height: Fit flow: Right align: Align{y: 0.5} spacing: 12
+            if step > 0 {
+                GestureView{width: 36 height: 36 on_tap: |x, y| go_back()
+                    SolidView{width: 36 height: 36 draw_bg.color: surface draw_bg.border_radius: 18.0 draw_bg.border_size: 1.0 draw_bg.border_color: #xe2e8f0
+                        Label{text: "←" draw_text.color: ink draw_text.text_style.font_size: 18}
+                    }
+                }
+            }
+            Label{text: "🍽️ 美食规划" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 22} width: Fill}
+        }
+    }
+    
+    // 主内容区
+    main := ScrollYView{width: Fill height: Fill flow: Down padding: 20 spacing: 24 on_render: || {
+        
+        // ============ 步骤 0: 选择偏好 ============
+        if step == 0 {
+            // 欢迎卡片
+            SolidView{width: Fill height: Fit padding: 28 draw_bg.color: primary draw_bg.border_radius: 24.0
+                View{width: Fill height: Fit flow: Down spacing: 12
+                    Label{text: "👋 欢迎使用" draw_text.color: #xffffff draw_text.text_style.font_size: 14}
+                    Label{text: "智能美食规划" draw_text.color: #xffffff draw_text.text_style: theme.font_bold{font_size: 32}}
+                    Label{text: "告诉我们你的口味偏好，AI 帮你规划一周美食" draw_text.color: #xe0e7ff draw_text.text_style.font_size: 14}
+                }
+            }
+            
+            // 偏好选择
+            View{width: Fill height: Fit flow: Down spacing: 16
+                Label{text: "选择你的偏好" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 18}}
+                
+                tags := View{width: Fill height: Fit flow: Down spacing: 12 on_render: || {
+                    for row in 4 {
+                        View{width: Fill height: Fit flow: Right spacing: 12
+                            for col in 2 {
+                                let i = row * 2 + col
+                                if i < tags.len() {
+                                    let tag = tags[i]
+                                    let selected = preferences.index_of(tag.key) >= 0
+                                    GestureView{width: Fill height: Fit on_tap: |x, y| toggle_tag(tag.key)
+                                        SolidView{width: Fill height: Fit padding: 16 draw_bg.color: selected ? primary : surface draw_bg.border_radius: 16.0 draw_bg.border_size: 2.0 draw_bg.border_color: selected ? primary : #e2e8f0
+                                            View{width: Fill height: Fit flow: Down spacing: 4
+                                                Label{text: tag.name draw_text.color: selected ? #ffffff : ink draw_text.text_style.font_size: 15}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }}
+            }
+            
+            // 开始按钮
+            ButtonFlat{text: "✨ 开始规划" height: 56 on_click: || start_planning()
+                draw_bg +: {border_radius: 16.0 color: primary color_hover: primaryLight border_size: 0.0}
+                draw_text +: {color: #xffffff}}
+        }
+        
+        // ============ 步骤 1-2: 加载中 ============
+        if step == 1 || step == 2 {
+            SolidView{width: Fill height: Fit padding: 40 draw_bg.color: surface draw_bg.border_radius: 24.0
+                View{width: Fill height: Fit flow: Down spacing: 24 align: Align{x: 0.5}
+                    // 加载动画
+                    View{width: 80 height: 80
+                        SolidView{width: 80 height: 80 draw_bg.color: #ede9fe draw_bg.border_radius: 40.0}
+                    }
+                    
+                    View{width: Fill height: Fit flow: Down spacing: 8 align: Align{x: 0.5}
+                        if step == 1 {
+                            Label{text: "🤖 AI 分析中..." draw_text.color: ink draw_text.text_style.font_size: 20 }
+                            Label{text: "正在匹配你的口味偏好" draw_text.color: muted draw_text.text_style.font_size: 14}
+                        }
+                        if step == 2 {
+                            Label{text: "🍳 生成菜谱..." draw_text.color: ink draw_text.text_style.font_size: 20 }
+                            Label{text: "为你精心搭配营养均衡的美食" draw_text.color: muted draw_text.text_style.font_size: 14}
+                        }
+                    }
+                    
+                    // 进度条
+                    View{width: 200 height: 8 draw_bg.border_radius: 4.0
+                        SolidView{width: 200 height: 8 draw_bg.color: primary draw_bg.border_radius: 4.0}
+                    }
+                }
+            }
+        }
+        
+        // ============ 步骤 3: 结果展示 ============
+        if step == 3 {
+            // 营养统计
+            View{width: Fill height: Fit flow: Right spacing: 12
+                View{width: Fill height: Fit
+                    SolidView{width: Fill height: Fit padding: 20 draw_bg.color: #dbeafe draw_bg.border_radius: 16.0
+                        View{width: Fill height: Fit flow: Down spacing: 6
+                            Label{text: "🔥 1850" draw_text.color: #1e40af draw_text.text_style.font_size: 24 }
+                            Label{text: "总热量 (kcal)" draw_text.color: #3b82f6 draw_text.text_style.font_size: 12}
+                        }
+                    }
+                }
+                View{width: Fill height: Fit
+                    SolidView{width: Fill height: Fit padding: 20 draw_bg.color: #d1fae5 draw_bg.border_radius: 16.0
+                        View{width: Fill height: Fit flow: Down spacing: 6
+                            Label{text: "💪 85g" draw_text.color: #065f46 draw_text.text_style.font_size: 24 }
+                            Label{text: "蛋白质" draw_text.color: #10b981 draw_text.text_style.font_size: 12}
+                        }
+                    }
+                }
+                View{width: Fill height: Fit
+                    SolidView{width: Fill height: Fit padding: 20 draw_bg.color: #fef3c7 draw_bg.border_radius: 16.0
+                        View{width: Fill height: Fit flow: Down spacing: 6
+                            Label{text: "⭐ 3道" draw_text.color: #92400e draw_text.text_style.font_size: 24 }
+                            Label{text: "精选菜品" draw_text.color: #f59e0b draw_text.text_style.font_size: 12}
+                        }
+                    }
+                }
+            }
+            
+            // 今日菜谱
+            View{width: Fill height: Fit flow: Down spacing: 16
+                Label{text: "📋 今日推荐" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 18}}
+                
+                // 早餐
+                SolidView{width: Fill height: Fit padding: 20 draw_bg.color: surface draw_bg.border_radius: 16.0
+                    View{width: Fill height: Fit flow: Down spacing: 12
+                        View{width: Fill height: Fit flow: Right align: Align{y: 0.5}
+                            SolidView{width: 48 height: 48 draw_bg.color: #fef3c7 draw_bg.border_radius: 12.0
+                                View{width: Fill height: Fill align: Align{x: 0.5 y: 0.5}
+                                    Label{text: "🌅" draw_text.text_style.font_size: 24}
+                                }
+                            }
+                            View{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 12}
+                                Label{text: "早餐" draw_text.color: accent draw_text.text_style: theme.font_bold{font_size: 12}}
+                                Label{text: "牛油果吐司配水波蛋" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 16}}
+                            }
+                            Label{text: "380 kcal" draw_text.color: muted draw_text.text_style.font_size: 13 width: Fill align: Align{x: 1.0}}
+                        }
+                    }
+                }
+                
+                // 午餐
+                SolidView{width: Fill height: Fit padding: 20 draw_bg.color: surface draw_bg.border_radius: 16.0
+                    View{width: Fill height: Fit flow: Down spacing: 12
+                        View{width: Fill height: Fit flow: Right align: Align{y: 0.5}
+                            SolidView{width: 48 height: 48 draw_bg.color: #dbeafe draw_bg.border_radius: 12.0
+                                View{width: Fill height: Fill align: Align{x: 0.5 y: 0.5}
+                                    Label{text: "☀️" draw_text.text_style.font_size: 24}
+                                }
+                            }
+                            View{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 12}
+                                Label{text: "午餐" draw_text.color: primary draw_text.text_style: theme.font_bold{font_size: 12}}
+                                Label{text: "藜麦鸡胸肉沙拉" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 16}}
+                            }
+                            Label{text: "450 kcal" draw_text.color: muted draw_text.text_style.font_size: 13 width: Fill align: Align{x: 1.0}}
+                        }
+                    }
+                }
+                
+                // 晚餐
+                SolidView{width: Fill height: Fit padding: 20 draw_bg.color: surface draw_bg.border_radius: 16.0
+                    View{width: Fill height: Fit flow: Down spacing: 12
+                        View{width: Fill height: Fit flow: Right align: Align{y: 0.5}
+                            SolidView{width: 48 height: 48 draw_bg.color: #e0e7ff draw_bg.border_radius: 12.0
+                                View{width: Fill height: Fill align: Align{x: 0.5 y: 0.5}
+                                    Label{text: "🌙" draw_text.text_style.font_size: 24}
+                                }
+                            }
+                            View{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 12}
+                                Label{text: "晚餐" draw_text.color: secondary draw_text.text_style: theme.font_bold{font_size: 12}}
+                                Label{text: "清蒸鲈鱼配时蔬" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 16}}
+                            }
+                            Label{text: "380 kcal" draw_text.color: muted draw_text.text_style.font_size: 13 width: Fill align: Align{x: 1.0}}
+                        }
+                    }
+                }
+            }
+            
+            // 采购清单
+            View{width: Fill height: Fit flow: Down spacing: 16
+                View{width: Fill height: Fit flow: Right align: Align{y: 0.5}
+                    Label{text: "🛒 采购清单" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 18} width: Fill}
+                    Label{text: " + shoppingList.len() + " + " 项" draw_text.color: muted draw_text.text_style.font_size: 14}
+                }
+                
+                SolidView{width: Fill height: Fit padding: 20 draw_bg.color: surface draw_bg.border_radius: 16.0
+                    View{width: Fill height: Fit flow: Down spacing: 12 on_render: || {
+                        for i in shoppingList.len() {
+                            let item = shoppingList[i]
+                            GestureView{width: Fill height: Fit on_tap: |x, y| toggle_item(i)
+                                View{width: Fill height: Fit flow: Right align: Align{y: 0.5} padding: Inset{top: 8 bottom: 8}
+                                    // Checkbox
+                                    SolidView{width: 24 height: 24 draw_bg.color: item.checked ? success : #e2e8f0 draw_bg.border_radius: 6.0
+                                        if item.checked {
+                                            View{width: Fill height: Fill align: Align{x: 0.5 y: 0.5}
+                                                Label{text: "✓" draw_text.color: #xffffff draw_text.text_style.font_size: 14}
+                                            }
+                                        }
+                                    }
+                                    View{width: Fill height: Fit flow: Down spacing: 2 padding: Inset{left: 12}
+                                        Label{text: item.name draw_text.color: item.checked ? muted : ink draw_text.text_style.font_size: 15}
+                                        Label{text: item.category draw_text.color: muted draw_text.text_style.font_size: 12}
+                                    }
+                                    Label{text: item.amount draw_text.color: muted draw_text.text_style.font_size: 14 width: Fill align: Align{x: 1.0}}
+                                }
+                            }
+                        }
+                    }}
+                }
+            }
+            
+            // 重新开始按钮
+            GestureView{width: Fill height: Fit on_tap: |x, y| restart()
+                SolidView{width: Fill height: 56 draw_bg.color: surface draw_bg.border_radius: 16.0 draw_bg.border_size: 2.0 draw_bg.border_color: #e2e8f0
+                    View{width: Fill height: Fill align: Align{x: 0.5 y: 0.5}
+                        Label{text: "🔄 重新规划" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 16}}
+                    }
+                }
+            }
+        }
+    }}
+    
+    // Toast 提示
+    toast := Label{text: "" draw_text.color: #ffffff draw_text.text_style.font_size: 14 height: 0}
+}

@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>广软智能餐表生成器</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --accent: #8b5cf6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #fbbf24;
+            --night: #8b5cf6;
+            --fruit: #10b981;
+            --coffee: #d97706;
+            --bg-start: #0f172a;
+            --bg-end: #1e1b4b;
+            --card-bg: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.15);
+            --text: #ffffff;
+            --text-secondary: #e2e8f0;
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.2);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+                        url('1790564767404.jpg') center/cover no-repeat fixed;
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text);
+            line-height: 1.6;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
+
+        .container { 
+            max-width: 1200px; 
+            margin: 0 auto; 
+        }
+
+        /* 头部 */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+        }
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+            opacity: 0.3;
+            filter: blur(60px);
+        }
+        .header h1 { 
+            font-size: 2.8em; 
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 40px rgba(99, 102, 241, 0.3);
+            margin-bottom: 12px;
+            position: relative;
+        }
+        .header p { 
+            color: var(--text-secondary); 
+            font-size: 1.1em;
+            position: relative;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin: 4px;
+            backdrop-filter: blur(10px);
+        }
+
+        /* 档次选择 */
+        .tier-section {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 24px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .tier-title { 
+            font-size: 1.3em; 
+            font-weight: 600; 
+            margin-bottom: 24px;
+            text-align: center;
+            color: var(--text);
+        }
+        .tier-grid { 
+            display: grid; 
+            grid-template-columns: repeat(6, 1fr); 
+            gap: 12px; 
+        }
+        .tier-card {
+            background: var(--card-bg);
+            border: 2px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .tier-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .tier-card:hover { 
+            transform: translateY(-4px); 
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.2);
+        }
+        .tier-card:hover::before { opacity: 1; }
+        .tier-card.active { 
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+        }
+        .tier-card.active::before { opacity: 1; }
+        .tier-label { 
+            font-size: 2.2em; 
+            font-weight: 700; 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px; 
+        }
+        .tier-name { 
+            font-size: 1em; 
+            font-weight: 600; 
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+        .tier-budget { 
+            font-size: 1.2em; 
+            font-weight: 700; 
+            color: #fbbf24; 
+            margin: 8px 0; 
+        }
+        .tier-desc { 
+            font-size: 0.8em; 
+            color: var(--text-secondary);
+            line-height: 1.4;
+        }
+
+        /* 按钮 */
+        .generate-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .generate-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            border: none;
+            padding: 16px 60px;
+            font-size: 1.2em;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        .generate-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+        .generate-btn:hover { 
+            transform: translateY(-3px); 
+            box-shadow: 0 15px 40px rgba(99, 102, 241, 0.5);
+        }
+        .generate-btn:hover::before { left: 100%; }
+        .generate-btn:active { transform: translateY(0); }
+
+        /* 统计卡片 */
+        .stats-section {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+            display: none;
+        }
+        .stat-card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(20px);
+            transition: all 0.3s;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+        .stat-icon { 
+            font-size: 2em; 
+            margin-bottom: 12px; 
+            display: block;
+        }
+        .stat-value { 
+            font-size: 1.6em; 
+            font-weight: 700; 
+            background: linear-gradient(135deg, #fff 0%, #c7d2fe 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label { 
+            font-size: 0.85em; 
+            color: var(--text-secondary); 
+            margin-top: 6px; 
+        }
+
+        /* 餐表 */
+        .meal-plan {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(20px);
+            display: none;
+        }
+        .meal-plan.active { display: block; }
+        .plan-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-align: center;
+            color: var(--text);
+        }
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .day-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .day-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            border-color: var(--primary);
+        }
+        .day-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .day-total { 
+            font-size: 1.1em;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        .meal-slot {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--card-border);
+            transition: background 0.2s;
+        }
+        .meal-slot:hover {
+            background: rgba(255,255,255,0.03);
+        }
+        .meal-slot:last-child { border-bottom: none; }
+        .meal-label {
+            font-size: 0.85em;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .meal-name {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 0.95em;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .meal-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 0.85em;
+        }
+        .meal-store { 
+            color: var(--text-secondary);
+            flex: 1;
+            margin-right: 12px;
+        }
+        .meal-price { 
+            color: #fbbf24; 
+            font-weight: 700;
+            font-size: 1.1em;
+        }
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .tag-night { 
+            background: rgba(139, 92, 246, 0.2); 
+            color: #a78bfa;
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+        .tag-fruit { 
+            background: rgba(16, 185, 129, 0.2); 
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        .tag-coffee { 
+            background: rgba(217, 119, 6, 0.2); 
+            color: #fbbf24;
+            border: 1px solid rgba(217, 119, 6, 0.3);
+        }
+
+        /* 响应式 */
+        @media (max-width: 1024px) {
+            .tier-grid { grid-template-columns: repeat(3, 1fr); }
+            .stats-section { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2em; }
+            .tier-grid { grid-template-columns: repeat(2, 1fr); }
+            .stats-section { grid-template-columns: repeat(2, 1fr); }
+            .days-grid { grid-template-columns: 1fr; }
+            .generate-btn { padding: 14px 40px; font-size: 1.1em; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .header h1 { font-size: 1.8em; }
+            .tier-grid { grid-template-columns: 1fr; }
+            .stats-section { grid-template-columns: 1fr; }
+        }
+
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .day-card { animation: fadeIn 0.5s ease forwards; }
+        .day-card:nth-child(2) { animation-delay: 0.1s; }
+        .day-card:nth-child(3) { animation-delay: 0.2s; }
+        .day-card:nth-child(4) { animation-delay: 0.3s; }
+        .day-card:nth-child(5) { animation-delay: 0.4s; }
+        .day-card:nth-child(6) { animation-delay: 0.5s; }
+        .day-card:nth-child(7) { animation-delay: 0.6s; }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-start); }
+        ::-webkit-scrollbar-thumb { 
+            background: var(--primary); 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-dark); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍜 广软智能餐表生成器</h1>
+        </div>
+        
+        <div class="tier-section">
+            <div class="tier-title">💰 选择你的资产等级</div>
+            <div class="tier-grid">
+                <div class="tier-card" data-tier="A1" onclick="selectTier('A1')">
+                    <div class="tier-label">A1</div>
+                    <div class="tier-name">特困级</div>
+                    <div class="tier-budget">¥12-18/天</div>
+                    <div class="tier-desc">月生活费 < 600元<br>三餐温饱</div>
+                </div>
+                <div class="tier-card" data-tier="A2" onclick="selectTier('A2')">
+                    <div class="tier-label">A2</div>
+                    <div class="tier-name">困难级</div>
+                    <div class="tier-budget">¥18-26/天</div>
+                    <div class="tier-desc">月生活费 600-1000元<br>三餐刚好</div>
+                </div>
+                <div class="tier-card active" data-tier="A3" onclick="selectTier('A3')">
+                    <div class="tier-label">A3</div>
+                    <div class="tier-name">普通级</div>
+                    <div class="tier-budget">¥26-36/天</div>
+                    <div class="tier-desc">月生活费 1000-1500元<br>偶尔夜宵/水果</div>
+                </div>
+                <div class="tier-card" data-tier="A4" onclick="selectTier('A4')">
+                    <div class="tier-label">A4</div>
+                    <div class="tier-name">小康级</div>
+                    <div class="tier-budget">¥36-52/天</div>
+                    <div class="tier-desc">月生活费 1500-2200元<br>下午茶/夜宵</div>
+                </div>
+                <div class="tier-card" data-tier="A5" onclick="selectTier('A5')">
+                    <div class="tier-label">A5</div>
+                    <div class="tier-name">富裕级</div>
+                    <div class="tier-budget">¥52-80/天</div>
+                    <div class="tier-desc">月生活费 > 2200元<br>全部自由</div>
+                </div>
+                <div class="tier-card" data-tier="A6" onclick="selectTier('A6')">
+                    <div class="tier-label">A6</div>
+                    <div class="tier-name">土豪级</div>
+                    <div class="tier-budget">¥100+/天</div>
+                    <div class="tier-desc">月生活费 > 3500元<br>想吃啥吃啥</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="generate-section">
+            <button class="generate-btn" onclick="generateMealPlan()">🎲 一键生成餐表</button>
+        </div>
+        
+        <div class="stats-section" id="statsSection">
+            <div class="stat-card">
+                <span class="stat-icon">📊</span>
+                <div class="stat-value" id="weeklyTotal">-</div>
+                <div class="stat-label">本周合计</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📅</span>
+                <div class="stat-value" id="dailyAvg">-</div>
+                <div class="stat-label">日均花费</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">📆</span>
+                <div class="stat-value" id="monthlyAvg">-</div>
+                <div class="stat-label">月均花费</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">☕</span>
+                <div class="stat-value" id="coffeeCount">-</div>
+                <div class="stat-label">下午茶</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🌙</span>
+                <div class="stat-value" id="nightCount">-</div>
+                <div class="stat-label">夜宵</div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-icon">🍎</span>
+                <div class="stat-value" id="fruitCount">-</div>
+                <div class="stat-label">水果</div>
+            </div>
+        </div>
+        
+        <div class="meal-plan" id="mealPlan">
+            <div class="plan-title" id="planTitle">📋 本周推荐餐表</div>
+            <div class="days-grid" id="daysGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        const allProducts = PRODUCTS_PLACEHOLDER;
+        
+        const TIERS = {
+            A1: { name: 'A1 特困级', dailyBudget: 15, breakfast: [2, 4], lunch: [4, 7], dinner: [4, 7], night: false, nightBudget: [0,0], nightProb: 0, fruit: true, fruitBudget: [2, 5], fruitProb: 0.2, coffee: false, coffeeBudget: [0,0], coffeeProb: 0 },
+            A2: { name: 'A2 困难级', dailyBudget: 22, breakfast: [3, 6], lunch: [6, 10], dinner: [6, 10], night: false, nightBudget: [0,0], nightProb: 0, fruit: true, fruitBudget: [2, 5], fruitProb: 0.3, coffee: false, coffeeBudget: [0,0], coffeeProb: 0 },
+            A3: { name: 'A3 普通级', dailyBudget: 32, breakfast: [5, 8], lunch: [8, 14], dinner: [8, 14], night: true, nightBudget: [3, 6], nightProb: 0.3, fruit: true, fruitBudget: [2, 8], fruitProb: 0.5, coffee: true, coffeeBudget: [8, 12], coffeeProb: 0.15 },
+            A4: { name: 'A4 小康级', dailyBudget: 45, breakfast: [6, 12], lunch: [12, 20], dinner: [14, 22], night: true, nightBudget: [5, 10], nightProb: 0.6, fruit: true, fruitBudget: [2, 10], fruitProb: 0.7, coffee: true, coffeeBudget: [10, 15], coffeeProb: 0.4 },
+            A5: { name: 'A5 富裕级', dailyBudget: 65, breakfast: [8, 15], lunch: [18, 28], dinner: [20, 32], night: true, nightBudget: [8, 15], nightProb: 0.8, fruit: true, fruitBudget: [2, 15], fruitProb: 0.9, coffee: true, coffeeBudget: [12, 20], coffeeProb: 0.6 },
+            A6: { name: 'A6 土豪级', dailyBudget: 100, breakfast: [10, 22], lunch: [15, 22], dinner: [15, 22], night: true, nightBudget: [10, 18], nightProb: 0.9, fruit: true, fruitBudget: [2, 20], fruitProb: 1.0, coffee: true, coffeeBudget: [12, 22], coffeeProb: 0.8 }
+        };
+        
+        const BREAKFAST_KW = ['粥', '包', '饼', '粉', '面', '肠粉', '饺子', '馄饨', '豆浆', '油条', '饭团', '卷', '可颂'];
+        const MAIN_KW = ['饭', '粉', '面', '米线', '馄饨', '饺子', '套餐', '堡', '卷', '炒', '盖饭', '拌饭', '焗饭'];
+        const DRINK_KW = ['茶', '奶', '咖啡', '果汁', '冰沙', '饮', '柠', '椰', '美式', '拿铁'];
+        const MEAT_KW = ['鸡', '鸭', '猪', '牛', '羊', '排骨', '肉', '腿', '翅', '扒'];
+        const KFC_KW = ['肯德基', '堡', '炸鸡', '鸡腿', '鸡翅', '薯条', '可乐', '雪糕', '圣代'];
+        const NIGHT_KW = ['烧烤', '炸', '烤', '串', '粥', '粉', '面', '小吃', '鸡', '鸭', '肠', '丸', '关东煮', '卤'];
+        const FRUIT_KW = ['果', '瓜', '桃', '蕉', '橙', '柚', '莓', '提', '火龙果', '芒', '圣女'];
+        const COFFEE_KW = ['咖啡', '美式', '拿铁', '卡布', '摩卡', '浓缩', '手冲', '生椰', '生酪'];
+        
+        let currentTier = 'A3';
+        
+        function parseHours(h) {
+            if (!h || h === '未设置') return [{ start: 0, end: 24 }];
+            const periods = [];
+            for (const part of h.split(', ')) {
+                const [s, e] = part.split('-');
+                if (s && e) {
+                    const [sh, sm] = s.split(':').map(Number);
+                    const [eh, em] = e.split(':').map(Number);
+                    periods.push({ start: sh + sm/60, end: eh + em/60 });
+                }
+            }
+            return periods.length > 0 ? periods : [{ start: 0, end: 24 }];
+        }
+        
+        function isOpen(p, hour) {
+            return parseHours(p.business_hours).some(period => hour >= period.start && hour < period.end);
+        }
+        
+        function classify(p) {
+            const t = p.name + ' ' + p.category;
+            const isMeat = MEAT_KW.some(k => t.includes(k));
+            if (BREAKFAST_KW.some(k => t.includes(k))) return 'breakfast';
+            if (COFFEE_KW.some(k => t.includes(k))) return 'coffee';
+            if (DRINK_KW.some(k => t.includes(k))) return 'drink';
+            if (FRUIT_KW.some(k => t.includes(k)) && !['茶','奶','冰沙','汁','饮'].some(k => t.includes(k))) return 'fruit';
+            if (NIGHT_KW.some(k => t.includes(k)) && p.price <= 15) return 'night';
+            if (MAIN_KW.some(k => t.includes(k))) return isMeat ? 'main_meat' : 'main_veg';
+            return isMeat ? 'main_meat' : 'other';
+        }
+        
+        function getCandidates(type, range, used, hour) {
+            const [min, max] = range;
+            return allProducts.filter(p => {
+                if (p.price < min || p.price > max * 1.3) return false;
+                if (!isOpen(p, hour)) return false;
+                if (used.has(p.name)) return false;
+                const cat = classify(p);
+                if (type === 'breakfast') return cat === 'breakfast';
+                if (type === 'main') return cat === 'main_meat' || cat === 'main_veg';
+                if (type === 'drink') return cat === 'drink';
+                if (type === 'night') return cat === 'night' || (p.price <= 10 && (cat === 'main_meat' || cat === 'main_veg'));
+                if (type === 'fruit') return p.store.includes('鲜果切');
+                if (type === 'coffee') return cat === 'coffee' || cat === 'drink';
+                if (type === 'kfc') return KFC_KW.some(k => p.name.includes(k)) || p.store.includes('肯德基');
+                return true;
+            });
+        }
+        
+        function pick(candidates, preferMeat) {
+            if (!candidates.length) return null;
+            if (preferMeat) {
+                const meat = candidates.filter(p => classify(p) === 'main_meat');
+                if (meat.length && Math.random() > 0.4) return meat[Math.floor(Math.random() * meat.length)];
+            }
+            return candidates[Math.floor(Math.random() * candidates.length)];
+        }
+        
+        function selectTier(t) {
+            currentTier = t;
+            document.querySelectorAll('.tier-card').forEach(c => c.classList.toggle('active', c.dataset.tier === t));
+        }
+        
+        function generateMealPlan() {
+            const tier = TIERS[currentTier];
+            const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+            const hours = { breakfast: 8, lunch: 12, dinner: 18, night: 22, coffee: 15, fruit: 14 };
+            
+            const plan = [];
+            const used = new Set();
+            let nightCount = 0, fruitCount = 0, coffeeCount = 0;
+            
+            for (const day of days) {
+                const isThursday = day === '周四';
+                const bkf = pick(getCandidates('breakfast', tier.breakfast, used, hours.breakfast), false);
+                
+                // 疯狂星期四：周四优先肯德基
+                let lunch;
+                if (isThursday && Math.random() > 0.1) {
+                    const kfcCandidates = getCandidates('kfc', tier.lunch, used, hours.lunch);
+                    lunch = kfcCandidates.length ? pick(kfcCandidates, false) : pick(getCandidates('main', tier.lunch, used, hours.lunch), true);
+                } else {
+                    lunch = pick(getCandidates('main', tier.lunch, used, hours.lunch), true);
+                }
+                
+                let dinner = pick(getCandidates('main', tier.dinner, used, hours.dinner), true);
+                
+                // 先计算正餐总价
+                let mainTotal = 0;
+                if (bkf) { mainTotal += bkf.price; }
+                if (lunch) { mainTotal += lunch.price; }
+                if (dinner) { mainTotal += dinner.price; }
+                
+                // A4+ 午餐加饮品（正餐基础上加）
+                let lunchDisplay = lunch ? { ...lunch } : null;
+                if (['A4', 'A5', 'A6'].includes(currentTier) && lunch) {
+                    const drinkBudget = tier.dailyBudget - mainTotal - 5; // 预留5元给其他副餐
+                    if (drinkBudget > 3) {
+                        const drinks = getCandidates('drink', [3, Math.min(8, drinkBudget)], new Set(), hours.lunch);
+                        if (drinks.length) {
+                            const drink = pick(drinks, false);
+                            if (drink && mainTotal + drink.price < tier.dailyBudget * 0.85) {
+                                lunchDisplay = { name: lunch.name + ' + ' + drink.name, price: lunch.price + drink.price, store: lunch.store + ' / ' + drink.store };
+                                mainTotal += drink.price;
+                            }
+                        }
+                    }
+                }
+                
+                let total = mainTotal;
+                
+                // 计算剩余预算（用于副餐）
+                let remaining = tier.dailyBudget - total;
+                
+                // 副餐逻辑：A6可以同时享受多个副餐
+                const isA6 = currentTier === 'A6';
+                
+                // 下午茶
+                let coffee = null;
+                if (tier.coffee && remaining > (isA6 ? 8 : 15) && Math.random() < tier.coffeeProb) {
+                    const coffeeBudget = Math.min(remaining * (isA6 ? 0.4 : 0.3), tier.coffeeBudget[1]);
+                    const coffeeCandidates = getCandidates('coffee', [tier.coffeeBudget[0], coffeeBudget], new Set(), hours.coffee);
+                    if (coffeeCandidates.length) {
+                        coffee = pick(coffeeCandidates, false);
+                        if (coffee && total + coffee.price < tier.dailyBudget * (isA6 ? 0.95 : 0.9)) {
+                            total += coffee.price;
+                            remaining -= coffee.price;
+                            coffeeCount++;
+                        } else { coffee = null; }
+                    }
+                }
+                
+                // 夜宵
+                let nightSnack = null;
+                if (tier.night && remaining > (isA6 ? 6 : 12) && Math.random() < tier.nightProb) {
+                    const nightBudget = Math.min(remaining * (isA6 ? 0.5 : 0.4), tier.nightBudget[1]);
+                    const nightCandidates = getCandidates('night', [tier.nightBudget[0], nightBudget], new Set(), hours.night);
+                    if (nightCandidates.length) {
+                        nightSnack = pick(nightCandidates, true);
+                        if (nightSnack && total + nightSnack.price <= tier.dailyBudget * (isA6 ? 0.98 : 0.95)) {
+                            total += nightSnack.price;
+                            remaining -= nightSnack.price;
+                            nightCount++;
+                        } else { nightSnack = null; }
+                    }
+                }
+                
+                // 水果
+                let fruit = null;
+                if (tier.fruit && dinner && remaining > (isA6 ? 4 : 8) && Math.random() < tier.fruitProb) {
+                    const fruitBudget = Math.min(remaining * (isA6 ? 0.6 : 0.5), tier.fruitBudget[1]);
+                    const fruitCandidates = getCandidates('fruit', [tier.fruitBudget[0], fruitBudget], new Set(), hours.fruit);
+                    if (fruitCandidates.length) {
+                        fruit = pick(fruitCandidates, false);
+                        if (fruit && total + fruit.price <= tier.dailyBudget * (isA6 ? 0.98 : 0.95)) {
+                            total += fruit.price;
+                            fruitCount++;
+                        } else { fruit = null; }
+                    }
+                }
+                
+                plan.push({ day, breakfast: bkf, lunch: lunchDisplay, dinner, coffee, nightSnack, fruit, total });
+            }
+            
+            const wt = plan.reduce((s, m) => s + m.total, 0);
+            document.getElementById('weeklyTotal').textContent = '¥' + wt.toFixed(2);
+            document.getElementById('dailyAvg').textContent = '¥' + (wt/7).toFixed(2);
+            document.getElementById('monthlyAvg').textContent = '¥' + (wt/7*30).toFixed(0);
+            document.getElementById('coffeeCount').textContent = coffeeCount + '次';
+            document.getElementById('nightCount').textContent = nightCount + '次';
+            document.getElementById('fruitCount').textContent = fruitCount + '次';
+            document.getElementById('statsSection').style.display = 'grid';
+            document.getElementById('planTitle').textContent = '📋 ' + tier.name + ' - 本周推荐餐表';
+            
+            const grid = document.getElementById('daysGrid');
+            grid.innerHTML = '';
+            
+            for (const d of plan) {
+                const card = document.createElement('div');
+                card.className = 'day-card';
+                
+                const mealHtml = (meal, label, tagClass) => {
+                    if (!meal) return '';
+                    let tag = tagClass ? '<span class="tag tag-' + tagClass + '">' + (tagClass === 'coffee' ? '☕ 下午茶' : tagClass === 'night' ? '🌙 夜宵' : '🍎 水果') + '</span>' : '';
+                    return '<div class="meal-slot"><div class="meal-label">' + label + '</div><div class="meal-name">' + meal.name + tag + '</div><div class="meal-info"><span class="meal-store">' + meal.store + '</span><span class="meal-price">¥' + meal.price.toFixed(2) + '</span></div></div>';
+                };
+                
+                let html = '<div class="day-header"><span>📅 ' + d.day + '</span><span class="day-total">¥' + d.total.toFixed(2) + '</span></div>';
+                html += mealHtml(d.breakfast, '🌅 早餐 (8:00)');
+                html += mealHtml(d.lunch, '☀️ 午餐 (12:00)');
+                html += mealHtml(d.dinner, '🌙 晚餐 (18:00)');
+                if (d.coffee) html += mealHtml(d.coffee, '☕ 下午茶 (15:00)', 'coffee');
+                if (d.nightSnack) html += mealHtml(d.nightSnack, '🌃 夜宵 (22:00)', 'night');
+                if (d.fruit) html += mealHtml(d.fruit, '🍎 饭后水果', 'fruit');
+                
+                card.innerHTML = html;
+                grid.appendChild(card);
+            }
+            
+            document.getElementById('mealPlan').classList.add('active');
+            document.getElementById('mealPlan').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+</body>
+</html>

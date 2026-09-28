@@ -1,0 +1,12 @@
+{
+  "capabilities": [
+    "storage"
+  ],
+  "id": "meal-planner",
+  "integrity": {
+    "bundle_blake3": "9765b7f1852313276fcb1192e6330a9c54fb9846133edb4b729b690cba1a0ad5"
+  },
+  "name": "美食规划",
+  "schema": 1,
+  "version": "0.1.0"
+}
