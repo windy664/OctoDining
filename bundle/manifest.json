@@ -1,12 +1,18 @@
 {
   "capabilities": [
-    "storage"
+    "storage",
+    "net"
   ],
-  "id": "meal-planner",
+  "id": "org.octosense.octodining",
   "integrity": {
-    "bundle_blake3": "9765b7f1852313276fcb1192e6330a9c54fb9846133edb4b729b690cba1a0ad5"
+    "bundle_blake3": "6ffff1fc2b1420d5ebb12af029ce24b89e3680b43d37de4c238e5f20d9efcfb1"
   },
-  "name": "美食规划",
+  "name": "OctoDining · 今晚吃什么",
+  "network": {
+    "hosts": [
+      "api.deepseek.com"
+    ]
+  },
   "schema": 1,
-  "version": "0.1.0"
+  "version": "1.0.0"
 }

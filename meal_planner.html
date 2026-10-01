@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>广软智能餐表生成器</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <title>下课后，今晚吃什么？｜广软食堂</title>
     <style>
         :root {
             --primary: #6366f1;
@@ -172,6 +171,28 @@
             text-align: center;
             margin: 30px 0;
         }
+        .request-box { margin: 0 auto 16px; max-width: 760px; text-align: left; }
+        .request-box label { display: block; margin: 0 0 8px 4px; font-weight: 600; }
+        .request-box input { width: 100%; padding: 14px 16px; border: 1px solid var(--glass-border); border-radius: 14px; background: rgba(15,23,42,.72); color: #fff; font: inherit; outline: none; }
+        .request-box input:focus { border-color: #a5b4fc; box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+        .request-hint { display: block; margin: 7px 4px 0; color: var(--text-secondary); font-size: .8rem; }
+        .budget-options { margin: 0 0 14px; text-align: center; }
+        .budget-options summary { display: inline-block; padding: 7px 14px; color: var(--text-secondary); cursor: pointer; font-size: .9rem; }
+        .tonight-results { display: none; margin: 0 0 24px; padding: 24px; border: 1px solid var(--glass-border); border-radius: 20px; background: rgba(15,23,42,.84); backdrop-filter: blur(18px); }
+        .tonight-results.active { display: block; }
+        .tonight-results h2 { margin-bottom: 6px; }
+        .tonight-intro { margin-bottom: 16px; color: var(--text-secondary); }
+        .tonight-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        .tonight-card { padding: 16px; border: 1px solid var(--glass-border); border-radius: 15px; background: rgba(255,255,255,.08); }
+        .tonight-card.featured { border-color: #a5b4fc; background: rgba(99,102,241,.2); }
+        .tonight-card h3 { font-size: 1rem; margin-bottom: 9px; }
+        .tonight-card p { color: var(--text-secondary); font-size: .85rem; overflow-wrap: anywhere; }
+        .tonight-card .price { color: #fcd34d; font-size: 1.1rem; font-weight: 700; margin: 10px 0; }
+        .choose-meal { width: 100%; border: 0; border-radius: 10px; padding: 10px; color: white; background: #6366f1; font: inherit; cursor: pointer; }
+        .choose-meal:disabled { background: #059669; cursor: default; }
+        .tonight-empty { padding: 18px; border-radius: 12px; background: rgba(245,158,11,.12); color: #fde68a; }
+        .secondary-btn { margin: 14px 8px 0; padding: 10px 17px; border: 1px solid var(--glass-border); border-radius: 24px; color: white; background: rgba(255,255,255,.08); font: inherit; cursor: pointer; }
+        @media (max-width: 760px) { .tonight-list { grid-template-columns: 1fr; } }
         .generate-btn {
             background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
             color: white;
@@ -202,6 +223,19 @@
         }
         .generate-btn:hover::before { left: 100%; }
         .generate-btn:active { transform: translateY(0); }
+
+        .task-proof { display: none; margin: 0 0 24px; padding: 22px 26px; border: 1px solid var(--glass-border); border-radius: 18px; background: rgba(15,23,42,.82); backdrop-filter: blur(16px); }
+        .task-proof.active { display: block; }
+        .task-proof h2 { font-size: 1.05rem; margin-bottom: 8px; }
+        .task-proof p { color: var(--text-secondary); font-size: .9rem; }
+        .task-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+        .task-step { padding: 12px; border-radius: 12px; background: rgba(255,255,255,.08); font-size: .83rem; }
+        .task-step strong { display: block; color: #a5b4fc; margin-bottom: 4px; }
+        .task-step.ok strong { color: #6ee7b7; }
+        .task-step.warn strong { color: #fcd34d; }
+        .task-footnote { margin-top: 12px; font-size: .78rem !important; opacity: .82; }
+        .unavailable { color: #fcd34d; font-size: .82rem; padding: 8px 0; }
+        @media (max-width: 640px) { .task-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } .task-proof { padding: 18px; } }
 
         /* 统计卡片 */
         .stats-section {
@@ -402,11 +436,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🍜 广软智能餐表生成器</h1>
+            <h1>🍜 下课后，今晚吃什么？</h1>
+            <p>给出预算和到店时间，先替你筛掉不合适的选择。</p>
         </div>
         
-        <div class="tier-section">
-            <div class="tier-title">💰 选择你的资产等级</div>
+        <details class="budget-options">
+          <summary>也可以直接选 A1–A6 预算档</summary>
+          <div class="tier-section">
+            <div class="tier-title">💰 选择每日预算档</div>
             <div class="tier-grid">
                 <div class="tier-card" data-tier="A1" onclick="selectTier('A1')">
                     <div class="tier-label">A1</div>
@@ -420,7 +457,7 @@
                     <div class="tier-budget">¥18-26/天</div>
                     <div class="tier-desc">月生活费 600-1000元<br>三餐刚好</div>
                 </div>
-                <div class="tier-card active" data-tier="A3" onclick="selectTier('A3')">
+                <div class="tier-card" data-tier="A3" onclick="selectTier('A3')">
                     <div class="tier-label">A3</div>
                     <div class="tier-name">普通级</div>
                     <div class="tier-budget">¥26-36/天</div>
@@ -445,11 +482,32 @@
                     <div class="tier-desc">月生活费 > 3500元<br>想吃啥吃啥</div>
                 </div>
             </div>
-        </div>
+          </div>
+        </details>
         
         <div class="generate-section">
-            <button class="generate-btn" onclick="generateMealPlan()">🎲 一键生成餐表</button>
+            <div class="request-box">
+                <label for="requestInput">告诉助手你今晚的条件</label>
+                <input id="requestInput" type="text" maxlength="120" placeholder="例如：预算 20 元，晚上 19 点到食堂，不吃辣">
+                <span class="request-hint">默认按 ¥20 筛选；也可写预算、到店时间和避辣。过敏、素食等要求尚未接入。</span>
+            </div>
+            <button class="generate-btn" onclick="pickTonight()">✨ 帮我选今晚吃什么</button>
+            <br>
+            <button class="secondary-btn" onclick="generateMealPlan()">再看一周餐表</button>
         </div>
+
+        <section class="tonight-results" id="tonightResults" aria-live="polite">
+            <h2 id="tonightTitle">今晚的候选</h2>
+            <p class="tonight-intro" id="tonightIntro"></p>
+            <div class="tonight-list" id="tonightList"></div>
+        </section>
+
+        <section class="task-proof" id="taskProof" aria-live="polite">
+            <h2 id="taskTitle">任务执行记录</h2>
+            <p id="taskSummary"></p>
+            <div class="task-steps" id="taskSteps"></div>
+            <p class="task-footnote">本地规则引擎按菜单快照自动筛选与核算，不调用大模型；不推断营养。商品营业时间、价格和库存可能已变化，请以食堂现场为准。</p>
+        </section>
         
         <div class="stats-section" id="statsSection">
             <div class="stat-card">
@@ -512,19 +570,26 @@
         const COFFEE_KW = ['咖啡', '美式', '拿铁', '卡布', '摩卡', '浓缩', '手冲', '生椰', '生酪'];
         
         let currentTier = 'A3';
+        let budgetTierTouched = false;
+        let interpretedRequest = '';
+        let tonightChoices = [];
         
         function parseHours(h) {
-            if (!h || h === '未设置') return [{ start: 0, end: 24 }];
+            if (!h || h === '未设置') return [];
             const periods = [];
-            for (const part of h.split(', ')) {
+            for (const part of h.split(',')) {
                 const [s, e] = part.split('-');
                 if (s && e) {
                     const [sh, sm] = s.split(':').map(Number);
                     const [eh, em] = e.split(':').map(Number);
-                    periods.push({ start: sh + sm/60, end: eh + em/60 });
+                    if ([sh, sm, eh, em].every(Number.isFinite) && sh <= 24 && eh <= 24 && sm < 60 && em < 60) {
+                        const start = sh + sm / 60, end = eh + em / 60;
+                        if (start < end) periods.push({ start, end });
+                        else if (start > end) periods.push({ start, end: 24 }, { start: 0, end });
+                    }
                 }
             }
-            return periods.length > 0 ? periods : [{ start: 0, end: 24 }];
+            return periods;
         }
         
         function isOpen(p, hour) {
@@ -543,10 +608,10 @@
             return isMeat ? 'main_meat' : 'other';
         }
         
-        function getCandidates(type, range, used, hour) {
+        function getCandidates(type, range, used, hour, hardMax = Infinity) {
             const [min, max] = range;
             return allProducts.filter(p => {
-                if (p.price < min || p.price > max * 1.3) return false;
+                if (p.price < min || p.price > max * 1.3 || p.price > hardMax) return false;
                 if (!isOpen(p, hour)) return false;
                 if (used.has(p.name)) return false;
                 const cat = classify(p);
@@ -572,10 +637,168 @@
         
         function selectTier(t) {
             currentTier = t;
+            budgetTierTouched = true;
             document.querySelectorAll('.tier-card').forEach(c => c.classList.toggle('active', c.dataset.tier === t));
+        }
+
+        function backedBySnapshot(meal) {
+            if (!meal) return true;
+            if (allProducts.some(p => p.name === meal.name && p.store === meal.store && Math.abs(p.price - meal.price) < 0.011)) return true;
+            const names = meal.name.split(' + '), stores = meal.store.split(' / ');
+            if (names.length !== 2 || stores.length !== 2) return false;
+            const parts = names.map((name, i) => allProducts.find(p => p.name === name && p.store === stores[i]));
+            return parts.every(Boolean) && Math.abs(parts.reduce((sum, p) => sum + p.price, 0) - meal.price) < 0.011;
+        }
+
+        function showTaskProof(tier, plan) {
+            const missing = plan.reduce((n, day) => n + [day.breakfast, day.lunch, day.dinner].filter(x => !x).length, 0);
+            const outsideBudget = plan.filter(day => day.total > tier.dailyBudget + 0.001).length;
+            const badSource = plan.flatMap(day => [day.breakfast, day.lunch, day.dinner, day.coffee, day.nightSnack, day.fruit]).filter(x => x && !backedBySnapshot(x)).length;
+            const badTotal = plan.filter(day => {
+                const sum = [day.breakfast, day.lunch, day.dinner, day.coffee, day.nightSnack, day.fruit].filter(Boolean).reduce((n, x) => n + x.price, 0);
+                return Math.abs(sum - day.total) > 0.011;
+            }).length;
+            const ok = !outsideBudget && !badSource && !badTotal;
+            document.getElementById('taskTitle').textContent = ok ? '✅ 自动任务已完成' : '⚠️ 自动任务需要复核';
+            const intent = interpretedRequest ? `用户输入“${interpretedRequest}”，识别为 ${tier.name}` : `用户选择 ${tier.name}`;
+            document.getElementById('taskSummary').textContent = `${intent}｜读取 ${allProducts.length} 条菜单快照，完成 7 天规划；${missing ? `有 ${missing} 个正餐时段在快照中无匹配商品` : '三餐时段均找到候选'}。预算、金额和来源核验${ok ? '通过' : '未通过'}。`;
+            const steps = [
+                ['1 · 理解需求', `${intent}；目标日预算约 ¥${tier.dailyBudget}`,'ok'],
+                ['2 · 检索候选', `菜单 ${allProducts.length} 条；按品类、价格与营业时段筛选`,'ok'],
+                ['3 · 执行规划', `完成 ${plan.length} 天，${plan.reduce((n, day) => n + [day.breakfast, day.lunch, day.dinner].filter(Boolean).length, 0)} 个正餐匹配`,'ok'],
+                ['4 · 核验结果', `${ok ? '通过' : '失败'}：超预算 ${outsideBudget} 天 · 金额异常 ${badTotal} 天 · 来源异常 ${badSource} 项`,''+(ok ? 'ok' : 'warn')]
+            ];
+            document.getElementById('taskSteps').replaceChildren(...steps.map(([title, detail, state]) => {
+                const node = document.createElement('div'); node.className = `task-step ${state}`;
+                const heading = document.createElement('strong'); heading.textContent = title;
+                const body = document.createElement('span'); body.textContent = detail;
+                node.append(heading, body); return node;
+            }));
+            document.getElementById('taskProof').classList.add('active');
+        }
+
+        function pickTonight() {
+            const request = document.getElementById('requestInput').value.trim();
+            const tierMatch = request.match(/\bA\s*([1-6])\b/i);
+            const amountMatch = request.match(/(\d+(?:\.\d+)?)\s*元/);
+            const unsupported = /(过敏|素食|清淡|高蛋白|不吃肉|不吃牛肉|不吃猪肉|不吃奶|不吃蛋|不吃花生|不要花生|不吃海鲜|不要海鲜)/.test(request);
+            const tier = tierMatch ? TIERS[`A${tierMatch[1]}`] : TIERS[currentTier];
+            const budget = amountMatch ? Number(amountMatch[1]) : (tierMatch || budgetTierTouched ? tier.dailyBudget : 20);
+            const timeMatch = request.match(/(\d{1,2})(?::|点)(\d{1,2})?/);
+            const hour = timeMatch ? Number(timeMatch[1]) + Number(timeMatch[2] || 0) / 60 : 18.5;
+            const avoidsSpicy = /(不吃辣|不要辣|少辣|避辣|别太辣)/.test(request);
+            const results = document.getElementById('tonightResults');
+            const list = document.getElementById('tonightList');
+            results.classList.add('active');
+            document.getElementById('tonightTitle').textContent = '今晚的候选';
+            list.replaceChildren();
+
+            if (unsupported || !Number.isFinite(budget) || budget <= 0 || budget > 500 || hour < 0 || hour >= 24) {
+                document.getElementById('tonightIntro').textContent = unsupported
+                    ? '这条饮食要求目前无法可靠判断，我不会忽略它。首版只支持预算、到店时间和避辣。'
+                    : '预算或到店时间格式不清楚。试试“预算 20 元，晚上 19 点到食堂，不吃辣”。';
+                list.append(Object.assign(document.createElement('div'), { className: 'tonight-empty', textContent: '暂时没有生成推荐，请补充可识别的条件后重试。' }));
+                showTonightTrace(request, budget, hour, 0, '未执行：输入无法安全解析');
+                return;
+            }
+
+            const candidates = getCandidates('main', [0, budget], new Set(), hour, budget)
+                .filter(p => !avoidsSpicy || !/(辣|麻|椒)/.test(`${p.name} ${p.category}`));
+            const unique = [];
+            const names = new Set();
+            for (const p of candidates.sort((a, b) => Math.abs(a.price - budget * 0.55) - Math.abs(b.price - budget * 0.55))) {
+                if (names.has(p.name)) continue;
+                names.add(p.name);
+                unique.push(p);
+                if (unique.length === 3) break;
+            }
+            tonightChoices = unique;
+            if (!unique.length) {
+                document.getElementById('tonightIntro').textContent = `按 ¥${budget.toFixed(0)} 预算和 ${Math.floor(hour)}:${String(Math.round((hour % 1) * 60)).padStart(2, '0')} 到店时间，没有找到快照中确认营业的匹配餐品。`;
+                list.append(Object.assign(document.createElement('div'), { className: 'tonight-empty', textContent: '可以提高预算或调整到店时间再试；不会推荐营业时间未知或超预算的商品。' }));
+                showTonightTrace(request, budget, hour, candidates.length, '没有可验证的匹配商品');
+                return;
+            }
+
+            const timeLabel = `${Math.floor(hour)}:${String(Math.round((hour % 1) * 60)).padStart(2, '0')}`;
+            const invalid = unique.some(p => !allProducts.includes(p) || p.price > budget || !isOpen(p, hour));
+            if (invalid) {
+                document.getElementById('tonightIntro').textContent = '候选复核没有通过，已停止推荐。请调整条件后重试。';
+                list.append(Object.assign(document.createElement('div'), { className: 'tonight-empty', textContent: '结果未通过价格、营业时间或来源核验。' }));
+                showTonightTrace(request, budget, hour, candidates.length, '候选复核失败，已停止展示');
+                return;
+            }
+            document.getElementById('tonightIntro').textContent = `按 ¥${budget.toFixed(0)} 预算、${timeMatch ? `${timeLabel} 到店` : `未指定时间，暂按 ${timeLabel} 到店`}筛选${avoidsSpicy ? '，并避开名称含辣/麻/椒的商品' : ''}。给你 ${unique.length} 个选择；标价和营业时间来自菜单快照。`;
+            unique.forEach((p, i) => {
+                const card = document.createElement('article');
+                card.className = `tonight-card ${i === 0 ? 'featured' : ''}`;
+                const title = document.createElement('h3'); title.textContent = `${i === 0 ? '⭐ 首选 · ' : '备选 · '}${p.name}`;
+                const store = document.createElement('p'); store.textContent = p.store;
+                const hoursLabel = document.createElement('p'); hoursLabel.textContent = `营业时段：${p.business_hours}`;
+                const price = document.createElement('p'); price.className = 'price'; price.textContent = `¥${p.price.toFixed(2)}`;
+                const choose = document.createElement('button'); choose.className = 'choose-meal'; choose.textContent = '就选这家';
+                choose.onclick = () => confirmTonight(i, choose);
+                card.append(title, store, hoursLabel, price, choose); list.append(card);
+            });
+            showTonightTrace(request, budget, hour, candidates.length, `已筛出 ${unique.length} 项并核对价格与来源`);
+        }
+
+        function showTonightTrace(request, budget, hour, candidateCount, result) {
+            const panel = document.getElementById('taskProof');
+            panel.classList.add('active');
+            document.getElementById('taskTitle').textContent = result.startsWith('已筛出') ? '✅ 今晚候选已核验' : '⚠️ 需要补充条件';
+            document.getElementById('taskSummary').textContent = `输入“${request || '使用所选预算档'}” · 预算 ¥${Number.isFinite(budget) ? budget.toFixed(0) : '—'} · 到店 ${Number.isFinite(hour) ? `${Math.floor(hour)}:${String(Math.round((hour % 1) * 60)).padStart(2, '0')}` : '—'} · ${result}`;
+            const steps = [
+                ['1 · 理解需求', '提取预算、预计到店时间与避辣要求'],
+                ['2 · 查找菜单', `在 ${allProducts.length} 条快照中按餐次、价格和营业时段筛选`],
+                ['3 · 整理选择', `符合条件的候选 ${candidateCount} 项；展示最多 3 项`],
+                ['4 · 核验边界', result]
+            ];
+            document.getElementById('taskSteps').replaceChildren(...steps.map(([title, detail], i) => {
+                const node = document.createElement('div'); node.className = `task-step ${result.startsWith('已筛出') || i < 3 ? 'ok' : 'warn'}`;
+                const heading = document.createElement('strong'); heading.textContent = title;
+                const body = document.createElement('span'); body.textContent = detail;
+                node.append(heading, body); return node;
+            }));
+        }
+
+        function confirmTonight(index, button) {
+            const selected = tonightChoices[index];
+            if (!selected) return;
+            document.querySelectorAll('.choose-meal').forEach(b => { b.disabled = false; b.textContent = '就选这家'; });
+            button.disabled = true;
+            button.textContent = '已选入今晚计划';
+            document.getElementById('tonightIntro').textContent = `已选择「${selected.name}」· ${selected.store} · ¥${selected.price.toFixed(2)}。这只是今晚计划，不会代你下单或付款。`;
         }
         
         function generateMealPlan() {
+            if (!Array.isArray(allProducts) || allProducts.length === 0) {
+                const proof = document.getElementById('taskProof');
+                proof.classList.add('active');
+                document.getElementById('taskTitle').textContent = '❌ 菜单数据不可用';
+                document.getElementById('taskSummary').textContent = '没有读到菜单快照，无法生成餐表。请检查应用包内数据后重试。';
+                document.getElementById('taskSteps').replaceChildren();
+                return;
+            }
+            interpretedRequest = document.getElementById('requestInput').value.trim();
+            if (interpretedRequest) {
+                const tierMatch = interpretedRequest.match(/\bA\s*([1-6])\b/i);
+                const amountMatch = interpretedRequest.match(/(\d+(?:\.\d+)?)\s*元/);
+                if (tierMatch) {
+                    currentTier = `A${tierMatch[1]}`;
+                } else if (amountMatch) {
+                    const amount = Number(amountMatch[1]);
+                    currentTier = Object.keys(TIERS).reduce((best, key) => Math.abs(TIERS[key].dailyBudget - amount) < Math.abs(TIERS[best].dailyBudget - amount) ? key : best, 'A1');
+                } else {
+                    const proof = document.getElementById('taskProof');
+                    proof.classList.add('active');
+                    document.getElementById('taskTitle').textContent = '⚠️ 暂时无法识别预算';
+                    document.getElementById('taskSummary').textContent = '请输入 A1–A6 或包含“每天 30 元”这样的预算金额，再试一次。当前支持预算识别，不会猜测未支持的饮食要求。';
+                    document.getElementById('taskSteps').replaceChildren();
+                    return;
+                }
+                document.querySelectorAll('.tier-card').forEach(c => c.classList.toggle('active', c.dataset.tier === currentTier));
+            }
             const tier = TIERS[currentTier];
             const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
             const hours = { breakfast: 8, lunch: 12, dinner: 18, night: 22, coffee: 15, fruit: 14 };
@@ -586,18 +809,19 @@
             
             for (const day of days) {
                 const isThursday = day === '周四';
-                const bkf = pick(getCandidates('breakfast', tier.breakfast, used, hours.breakfast), false);
+                const bkf = pick(getCandidates('breakfast', tier.breakfast, used, hours.breakfast, tier.dailyBudget), false);
+                const afterBreakfast = tier.dailyBudget - (bkf?.price || 0);
                 
                 // 疯狂星期四：周四优先肯德基
                 let lunch;
                 if (isThursday && Math.random() > 0.1) {
-                    const kfcCandidates = getCandidates('kfc', tier.lunch, used, hours.lunch);
-                    lunch = kfcCandidates.length ? pick(kfcCandidates, false) : pick(getCandidates('main', tier.lunch, used, hours.lunch), true);
+                    const kfcCandidates = getCandidates('kfc', tier.lunch, used, hours.lunch, afterBreakfast);
+                    lunch = kfcCandidates.length ? pick(kfcCandidates, false) : pick(getCandidates('main', tier.lunch, used, hours.lunch, afterBreakfast), true);
                 } else {
-                    lunch = pick(getCandidates('main', tier.lunch, used, hours.lunch), true);
+                    lunch = pick(getCandidates('main', tier.lunch, used, hours.lunch, afterBreakfast), true);
                 }
-                
-                let dinner = pick(getCandidates('main', tier.dinner, used, hours.dinner), true);
+                const afterLunch = afterBreakfast - (lunch?.price || 0);
+                let dinner = pick(getCandidates('main', tier.dinner, used, hours.dinner, afterLunch), true);
                 
                 // 先计算正餐总价
                 let mainTotal = 0;
@@ -677,6 +901,7 @@
             }
             
             const wt = plan.reduce((s, m) => s + m.total, 0);
+            showTaskProof(tier, plan);
             document.getElementById('weeklyTotal').textContent = '¥' + wt.toFixed(2);
             document.getElementById('dailyAvg').textContent = '¥' + (wt/7).toFixed(2);
             document.getElementById('monthlyAvg').textContent = '¥' + (wt/7*30).toFixed(0);
@@ -703,6 +928,9 @@
                 html += mealHtml(d.breakfast, '🌅 早餐 (8:00)');
                 html += mealHtml(d.lunch, '☀️ 午餐 (12:00)');
                 html += mealHtml(d.dinner, '🌙 晚餐 (18:00)');
+                if (!d.breakfast) html += '<div class="unavailable">早餐：快照中没有符合价格和营业时段的商品</div>';
+                if (!d.lunch) html += '<div class="unavailable">午餐：快照中没有符合价格和营业时段的商品</div>';
+                if (!d.dinner) html += '<div class="unavailable">晚餐：快照中没有符合价格和营业时段的商品</div>';
                 if (d.coffee) html += mealHtml(d.coffee, '☕ 下午茶 (15:00)', 'coffee');
                 if (d.nightSnack) html += mealHtml(d.nightSnack, '🌃 夜宵 (22:00)', 'night');
                 if (d.fruit) html += mealHtml(d.fruit, '🍎 饭后水果', 'fruit');
