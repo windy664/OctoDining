@@ -4,7 +4,7 @@
 
 OctoDining 面向打工人、学生和其他需要控制餐饮开销的人，目标是结合预算、口味、已有计划和真实菜单，帮助用户选餐、确认计划并持续调整。广州软件学院食堂菜单是首个数据集，产品范围不限校园。
 
-> **开发状态 · 2026-10-03：** 基本选餐和计划管理已在 OctoScript `card-host` 完成 15 项自动交互验收；Agent 建议入口、`octos.turn.start` 权限和响应校验已接入。OctoSense Linux `cargo check` 与桌面可执行构建通过；Shell 实际启动、用户授权与真实 Agent 请求仍待验收。开发预览不能当作系统 Agent 演示。
+> **开发状态 · 2026-10-03：** 基本选餐和计划管理已在 OctoScript `card-host` 完成 15 项自动交互验收；Agent 建议入口、`octos.turn.start` 权限和响应校验已接入。OctoSense Linux `cargo check` 与桌面可执行构建通过；Shell 已启动，但 Kimi Coding Plan 在正确 endpoint 上返回 401，暂时没有真实 Agent 回复。需先核对 key 状态和模型权限，再验收用户授权与真实请求。开发预览不能当作系统 Agent 演示。
 
 ## 现在有什么
 
