@@ -2,6 +2,7 @@
 """Embed the canonical menu snapshot into the OctoScript mini-app source."""
 import json
 import argparse
+from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,6 +14,10 @@ parser.add_argument(
 )
 args = parser.parse_args()
 products = json.loads((ROOT / "products_clean.json").read_text(encoding="utf-8"))
+for product in products:
+    product["cents"] = int((Decimal(str(product["price"])) * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+    if product["cents"] <= 0:
+        raise SystemExit("Menu prices must be positive")
 template = (ROOT / "scripts/main.splash.in").read_text(encoding="utf-8")
 compact = json.dumps(products, ensure_ascii=False, separators=(",", ":"))
 source = template.replace("__MENU_JSON__", json.dumps(compact, ensure_ascii=False))

@@ -35,20 +35,21 @@ Rules:
 - Read `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md` and
   `docs/CONTEST_READINESS.md` for the current direction and actual status.
 - Prioritize an OctoScript app hosted by OctoSense Shell, using its system octos
-  service. Validate Linux and pin working versions before claiming this works.
+  service. Basic selection/planning has passed card-host checks; validate Shell
+  authorization and real Agent requests before claiming that works.
   Rinx is an optional host for chat sharing, not a prerequisite for the personal
   dining task. Do not confuse `tools/octo`, `card-host`, octos and OctoSense.
-- First make basic functionality reliable, then integrate the runtime Agent,
-  then improve UI. P0 host feasibility comes before expanding the product.
+- Continue in this order: basic functionality (now implemented), runtime Agent
+  validation, then UI polish. Record host blockers without overstating evidence.
 - Preserve the original menu data, A1–A6 tiers, weekly planner and design assets.
   HTML and Rust/egui remain reference implementations; do not replace the
   competition app with an unrelated GUI framework.
 - Treat `scripts/main.splash.in` as the source and `bundle/main.splash` as generated
-  output. Current title drift and manifest/call mismatch are P0 defects, not
-  intended architecture. Do not regenerate without accounting for that drift.
+  output. Rebuild and check after every app or manifest edit.
 - Distinguish source presence, runtime verification and planned work. A model
-  response, card-host screenshot or Hub check does not prove an Agent task is
-  complete. Report tested commits and remaining limitations.
+  response, card-host run or Hub check does not prove the Shell Agent task is
+  complete. Report tested commits and remaining limitations. Current hidden
+  window capture returns 404; do not claim screenshot review until fixed.
 - The 1,497 menu entries are snapshots, not live price, stock, nutrition or
   allergy data. Never invent unsupported facts. Confirmed plans are not orders.
 - Historical notes in `docs/CONTINUATION.md` and `docs/HANDOFF-2026-10-03.md`

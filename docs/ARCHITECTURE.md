@@ -1,21 +1,21 @@
 # 技术路线与宿主选择
 
-路线决策日期：2026-10-03。**OctoSense Shell 是优先验证的主宿主；尚未完成本机端到端验收。**
+路线决策日期：2026-10-03。当前比赛应用采用 OctoScript bundle，主要目标宿主为 OctoSense Shell。Rinx 是同一生态中可选的聊天和分享宿主；本项目不需要同时开发两个前端，也不需要把 octos 与 Rinx 二选一。octos 是宿主 Agent 服务，OctoSense/Rinx 是应用运行入口。
 
 ## 各组件的责任
 
 | 组件 | 在 OctoDining 中的角色 |
 | --- | --- |
-| OctoDining | 餐饮任务、界面、数据核验与本地计划 |
-| OctoScript / Makepad | 描述界面、状态、事件，并原生渲染 |
-| OctoSense Shell | 加载应用，管理权限、模型配置与系统 Agent |
-| octos | 运行时 Agent 内核；通过宿主服务接入 |
-| App Hub / Design Flow | 包规范、生成、预览与准入检查 |
-| card-host | 开发用隔离运行器，不提供系统 Agent 服务 |
-| Rinx | 可选的小程序与会话宿主，用于后续聊天分享和协作 |
-| octoscode / OctoLoop / hagency | 按需使用的开发和协作工具，不是全部必装的运行时依赖 |
+| OctoDining | 餐饮规划、菜单筛选、预算核算、用户确认与本地计划 |
+| OctoScript / Makepad | 描述界面、状态和事件，原生渲染应用 |
+| OctoSense Shell | 运行应用，管理应用权限、Agent 服务、模型配置与审批 |
+| octos | 宿主管理的运行时 Agent 内核，通过 `octos.turn.start` 接入 |
+| App Hub / Design Flow | bundle 规范、构建、开发预览和准入检查 |
+| card-host | 应用交互的开发预览，不注册系统 Agent 服务 |
+| Rinx | 可选的聊天小程序入口；需要时复用 OctoScript 应用并按宿主要求集成 |
+| octoscode / OctoLoop / hagency | 开发、审查与多 Agent 协作工具，按需使用，不是比赛应用的强制运行依赖 |
 
-个人选餐任务目前不需要 Matrix 会话，因此先验证直接运行在 OctoSense 中的应用。Rinx 与 OctoSense 属于同一生态；选择一个主要宿主并不保证 bundle 无需适配就能在另一个宿主运行。
+个人选餐任务先交付一个可运行应用。系统 Agent 负责比较筛选出来的候选；应用验证序号，用户确认，应用写入计划。Agent 不直接操作存储。
 
 ## 目标数据流
 
@@ -23,52 +23,45 @@
 sequenceDiagram
     actor U as 用户
     participant A as OctoDining
-    participant H as OctoSense 宿主
+    participant H as OctoSense Shell
     participant O as octos Agent
-    U->>A: 预算、时间与偏好
-    A->>A: 读取菜单与计划，筛选并核验候选
-    A->>H: 请求助手服务
-    H->>U: 首次使用授权（如需要）
-    U->>H: 允许或拒绝
-    H->>O: 获授权的候选与偏好
-    O-->>A: 经宿主返回建议
-    A->>A: 校验结果与当前条件
-    A-->>U: 候选、理由、来源与待确认操作
-    U->>A: 确认
-    A->>A: 保存计划并读回核验
-    A-->>U: 已确认计划与预算变化
+    U->>A: 预算、餐次、时间和需求
+    A->>A: 从菜单快照筛选最多三个候选
+    A->>H: host.request(octos.turn.start)
+    H->>U: 按宿主流程授权
+    H->>O: 转发候选、需求和当日计划摘要
+    O-->>A: 候选序号和取舍理由
+    A->>A: 检查序号、条件和候选版本
+    A-->>U: 显示建议与原始菜单来源
+    U->>A: 手动确认具体候选
+    A->>A: 保存、读回、重新核算预算
 ```
 
-这是目标流程；当前 bundle 尚无计划读回和完整的结果约束校验。`octos.turn.start` 返回文字也不意味着 Agent 已具备操作本应用的工具。
+## 当前应用状态
 
-## 官方资料中的版本差异
+- `scripts/main.splash.in` 是 OctoScript 源模板；`products_clean.json` 提供本地快照；`scripts/build-octos-bundle.py` 生成 `bundle/main.splash` 并将菜单价换算成整数分。
+- `bundle/manifest.json` 只声明 `storage` 与 `octos.turn.start`，没有直连模型或菜单网络权限。
+- 基本选餐与计划管理在 App Hub `card-host` 中有真实交互自动验收；验收报告保存于本地忽略目录 `.local-state/acceptance-*/results.json`。
+- 系统 Agent 请求界面与候选序号校验已加入源码，但 card-host 不提供该服务。必须在 OctoSense Shell 中通过授权并运行一次真实请求，才能标记 Agent 集成完成。
+- 截图端点在本机隐藏窗口运行时返回 404；当前自动验收并未生成或检查截图。UI 美化和交付截图留到基本任务与 Agent 路径稳定后。
 
-截至此次核对，Design Flow 的 AI-SERVICES 仍有基于 9/27 的“脚本应用没有助手服务”描述；OctoSense 主仓库文档已经记录后续能力：
+## 官方能力与实际边界
 
-- 脚本应用可请求 `octos.*`，需宿主运行内核、开启 `OCTOSENSE_CONTAINED_APPS=1`，并取得用户首次使用同意。
-- `model.complete` 已有一次性模型调用实现；它没有工具、历史或记忆，不应等同于完整 Agent。
-- 应用工具注册、触发器等能力仍有规划或集成限制，不能仅凭 manifest 能被接受就视为运行时可用。
+OctoScript 通过 `host.request("octos.turn.start", {text}, callback)` 请求 Agent；manifest 必须声明该服务能力，宿主管理模型配置和授权。此服务返回文本，应用需自行要求结构化格式并验证响应。它不证明 Agent 获得了应用工具，也不代表跨应用自动执行。
 
-以上是官方文档与合并记录所支持的技术依据，不是本项目的实机验证。应按选择的宿主提交号再核对接口和限制；不要通过开启开发者自动审批来代替正常授权流程。
+官方资料列出的额外运行条件和实现状态会随宿主版本变化。每次真实验收都应记录 OctoSense、App Hub、Makepad 和 OctoScript-Makepad 的固定提交号及构建配置。以目标宿主版本内的能力说明和成功/失败实测为准，不依赖过期课程讲义或仅对源码静态检查。
 
-## 当前源码约束
+## 数据、安全与限制
 
-- `scripts/main.splash.in` 是应维护的模板；`products_clean.json` 是数据输入；生成脚本写出 `bundle/main.splash`。
-- 当前模板和 bundle 的两行品牌文案不同，重新生成会覆盖品牌更新。
-- 当前调用 `octos.turn.start`，manifest 却仅声明 `storage`、`net` 及 `api.deepseek.com`。修复应以实际采用的宿主服务为准，移除不用的网络权限。
-- 成功标签仍写作 Rinx；失败分支隐藏具体错误，只显示本地规则回退。正式联调需要保留可诊断且不含凭据的错误信息。
-- 计划写入目前没有读回验证、恢复或失败反馈，不能宣传完整持久化流程。
-
-## 运行环境状态
-
-当前开发机器是 Linux。已有 App Hub、Design Flow、Rinx 与 octos 工作区，尚无本项目验证过的 OctoSense Shell 基线。需要先获取或定位宿主源码，按其锁定依赖构建，验证应用加载与助手可用性，再记录提交号、构建特性和启动命令。
-
-界面预览使用 `tools/octo run`；其 HTTP 端口是 UI 树、点击和截图的测试桥。可通过 UI 树驱动交互，并检查真实截图。Makepad Studio / 测试桥属于开发验证工具，不替代应用运行时 Agent。
+- 菜单数据是本地快照；不提供实时库存、价钱、营养、过敏原或健康建议。
+- 发送给 Agent 的内容限于本次用户需求、最多三个候选、预算和当天计划摘要。宿主按其 provider 设置将请求交给模型服务。
+- 应用在用户确认后才保存。两份轮换 JSON 记录带版本和修订号，启动时选择较新有效版本，写入后读回校验。
+- `card-host` 仅证明 bundle 普通交互和持久化，不证明 OctoSense Shell 授权或 Agent 可用。
 
 ## 来源
 
-- [赛事提交说明](https://github.com/gosimfoundation/hackathon-agenticapp26/blob/main/docs/app-hub-submission.md)：主要基线、作品形态和运行证据。
-- [OctoSense AI 服务](https://github.com/OctoSense-org/OctoSense/blob/main/docs/ai-services.zh-CN.md)：宿主服务、授权和当前限制。
-- [model.complete 合并记录 #95](https://github.com/OctoSense-org/OctoSense/pull/95)：2026-09-28 合入。
-- [应用开发流程](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/README.zh-CN.md)：bundle、card-host 和发布流程。
-- [赛事项目说明](https://github.com/gosimfoundation/hackathon-agenticapp26)：八个生态项目不要求全部集成。
+- [App Hub 发布规范](https://github.com/OctoSense-org/OctoSense-App-Hub/blob/main/docs/PUBLISHING.md)：服务能力和 manifest。
+- [OctoScript 能力说明](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/docs/CAPABILITIES.md)：脚本应用可调用 API。
+- [OctoSense AI 服务说明](https://github.com/OctoSense-org/OctoSense/blob/main/docs/ai-services.zh-CN.md)：宿主授权、provider 和服务限制。
+- [Rinx 脚本小程序示例](https://github.com/hagency-org/Rinx/tree/main/examples/miniapps/matrix-octos-script)：同一 `host.request` 接口的另一宿主用法。
+- [赛事交付说明](https://github.com/gosimfoundation/hackathon-agenticapp26/blob/main/docs/app-hub-submission.md)：作品运行与实际任务证据要求。

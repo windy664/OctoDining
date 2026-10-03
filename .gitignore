@@ -13,3 +13,5 @@
 .env.*
 !.env.example
 /build/
+__pycache__/
+*.py[cod]
