@@ -13,7 +13,7 @@
 | 持久化 | 双文件轮换；测试覆盖文件损坏恢复、保存故障保护、双副本无效时锁写 |
 | Agent 能力 | `octos.turn.start` 候选比较、序号校验与过期结果丢弃已进入源码；card-host 已验证无服务时的回退 |
 | App Hub 检查 | bundle 1.2.0 已通过 unsigned hub check；声明 `storage`、`octos.turn.start`。签名警告和 listing 模板占位仍待处理 |
-| 运行宿主 | OctoSense `4a541777` 与锁定依赖下，Linux `cargo check --locked -p octosense`、`cargo build --locked -p octosense` 已通过；Octos `2.0.3-rc.13 (056173e)` 内核已构建。Shell 在隔离 home/app-data 启动并显示尚未配置模型 provider；未使用真实密钥或触发模型调用 |
+| 运行宿主 | OctoSense `4a541777` 与锁定依赖下，Linux `cargo check --locked -p octosense`、`cargo build --locked -p octosense` 已通过；Octos `2.0.3-rc.13 (056173e)` 内核已构建。Shell 在隔离 home/app-data 启动；用户提供的 Kimi CN provider 最小请求返回余额不足的 HTTP 429，无 Agent 回复。临时凭据已删除 |
 | 页面外观 | 功能验证页面可交互；隐藏窗口截图端点返回 404，未完成视觉验收 |
 | 商店资料 | `bundle/listing.json` 仍有示例发布者/平台信息，不可发布 |
 | 许可与隐私 | 代码 Apache-2.0；菜单的采集来源、日期和再分发许可待确认。请求仅发送本次需求、候选和当日计划摘要 |
@@ -32,7 +32,7 @@ Agent 不会搜索整份菜单、创建新候选或自动保存。菜单不提�
 ## 交付前还需要
 
 - Shell 中打开已验证目录安装的 OctoDining 包，并完成首次授权；当前 UI 启动检查尚未形成应用任务运行记录。
-- 在 OctoSense 中配置模型 provider 后，完成一次用户授权下的成功 Agent 请求，并测试拒绝、服务不可用、无效/过期响应。
+- 为 Kimi CN 账户补充可用额度后，在 OctoSense 中配置模型 provider，完成一次用户授权下的成功 Agent 请求，并测试拒绝、服务不可用、无效/过期响应。
 - 修复截图采集，检查最终真实界面并录制任务演示。
 - 补全菜单来源与再分发许可，填写真实 listing 元数据。
 - 以冻结的可运行提交参加赛事；无需先等待 App Hub 商店上架。[官方交付说明](https://github.com/gosimfoundation/hackathon-agenticapp26/blob/main/docs/app-hub-submission.md)

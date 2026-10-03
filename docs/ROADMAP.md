@@ -23,9 +23,9 @@
 - Agent 只建议；用户必须手动确认，应用才保存并核验计划。
 - card-host 中验证服务不可用反馈，OctoSense Shell 中继续验收授权拒绝、成功请求、服务失败、过期响应和确认后的持久化结果。
 
-**当前进度：** OctoScript 页面和 manifest 已接入精确的 `octos.turn.start` 权限；card-host 验收了服务不可用回退。OctoSense 主仓库 `4a541777` 的 Linux `cargo check --locked -p octosense` 与 `cargo build --locked -p octosense` 已通过；并按该锁文件构建 Octos `2.0.3-rc.13 (056173e)`，产物 SHA-256 前缀为 `35d1d279c6b04061`。OctoSense Shell 已在独立 `/tmp` home/app-data 启动，并配置临时锚签名的本地测试目录；未使用真实发布密钥。Shell 显示没有配置模型 provider，故尚无正常授权后的成功 Agent 请求，也未完成应用端到端运行验收。不得把内核构建或目录签名写成 Agent 已验证。
+**当前进度：** OctoScript 页面和 manifest 已接入精确的 `octos.turn.start` 权限；card-host 验收了服务不可用回退。OctoSense 主仓库 `4a541777` 的 Linux `cargo check --locked -p octosense` 与 `cargo build --locked -p octosense` 已通过；并按该锁文件构建 Octos `2.0.3-rc.13 (056173e)`，产物 SHA-256 前缀为 `35d1d279c6b04061`。OctoSense Shell 已在独立 `/tmp` home/app-data 启动，并配置临时锚签名的本地测试目录；未使用真实发布密钥。按 Kimi 中国区 endpoint 配置临时 provider 后，最小连通请求收到 HTTP 429，接口说明账户余额不足、当前额度不可用；未得到模型回复，因此真实 Agent 任务仍未完成。测试结束后已删除隔离目录中的临时 key 与 provider profile。不得把内核构建、目录签名或单独连通性尝试写成 Agent 已验证。
 
-**本轮运行观察：** Shell 的系统助手明确显示“尚未设置模型提供方”。干净测试 home 中没有 provider 配置；没有读取或复制用户凭据，也没有发起可能计费的模型请求。后续须由用户在 OctoSense 中配置自己的 provider，并在 app 首次使用时亲自处理授权，然后记录成功响应、拒绝/错误/过期回退及确认后的持久化结果。当前测试 Shell 已正常退出。
+**本轮运行观察：** 首次启动时，Shell 的系统助手显示“尚未设置模型提供方”。用户提供 Kimi CN key 后，按中国区 endpoint 做了一次最小请求，收到余额不足的 429；没有成功生成内容。provider key 仅保存在权限为 0600 的隔离临时 secret 文件，测试后已删除，未写进仓库。补足 Kimi 账户可用额度后，仍须在 OctoSense 配置 provider、完成应用首次授权，并验证成功响应、拒绝/错误/过期回退及确认后的持久化结果。当前测试 Shell 已正常退出。
 
 **通过条件：** Shell 中真实 Agent 请求与系统授权有记录；建议对应实际候选；用户确认后计划写入、读回和预算均正确；拒绝、错误或过期时没有假成功。本地预览、hub check、临时目录签名或单独构建内核均不算通过。
 
