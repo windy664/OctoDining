@@ -23,9 +23,9 @@
 - Agent 只建议；用户必须手动确认，应用才保存并核验计划。
 - card-host 中验证服务不可用反馈，OctoSense Shell 中继续验收授权拒绝、成功请求、服务失败、过期响应和确认后的持久化结果。
 
-**当前进度：** OctoScript 页面和 manifest 已接入精确的 `octos.turn.start` 权限；card-host 验收了服务不可用回退。OctoSense 主仓库 `4a541777` 的 Linux `cargo check --locked -p octosense` 与 `cargo build --locked -p octosense` 已通过；并按该锁文件构建 Octos `2.0.3-rc.13 (056173e)`，产物 SHA-256 前缀为 `35d1d279c6b04061`。OctoSense Shell 已在独立 `/tmp` home/app-data 启动，并配置临时锚签名的本地测试目录；未使用真实发布密钥。曾将 Kimi Coding Plan key 错配到 Moonshot Open Platform endpoint，并请求 `kimi-k2.5`，收到 HTTP 429；该响应不能判断 Coding Plan 的 key 或额度。测试结束后已删除隔离目录中的临时 key 与 provider profile。真实 Coding Plan provider 尚未验证，不能把内核构建、目录签名或错误 endpoint 的连通性尝试写成 Agent 已验证。
+**当前进度：** OctoScript 页面和 manifest 已接入精确的 `octos.turn.start` 权限；card-host 验收了服务不可用回退。OctoSense 主仓库 `4a541777` 的 Linux `cargo check --locked -p octosense` 与 `cargo build --locked -p octosense` 已通过；并按该锁文件构建 Octos `2.0.3-rc.13 (056173e)`，产物 SHA-256 前缀为 `35d1d279c6b04061`。OctoSense Shell 已在独立 `/tmp` home/app-data 启动，并配置临时锚签名的本地测试目录；未使用真实发布密钥。先前将 Kimi Coding Plan key 错配到 Moonshot Open Platform 并得到的 HTTP 429 不可用于判断 Coding Plan。随后按正确的 Kimi Coding Plan endpoint（`https://api.kimi.com/coding/v1`）和 `k3` 模型进行一次最小请求，返回 HTTP 401 `invalid_authentication_error`（key 无效或已过期）；没有模型回复，真实 Agent provider 仍未验证。临时 key 与 provider profile 已删除。
 
-**本轮运行观察：** 首次启动时，Shell 的系统助手显示“尚未设置模型提供方”。随后误将 Coding Plan key 配到 Moonshot Open Platform 的 `api.moonshot.cn` endpoint，并请求 `kimi-k2.5`；其 429 响应不适用于判断 Coding Plan。provider key 仅保存在权限为 0600 的隔离临时 secret 文件，测试后已删除，未写进仓库。OctoSense 已内置 `moonshot-coding` provider（Kimi Coding Plan），中国区 endpoint 应为 `https://api.kimi.com/coding/v1`，本地模型 catalog 有 `k3`。用轮换后的新 key 按此配置后，仍须完成应用首次授权并验证成功回复、拒绝/错误/过期回退及确认后的持久化结果。当前测试 Shell 已正常退出。
+**本轮运行观察：** 首次启动时，Shell 的系统助手显示“尚未设置模型提供方”。确认 Kimi Coding Plan 配置为 `moonshot-coding`、中国区 endpoint `https://api.kimi.com/coding/v1`、模型 `k3` 后，最小认证请求返回 HTTP 401 `invalid_authentication_error`，提示 key 无效或已过期；未收到模型回复。旧 key 仅暂存在权限为 0600 的隔离 secret 文件，随后已删除。OctoSense 已内置此 provider；须在 Kimi Code Console 确认 key 属于 Coding Plan 并有效后，再完成 Shell 配置、应用首次授权、成功回复及拒绝/失败回退测试。当前测试 Shell 已正常退出。
 
 **通过条件：** Shell 中真实 Agent 请求与系统授权有记录；建议对应实际候选；用户确认后计划写入、读回和预算均正确；拒绝、错误或过期时没有假成功。本地预览、hub check、临时目录签名或单独构建内核均不算通过。
 
