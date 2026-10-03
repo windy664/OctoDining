@@ -14,7 +14,8 @@ Follow the harness, and do not invent requirements or APIs:
 
 The loop, with `OCTO=<path to OctoScript-App-Design-Flow>/tools/octo` (the CLI
 lives in the harness repository, not here), run from this directory: edit
-`bundle/main.splash` → `$OCTO run bundle --port 8141 --detach` → drive it
+`scripts/main.splash.in` → `python3 scripts/build-octos-bundle.py`
+→ `$OCTO run bundle --port 8141 --detach` → drive it
 (`/click`, `/t`, `/snap`) and `$OCTO shot 8141 out.png` → `curl -s 127.0.0.1:8141/quit`
 → `$OCTO check bundle`.
 
@@ -29,4 +30,29 @@ Rules:
 - Keys, `.local-state/`, `build/` and review packets never enter `bundle/` or git.
 - Stop at human steps: publisher key, publisher details, platform claims, submission.
 
-Add this app's own requirements, data sources and tests below.
+## OctoDining project direction (2026-10-03)
+
+- Read `README.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md` and
+  `docs/CONTEST_READINESS.md` for the current direction and actual status.
+- Prioritize an OctoScript app hosted by OctoSense Shell, using its system octos
+  service. Validate Linux and pin working versions before claiming this works.
+  Rinx is an optional host for chat sharing, not a prerequisite for the personal
+  dining task. Do not confuse `tools/octo`, `card-host`, octos and OctoSense.
+- First make basic functionality reliable, then integrate the runtime Agent,
+  then improve UI. P0 host feasibility comes before expanding the product.
+- Preserve the original menu data, A1–A6 tiers, weekly planner and design assets.
+  HTML and Rust/egui remain reference implementations; do not replace the
+  competition app with an unrelated GUI framework.
+- Treat `scripts/main.splash.in` as the source and `bundle/main.splash` as generated
+  output. Current title drift and manifest/call mismatch are P0 defects, not
+  intended architecture. Do not regenerate without accounting for that drift.
+- Distinguish source presence, runtime verification and planned work. A model
+  response, card-host screenshot or Hub check does not prove an Agent task is
+  complete. Report tested commits and remaining limitations.
+- The 1,497 menu entries are snapshots, not live price, stock, nutrition or
+  allergy data. Never invent unsupported facts. Confirmed plans are not orders.
+- Historical notes in `docs/CONTINUATION.md` and `docs/HANDOFF-2026-10-03.md`
+  are context only. Current task instructions take precedence.
+- Do not run the historical `start-demo.sh` as the default launcher. It controls
+  Rinx processes. `scripts/preview.sh` also has machine-specific paths and stops
+  the preview at port 8141; prefer explicit commands for the intended host.

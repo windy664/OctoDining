@@ -1,8 +1,15 @@
-# 开发接续记录 · 2026-09-29
+# 历史开发接续记录 · 2026-09-29 至 09-30
+
+> **历史归档。** 下文保留当时的实现、测试和判断，不代表当前状态。
+> 2026-10-03 已改为优先验证 OctoSense Shell + OctoScript + 系统 octos，
+> Rinx 是可选宿主。当前计划见 [ROADMAP](ROADMAP.md)，实际缺口见
+> [CONTEST_READINESS](CONTEST_READINESS.md)。当前 bundle 权限与源码不一致，
+> 旧文中的通过记录不能作为新版本验收证据。
 
 接续 OpenCode 会话：参与 agenticapp26 比赛和 OctoSense 项目研究。
 
-> 本文件后续段落保留历史。当前比赛入口以 2026-09-30 更新为准：Rinx Mini Apps OctoScript bundle，真实 Agent 请求走 `octos.turn.start`。此前“网页小程序为主”已过时。
+> 在 2026-09-30 的工作中，比赛入口曾设为 Rinx Mini Apps OctoScript bundle。
+> 这段话描述当时路线；2026-10-03 之后以文首指向的当前文档为准。
 
 ## 用户要求
 
