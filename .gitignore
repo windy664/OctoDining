@@ -6,3 +6,10 @@
 .DS_Store
 .idea/
 *.log
+
+# Local credentials and development state
+/token.json
+.env
+.env.*
+!.env.example
+/build/

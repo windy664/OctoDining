@@ -1,7 +1,8 @@
 #!/bin/bash
-# 一键启动 meal-planner demo
+# Historical Rinx launcher; see docs/ROADMAP.md for the current OctoSense route.
 
-export OPENAI_API_KEY="sk-api-_NRLWqdyOCxGBEdlOvWfK3eoUk1MMDcp73gJC-e9jVnyLG4fmy-nIG1vvb5V7Ia3BO0OdGZDSguAjmnQLbonfYy2k6PcU3gtNr2g4ydIZcxhkLBEnAvDOdw"
+: "${OPENAI_API_KEY:?Set OPENAI_API_KEY locally before running this legacy Rinx demo.}"
+export OPENAI_API_KEY
 export RINX_OCTOS_BIN="/home/windy/Project/octosense-ws/Rinx/target/debug/octos"
 
 # 杀掉旧进程
