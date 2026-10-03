@@ -156,6 +156,10 @@ fn store_record(next){
     return true
 }
 fn hide_candidates(){
+    // Invalidate any outstanding assistant callback when its inputs/results
+    // cease to be usable. A late callback must not lock a newer request.
+    agentRequest += 1
+    agentBusy = false
     candidates = []
     candidateStamp = ""
     agentChoice = -1
@@ -337,8 +341,8 @@ fn ask_agent(){
     ui.agent_result.set_text("正在请求 OctoSense 系统 Agent…")
     agentBusy = true
     host.request("octos.turn.start", {text: prompt}, fn(r){
-        agentBusy = false
         if requestId != agentRequest { return }
+        agentBusy = false
         if stamp != candidateStamp || stamp != selection_stamp() {
             agentChoice = -1
             ui.agent_result.set_text("条件已变化；这次 Agent 结果已丢弃，请重新查找。")

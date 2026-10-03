@@ -16,8 +16,8 @@ OctoDining 面向打工人、学生和其他需要控制餐饮开销的人，目
 | 六档预算与三餐 | A1–A6、早餐/午餐/晚餐、餐次上限和每日预算已进入 OctoScript |
 | 菜单候选 | 1,497 条快照，按价格、到店时间、餐次与关键词避辣筛选，展示最多三个店铺 |
 | 计划管理 | 按日期保存；支持同餐替换、查看、修改、取消、日预算调整和重启恢复；写入后读回核验，双份记录容错 |
-| 自动验收 | `python3 scripts/test-basic-app.py` 通过 15 项真实 UI bridge 用例；结果见 `.local-state/acceptance-20261003-204851/results.json`，截图接口返回 404 |
-| OctoSense Agent | 页面请求 `octos.turn.start` 并校验当前候选序号；必须由用户点候选确认。card-host 已验收服务不可用回退；Shell 请求待验收 |
+| 自动验收 | `python3 scripts/test-basic-app.py` 的 14 组 UI bridge 检查通过；最近结果见 `.local-state/acceptance-20261003-233543/results.json`，截图接口返回 404 |
+| OctoSense Agent | 页面请求 `octos.turn.start` 并校验当前候选序号；条件变化会使未完成回调失效，迟到结果不能阻塞新请求；仍须用户点候选确认。card-host 已验收服务不可用回退；Shell 请求待验收 |
 | 暂未包含 | 周计划、历史去重、实时价格/库存、营养与过敏信息、下单和支付 |
 | 商店资料 | `listing.json` 仍是示例模板，发布者、平台与截图需在 UI/交付阶段据实填写 |
 

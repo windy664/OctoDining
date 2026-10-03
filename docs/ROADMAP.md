@@ -20,12 +20,15 @@
 - 仅申请 `octos.turn.start` 精确服务能力，模型 provider 和密钥由宿主管理。
 - 将用户需求、预算、餐次、至多三个已筛候选及当天已有计划传给宿主。
 - 限定响应为候选序号与理由；校验序号属于本次候选，且响应回来时请求条件未变化。
+- 条件变化或候选失效时递增请求代次并释放界面忙碌状态；迟到回调直接丢弃，不能清掉较新请求的忙碌状态。
 - Agent 只建议；用户必须手动确认，应用才保存并核验计划。
 - card-host 中验证服务不可用反馈，OctoSense Shell 中继续验收授权拒绝、成功请求、服务失败、过期响应和确认后的持久化结果。
 
 **当前进度：** OctoScript 页面和 manifest 已接入精确的 `octos.turn.start` 权限；card-host 验收了服务不可用回退。OctoSense 主仓库 `4a541777` 的 Linux `cargo check --locked -p octosense` 与 `cargo build --locked -p octosense` 已通过；并按该锁文件构建 Octos `2.0.3-rc.13 (056173e)`，产物 SHA-256 前缀为 `35d1d279c6b04061`。OctoSense Shell 已在独立 `/tmp` home/app-data 启动，并配置临时锚签名的本地测试目录；未使用真实发布密钥。先前将 Kimi Coding Plan key 错配到 Moonshot Open Platform 并得到的 HTTP 429 不可用于判断 Coding Plan。之后对正确的 Coding Plan endpoint（`https://api.kimi.com/coding/v1`）分别以 `k3` 和 `kimi-for-coding` 发起最小请求，均返回 HTTP 401 `invalid_authentication_error`，没有模型回复；认证失败本身不能区分 key 无效、过期或撤销，也不能排除所选模型不在当前计划权限内。Kimi 官方文档列出的下一步是确认 key 来自 Kimi Code Console、仍有效且有对应模型权限。临时 key 与 provider profile 已删除。
 
 **本轮运行观察：** 首次启动时，Shell 的系统助手显示“尚未设置模型提供方”。按官方 OpenAI-compatible 配置使用 provider `moonshot-coding`、中国区 endpoint `https://api.kimi.com/coding/v1`；`k3` 与 `kimi-for-coding` 各做一次最小请求，均返回 HTTP 401 `invalid_authentication_error`。没有模型回复，也没有消耗到可验证的模型输出。该响应不能单独证明 key 无效，因为官方模型文档也将缺少对应模型计划权限列为 401 可能原因。旧 key 仅暂存在权限为 0600 的隔离 secret 文件，随后已删除；因其曾在聊天中明文发送，建议在 Kimi Code Console 撤销并重新生成。拿到新 key 后先核对 Coding Plan 归属和模型权限，再在 OctoSense 中完成授权、成功回复及拒绝/失败回退测试。当前测试 Shell 已正常退出。参考：[Kimi Code 模型与权限说明](https://www.kimi.com/code/docs/kimi-code/models.html)、[Kimi Code FAQ](https://www.kimi.ai/help/kimi-code/faq)。
+
+随后修正了一处异步竞态：用户修改条件或重新查找后，旧 `octos.turn.start` 回调不能把新请求标记为空闲/忙碌，也不再阻止用户发起新一轮建议；旧响应按请求代次丢弃。bundle 通过 `octo check bundle`，card-host 回归脚本通过 14 组检查（`.local-state/acceptance-20261003-233543/results.json`）。当前 card-host 没有 octos 服务，这条测试只验收无服务回退和应用基本功能，不代表模拟或真实模型成功；视觉截图仍未生成。
 
 **通过条件：** Shell 中真实 Agent 请求与系统授权有记录；建议对应实际候选；用户确认后计划写入、读回和预算均正确；拒绝、错误或过期时没有假成功。本地预览、hub check、临时目录签名或单独构建内核均不算通过。
 

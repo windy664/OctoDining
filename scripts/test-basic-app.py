@@ -56,7 +56,13 @@ class App:
             self.get('k', k='down', c='Backspace')
             self.get('k', k='up', c='Backspace')
         self.get('t', t=text, wait=1)
-        time.sleep(.06)
+        deadline = time.monotonic() + 2
+        actual = self.text(key)
+        while actual != text and time.monotonic() < deadline:
+            time.sleep(.05)
+            actual = self.text(key)
+        if actual != text:
+            raise AssertionError(f'Could not enter {text!r} in {key!r}; got {actual!r}')
 
     def status(self, fragment):
         deadline = time.monotonic() + 5
