@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-04",
+  "app_version": "1.2.1",
+  "app_commit": "997d541a28a503b274791ddcdbf1bd6ec47d92c3",
+  "shell_commit": "4a541777298eb4f85d9ac8ec2b83fab9e12ce909",
+  "source": "OctoSense Shell /snap in isolated local profile; selected UI nodes copied from raw local snapshots",
+  "cases": [
+    {
+      "consent_allowed": false,
+      "model_provider_configured": false,
+      "agent_result": "系统 Agent 暂不可用：Waiting for the person to allow this app's agent (OctoSense asks the first time)。你仍可自行选择候选。",
+      "plan_summary": "2026-10-04 · 已计划 ¥10.00 · 剩余 ¥22.00",
+      "confirmation_button_visible": true
+    },
+    {
+      "consent_allowed": true,
+      "model_provider_configured": false,
+      "agent_result": "系统 Agent 暂不可用：profile '_main' is not configured for this AppUI session (profile_unresolved)。你仍可自行选择候选。",
+      "plan_summary": "2026-10-04 · 已计划 ¥10.00 · 剩余 ¥22.00",
+      "confirmation_button_visible": true
+    }
+  ],
+  "limits": "Failure paths were tested with consent state in an isolated profile. No first-use consent sheet capture, live model call, or Shell screenshot is included. The refusal message comes from the host and still says Waiting."
+}
