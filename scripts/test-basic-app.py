@@ -129,6 +129,9 @@ def main():
     started = False
     try:
         start(); started = True
+        app.click('我的一周餐表')
+        app.node('history')
+        app.click('首页')
         app.click('manual')
         app.status('本地规划已就绪')
         for i,amount in enumerate([15,22,32,45,65,100],1):
