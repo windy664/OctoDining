@@ -1,0 +1,36 @@
+{
+  "checks": [
+    "A1–A6 daily budgets",
+    "Invalid money, time, date and unsupported dietary conditions rejected",
+    "Agent service unavailable is reported without blocking manual choice",
+    "Real menu filtering and confirmed dinner saved/read back",
+    "Breakfast candidates and breakfast plan saved",
+    "Replacing same meal never double counts",
+    "Multiple meals respect daily budget",
+    "Plans stay isolated by calendar date",
+    "Decimal budget persistence and stale candidates invalidated",
+    "Restart restores saved budget and meals",
+    "Cancellation updates and verifies saved totals",
+    "Actual storage failure preserves prior confirmed plan",
+    "Corrupt journal copy recovers last valid record",
+    "Unreadable storage locks writes without resetting data"
+  ],
+  "app_data": "/home/windy/Project/OctoDining/.local-state/acceptance-20261004-115655",
+  "screenshot": null,
+  "head": "206e207b7b5ee792eafbc16f9c323aed34fe7edc",
+  "worktree_dirty": true,
+  "bundle_sha256": "ee71085545e01258686f597de3f483e48588cfb63ad2741c2b5bf84ba8548f79",
+  "manifest": {
+    "capabilities": [
+      "storage",
+      "octos.turn.start"
+    ],
+    "id": "org.octosense.octodining",
+    "integrity": {
+      "bundle_blake3": "9415ccc8325ee4a30bdeb84e9227c69de0887baca5e206b86358f611472ef938"
+    },
+    "name": "OctoDining · 今晚吃什么",
+    "schema": 1,
+    "version": "1.2.1"
+  }
+}
