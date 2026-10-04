@@ -1,10 +1,10 @@
 {
   "schema": 1,
   "subtitle": "为你推荐一餐，和 Agent 一起调整餐表",
-  "description": "OctoDining（好好吃饭）打开先显示今天已安排的餐品；尚未安排时，根据菜单快照、预算、餐次与到店时间直接推荐一道菜，可一键加入餐表或换一道。你可以输入需求，请 OctoSense Agent 比较最多三个可用候选，检查建议后自行确认。副页展示未来七天已确认的餐次与待安排日期；应用保存计划并读回核验，也支持修改和取消。首页餐桌图是氛围配图，并非推荐菜品的实拍。菜单共 1,497 条快照，不代表实时价格、库存、营养、过敏原或当天营业状态。本应用不下单、不付款。",
+  "description": "OctoDining（好好吃饭）首次使用先说明内置食堂快照，按每月可支配生活费扣除非餐饮固定开销与缓冲金，估算每日饭钱。以后打开先显示今天已安排的餐品；尚未安排时，根据预算、餐次与到店时间推荐一道菜，可一键加入餐表或换一道。你可以输入需求，请 OctoSense Agent 比较最多三个候选，检查建议后自行确认。副页展示未来七天已确认的餐次与待安排日期；应用保存计划并读回核验，也支持修改和取消。外部食堂表导入、自动采集和整周自动规划尚未接入。首页餐桌图是氛围配图，并非菜品实拍。内置菜单共 1,497 条快照，不代表实时价格、库存、营养、过敏原或当天营业状态。本应用不下单、不付款。",
   "category": "lifestyle",
   "keywords": ["餐饮", "预算", "选餐", "计划"],
-  "screenshots": ["screenshots/01-home-recommendation.png", "screenshots/02-candidates.png", "screenshots/03-week-plan-confirmed.png"],
+  "screenshots": ["screenshots/00-first-run-setup.png", "screenshots/01-home-recommendation.png", "screenshots/02-candidates.png", "screenshots/03-week-plan-confirmed.png"],
   "icon": "assets/icon.svg",
   "platforms": ["linux"],
   "publisher": {
@@ -12,7 +12,7 @@
     "support": "https://github.com/windy664/OctoDining/issues",
     "privacy_policy_url": "https://github.com/windy664/OctoDining/blob/master/docs/PRIVACY.md"
   },
-  "release_notes": "1.4.0：打开首页先看到今天已安排或推荐的菜品，可一键加入餐表；装饰配图退到次要位置。",
+  "release_notes": "1.5.0：首次使用先选择内置食堂菜单，输入每月生活费、非餐饮固定开销与缓冲金；应用核算日餐饮预算，并更严格地筛除不完整的正餐候选。外部菜单导入与整周自动规划尚未接入。",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

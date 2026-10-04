@@ -22,6 +22,8 @@ let homePick = -1
 let homeSkip = -1
 let homeShowingSaved = false
 let onHome = true
+let profileReady = false
+let profileDaily = 3200
 let ink = #x203d32
 let muted = #x697970
 let blue = #x315e45
@@ -82,6 +84,13 @@ fn money_value(text){
     if !(n >= 100 && n <= 50000) { return -1 }
     n
 }
+fn monthly_value(text){
+    let s = text.trim()
+    if !regex("^[0-9]+([.][0-9]{1,2})?$", "").test(s) { return -1 }
+    let n = round(s.to_f64() * 100)
+    if !(n >= 0 && n <= 5000000) { return -1 }
+    n
+}
 fn open_at(hours, current){
     if hours == "" || hours == "未设置" { return false }
     for period in hours.split(",") {
@@ -101,9 +110,13 @@ fn matches_meal(p){
     let text = p.name + " " + p.category
     if regex("勿点|专用|补差|打包费|餐具|加料|加粉|加饭|加面|配菜|小料", "").test(text) { return false }
     if selectedSlot == 0 {
-        return regex("早餐|包子|馒头|粥|肠粉|豆浆|油条|面包|饺|馄饨|云吞|三明治", "").test(text)
+        return regex("包子|馒头|粥|肠粉|油条|饺|馄饨|云吞|三明治|鸡蛋|煎蛋", "").test(text)
+            && !regex("饮|奶茶|果切|水果|咖啡|甜品|蛋糕|豆浆|牛奶|加料", "").test(text)
     }
-    regex("饭|粉|面|米线|馄饨|云吞|饺子|套餐|堡", "").test(text) && !regex("饮|奶茶|果切|水果|咖啡|甜品|蛋糕|面包|早餐|粥类|豆浆|油条", "").test(text)
+    regex("饭|粉|面|米线|馄饨|云吞|饺子|套餐|堡", "").test(text)
+        && regex("肉|鸡|鸭|猪|牛|鱼|虾|蛋|肘|排骨|叉烧|云吞|饺|腊|煲仔|麻婆", "").test(p.name)
+        && !regex("饮|奶茶|果切|水果|咖啡|甜品|蛋糕|面包|早餐|粥类|豆浆|油条|斋|清汤|青菜|白饭|米饭|单点|小份|半份", "").test(text)
+        && p.cents >= 800
 }
 fn day_index(doc, date){
     for i in doc.days.len() { if doc.days[i].date == date { return i } }
@@ -200,6 +213,8 @@ fn selection_stamp(){
 }
 fn show_home(){
     onHome = true
+    ui.setup.set_visible(false)
+    ui.week_nav.set_visible(true)
     ui.home_nav.set_visible(false)
     ui.intro.set_visible(true)
     ui.summary_card.set_visible(false)
@@ -219,6 +234,8 @@ fn show_home(){
 }
 fn show_page(history){
     onHome = false
+    ui.setup.set_visible(false)
+    ui.week_nav.set_visible(true)
     ui.home_nav.set_visible(true)
     ui.intro.set_visible(false)
     ui.summary_card.set_visible(true)
@@ -236,6 +253,72 @@ fn show_page(history){
     ui.history.set_visible(history)
     ui.results.set_visible(false)
     if history { ui.plans.render() }
+}
+fn show_setup(){
+    onHome = false
+    ui.setup.set_visible(true)
+    ui.setup_back.set_visible(profileReady)
+    ui.week_nav.set_visible(false)
+    ui.home_nav.set_visible(false)
+    ui.intro.set_visible(false)
+    ui.summary_card.set_visible(false)
+    ui.status_card.set_visible(false)
+    ui.footer_note.set_visible(false)
+    ui.home.set_visible(false)
+    ui.home_actions.set_visible(false)
+    ui.hero.set_visible(false)
+    ui.date_bar.set_visible(false)
+    ui.tabs.set_visible(false)
+    ui.selection.set_visible(false)
+    ui.history.set_visible(false)
+    ui.results.set_visible(false)
+}
+fn profile_limit(slot){
+    if profileReady && money_value(ui.daily.text()) == profileDaily {
+        if slot == 0 { return floor(profileDaily * 0.22) }
+        if slot == 1 { return floor(profileDaily * 0.39) }
+        return profileDaily - floor(profileDaily * 0.22) - floor(profileDaily * 0.39)
+    }
+    limits[selectedTier][slot]
+}
+fn setup_calculation(){
+    let monthly = monthly_value(ui.setup_monthly.text())
+    let fixed = monthly_value(ui.setup_fixed.text())
+    let reserve = monthly_value(ui.setup_reserve.text())
+    if monthly < 10000 || fixed < 0 || reserve < 0 || fixed + reserve >= monthly {
+        ui.setup_result.set_text("请填写每月生活费，以及非餐饮固定开销和缓冲金；扣除后须有餐饮预算。")
+        return -1
+    }
+    let daily = floor((monthly - fixed - reserve) / 30)
+    if daily < 100 || daily > 50000 {
+        ui.setup_result.set_text("按 30 天估算的每日餐饮预算须在 ¥1–500 之间，请调整数字。")
+        return -1
+    }
+    let note = "按 30 天估算：每月可用于吃饭 ¥" + cash(monthly - fixed - reserve) + "，每天约 ¥" + cash(daily)
+        + "；早餐约 ¥" + cash(floor(daily * 0.22)) + "，午餐约 ¥" + cash(floor(daily * 0.39)) + "，晚餐约 ¥" + cash(daily - floor(daily * 0.22) - floor(daily * 0.39)) + "。"
+    if daily < 3000 { note += " 预算偏紧，不能仅靠本菜单证明三餐足量；请调整分配或人工检查。" }
+    else { note += " 这只是分配起点；份量和营养仍须人工核对。" }
+    ui.setup_result.set_text(note)
+    daily
+}
+fn finish_setup(){
+    let daily = setup_calculation()
+    if daily < 0 { return }
+    let record = {schema: 1 menu: "gzis-snapshot" monthly_cents: monthly_value(ui.setup_monthly.text()) fixed_cents: monthly_value(ui.setup_fixed.text()) reserve_cents: monthly_value(ui.setup_reserve.text()) daily_cents: daily}
+    let saved = false
+    try {
+        fs.write("profile.json", record.to_json())
+        let readback = fs.read("profile.json").parse_json()
+        if readback.schema == 1 && readback.menu == "gzis-snapshot" && readback.daily_cents == daily { saved = true }
+    } { saved = false }
+    if !saved { ui.setup_result.set_text("设置未能保存并读回；请检查存储后重试。") return }
+    profileDaily = daily
+    profileReady = true
+    ui.date.set_text(today())
+    ui.daily.set_text(cash(daily))
+    ui.budget.set_text(cash(profile_limit(selectedSlot)))
+    open_date()
+    show_home()
 }
 fn plan_with_agent(){
     find_candidates()
@@ -366,7 +449,7 @@ fn confirm_home_pick(){
 }
 fn apply_slot(slot){
     selectedSlot = slot
-    ui.budget.set_text(cash(limits[selectedTier][slot]))
+    ui.budget.set_text(cash(profile_limit(slot)))
     ui.arrival.set_text(defaultTimes[slot])
     invalidate()
 }
@@ -384,8 +467,11 @@ fn open_date(){
     if i >= 0 {
         selectedTier = journal.days[i].tier
         ui.daily.set_text(cash(journal.days[i].daily_cents))
-    } else { ui.daily.set_text(cash(tiers[selectedTier])) }
-    ui.budget.set_text(cash(limits[selectedTier][selectedSlot]))
+    } else {
+        if profileReady { ui.daily.set_text(cash(profileDaily)) }
+        else { ui.daily.set_text(cash(tiers[selectedTier])) }
+    }
+    ui.budget.set_text(cash(profile_limit(selectedSlot)))
     hide_candidates()
     refresh_summary()
     ui.plans.render()
@@ -634,10 +720,25 @@ fn boot(){
     if existsB { b = read_record("plans-b.json") }
     if a != nil { journal = a activeFile = "plans-a.json" }
     if b != nil { if b.revision > journal.revision { journal = b activeFile = "plans-b.json" } }
+    if fs.exists("profile.json") {
+        try {
+            let p = fs.read("profile.json").parse_json()
+            if p.schema == 1 && p.menu == "gzis-snapshot" && p.daily_cents >= 100 && p.daily_cents <= 50000
+                && p.monthly_cents >= p.fixed_cents + p.reserve_cents + p.daily_cents * 30 {
+                profileDaily = p.daily_cents
+                profileReady = true
+                ui.setup_monthly.set_text(cash(p.monthly_cents))
+                ui.setup_fixed.set_text(cash(p.fixed_cents))
+                ui.setup_reserve.set_text(cash(p.reserve_cents))
+            }
+        } { profileReady = false }
+    }
     currentDate = today()
     ui.date.set_text(currentDate)
-    show_home()
+    if profileReady || journal.days.len() > 0 { show_home() }
+    else { show_setup() }
     open_date()
+    if !profileReady && journal.days.len() == 0 { show_setup() }
     if (existsA || existsB) && activeFile == "" {
         storageReady = false
         ui.status.set_text("记录损坏或无法读取，已暂停保存，原文件保持不变。")
@@ -670,7 +771,34 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
             open_date()
             show_home()
         }}
-        Action{text: "我的一周餐表" on_click: || show_page(true)}
+        week_nav := Action{text: "我的一周餐表" on_click: || show_page(true)}
+    }
+    setup := ScrollYView{width: Fill height: Fill flow: Down spacing: 14
+        Label{text: "先把饭钱留出来。" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 25}}
+        Label{width: Fill text: "告诉我可支配生活费和必须先付的开销，再决定每天能用多少吃饭。" draw_text.color: muted draw_text.text_style.font_size: 13}
+        RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 15 bottom: 15} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 17.0
+            Label{text: "01 · 选择食堂菜单" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 15}}
+            Label{width: Fill text: "当前可用：广州软件学院食堂菜单快照 · 1,497 条商品。价格和营业时段可能已变化。" draw_text.color: ink draw_text.text_style.font_size: 12}
+            Label{width: Fill text: "其他食堂的文件导入与自动采集尚未接入；没有你的菜单，就不声称能替你安排真实餐表。" draw_text.color: muted draw_text.text_style.font_size: 11}
+        }
+        RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 15 bottom: 15} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 17.0
+            Label{text: "02 · 核算每月生活费" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 15}}
+            Label{text: "每月可支配生活费 · 元" draw_text.color: muted draw_text.text_style.font_size: 11}
+            setup_monthly := Field{text: "" empty_text: "例如 1500.00"}
+            Label{text: "房租、交通等非餐饮固定开销 · 元" draw_text.color: muted draw_text.text_style.font_size: 11}
+            setup_fixed := Field{text: "" empty_text: "例如 400.00"}
+            Label{text: "本月预留缓冲金 · 元" draw_text.color: muted draw_text.text_style.font_size: 11}
+            setup_reserve := Field{text: "0.00" empty_text: "例如 100.00"}
+            Action{text: "看看如何分配" on_click: || setup_calculation()}
+            setup_result := Label{width: Fill text: "先扣除非餐饮开销与缓冲金，再按 30 天估算饭钱。" draw_text.color: ink draw_text.text_style.font_size: 12}
+        }
+        RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 15 bottom: 15} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 17.0
+            Label{text: "03 · 从今天开始" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 15}}
+            Label{width: Fill text: "优先挑含主食和明显蛋、肉等食材的正餐；这只依据菜名，无法判断份量、营养或过敏原。你可以检查并改餐。" draw_text.color: ink draw_text.text_style.font_size: 12}
+            Label{width: Fill text: "重新核算只影响之后的新安排；已确认的餐次和预算不会被悄悄改写。" draw_text.color: muted draw_text.text_style.font_size: 11}
+            Primary{text: "使用这份菜单，开始选餐" on_click: || finish_setup()}
+        }
+        setup_back := Action{text: "返回今天" on_click: || show_home()}
     }
     intro := View{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 3 right: 3 top: 7 bottom: 6}
         Label{text: "今天，吃点好的。" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 28}}
@@ -714,6 +842,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
     }
     home_actions := View{width: Fill height: Fit flow: Right spacing: 8
         manual := Action{text: "调整预算与时间 →" on_click: || show_page(false)}
+        Action{text: "重新核算生活费" on_click: || show_setup()}
     }
     date_bar := RoundedView{width: Fill height: Fit flow: Right spacing: 8 padding: Inset{left: 10 right: 10 top: 8 bottom: 8} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 14.0
         date := Field{text: "" empty_text: "YYYY-MM-DD" on_change: |text| invalidate()}

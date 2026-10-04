@@ -14,6 +14,7 @@ from pathlib import Path
 import struct
 import subprocess
 import time
+import urllib.parse
 import urllib.request
 
 
@@ -61,6 +62,20 @@ def main():
         print("click", widget_id or label, (x, y, w, h), flush=True)
         get(f"click?x={x + w / 2}&y={y + h / 2}&wait=1")
 
+    def fill(widget_id, value):
+        for _ in range(3):
+            click(widget_id=widget_id)
+            get("k?k=down&c=End")
+            current = next(node.get("t", "") for node in snap() if node.get("i") == widget_id)
+            for _ in range(len(current) + 2):
+                get("k?k=down&c=Backspace")
+                get("k?k=up&c=Backspace")
+            get("t?" + urllib.parse.urlencode({"t": value, "wait": 1}))
+            actual = next(node.get("t", "") for node in snap() if node.get("i") == widget_id)
+            if actual == value:
+                return
+        raise RuntimeError(f"Could not fill {widget_id}: {actual!r}")
+
     def capture(name, previous_mtime=0):
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
@@ -84,6 +99,15 @@ def main():
             cwd=ROOT, env=env, check=True,
         )
         started = True
+        capture("00-first-run-setup.png")
+        fill("setup_monthly", "1500.00")
+        fill("setup_fixed", "540.00")
+        click(label="看看如何分配")
+        if not any("每天约 ¥32.00" in node.get("t", "") for node in snap()):
+            raise RuntimeError("First-run budget calculation failed")
+        click(label="使用这份菜单，开始选餐")
+        if not any(node.get("i") == "home_name" for node in snap()):
+            raise RuntimeError("First-run setup did not open the meal-first home")
         capture("01-home-recommendation.png")
         before = framebuffer.stat().st_mtime_ns
         click(widget_id="manual")

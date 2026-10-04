@@ -61,20 +61,22 @@ class App:
         return self.node(key).get('t', '')
 
     def fill(self, key, text):
-        self.click(key)
-        self.get('k', k='down', c='End')
-        # Shift selection is not required: source API documents Backspace.
-        for _ in range(len(self.text(key)) + 2):
-            self.get('k', k='down', c='Backspace')
-            self.get('k', k='up', c='Backspace')
-        self.get('t', t=text, wait=1)
-        deadline = time.monotonic() + 2
-        actual = self.text(key)
-        while actual != text and time.monotonic() < deadline:
-            time.sleep(.05)
+        for attempt in range(3):
+            self.click(key)
+            self.get('k', k='down', c='End')
+            # Remote text entry can lose a focused frame after scrolling.
+            for _ in range(len(self.text(key)) + 2):
+                self.get('k', k='down', c='Backspace')
+                self.get('k', k='up', c='Backspace')
+            self.get('t', t=text, wait=1)
+            deadline = time.monotonic() + 2
             actual = self.text(key)
-        if actual != text:
-            raise AssertionError(f'Could not enter {text!r} in {key!r}; got {actual!r}')
+            while actual != text and time.monotonic() < deadline:
+                time.sleep(.05)
+                actual = self.text(key)
+            if actual == text:
+                return
+        raise AssertionError(f'Could not enter {text!r} in {key!r}; got {actual!r}')
 
     def status(self, fragment):
         deadline = time.monotonic() + 5
@@ -129,6 +131,17 @@ def main():
     started = False
     try:
         start(); started = True
+        app.node('setup')
+        app.fill('setup_monthly','1500.00')
+        app.fill('setup_fixed','800.00')
+        app.click('看看如何分配')
+        assert '预算偏紧' in app.text('setup_result')
+        app.fill('setup_fixed','540.00')
+        app.click('看看如何分配')
+        assert '每天约 ¥32.00' in app.text('setup_result')
+        app.click('使用这份菜单，开始选餐')
+        assert json.loads((jail/'profile.json').read_text())['daily_cents']==3200
+        record('First-run living allowance and non-food costs yield a persisted dining budget')
         app.click('我的一周餐表')
         app.node('history')
         app.click('首页')
