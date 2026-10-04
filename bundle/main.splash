@@ -321,6 +321,13 @@ fn ask_agent(){
         ui.agent_result.set_text("候选已失效，请重新查找。")
         return
     }
+    let condition = read_conditions()
+    if condition == nil {
+        agentChoice = -1
+        agentStamp = ""
+        ui.agent_result.set_text("当前条件已不可用，请重新查找候选。")
+        return
+    }
     agentRequest += 1
     let requestId = agentRequest
     let stamp = candidateStamp
@@ -334,7 +341,7 @@ fn ask_agent(){
     for m in current_meals() { prior += "；" + slotNames[m.slot] + " " + m.name + " ¥" + cash(m.cents) }
     let prompt = "你是餐饮候选比较助手。只能比较给出的候选，不能编造价格、菜品、营业信息或营养过敏事实。\n"
         + "用户餐次：" + slotNames[selectedSlot] + "；日预算 ¥" + cash(money_value(ui.daily.text()))
-        + "；本餐可用上限 ¥" + cash(read_conditions().cap) + "；到店时间 " + ui.arrival.text()
+        + "；本餐可用上限 ¥" + cash(condition.cap) + "；到店时间 " + ui.arrival.text()
         + "；用户需求：" + ui.request.text() + "；当天已计划：" + prior + "。\n"
         + "候选如下：\n" + options
         + "仅返回 JSON：{\"choice\":候选序号(从1开始，无法推荐则0),\"reason\":\"简短取舍理由\"}。不要提供其他文本。"

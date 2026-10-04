@@ -4,6 +4,7 @@
 Uses an isolated storage directory. No model calls or desktop input injection.
 """
 import argparse
+from datetime import date, timedelta
 import hashlib
 import json
 import os
@@ -159,7 +160,8 @@ def main():
         total=sum(m['cents'] for m in day()['meals'])
         assert total<=day()['daily_cents']
         record('Multiple meals respect daily budget')
-        app.fill('date','2026-10-04');app.click('open_day');app.click('tab_history')
+        empty_date=(date.fromisoformat(current_date)+timedelta(days=1)).isoformat()
+        app.fill('date',empty_date);app.click('open_day');app.click('tab_history')
         assert '还没有已确认计划' in app.text('这一天还没有已确认计划。')
         app.fill('date',current_date);app.click('open_day')
         record('Plans stay isolated by calendar date')
