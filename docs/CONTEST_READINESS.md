@@ -18,7 +18,7 @@
 | 商店资料 | `bundle/listing.json` 已改为 OctoDining 文案，列出已在 Linux 实测的平台、队伍名「跃珩科技」及仓库 Issues 支持地址；隐私说明见 [PRIVACY](PRIVACY.md)。上架前仍须核对发布者身份与有效截图；菜单来源和授权未补齐 |
 | 许可与隐私 | 代码 Apache-2.0；菜单的采集来源、日期和再分发许可待确认。请求仅发送本次需求、候选和当日计划摘要 |
 | 赛事登记 | 队伍主题已在[官方 Issue #5](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/5#issuecomment-5854778542)登记：跃珩科技、成员 id Torine、餐谱规划、已加群；初赛仓库已在[官方 Issue #13](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/13#issuecomment-5924251291)登记。个人报名表是否完成尚无证据 |
-| 冻结版本 | 使用 Git 标记 `qualifier-2026-10-04` 固定初赛交付；执行 `git rev-parse qualifier-2026-10-04` 获取完整 SHA。官方 Issue #13 已指向本公开仓库 |
+| 冻结版本 | 原始初赛版保留在 `qualifier-2026-10-04`；包含真实 MiniMax 验收材料的版本固定为 `qualifier-2026-10-04-minimax`。执行 `git rev-parse qualifier-2026-10-04-minimax` 获取完整 SHA。官方 Issue #13 已指向本公开仓库 |
 
 ## 当前完整任务路径
 
@@ -32,7 +32,7 @@ Agent 不会搜索整份菜单、创建新候选或自动保存。菜单不提�
 
 ## 评审复现顺序
 
-1. 检出本仓库 `qualifier-2026-10-04` 标记（`git rev-parse qualifier-2026-10-04` 可获取完整 SHA），并记录 `bundle/manifest.json` 的版本和摘要。当前目标包是 OctoDining 1.2.1。
+1. 检出本仓库 `qualifier-2026-10-04-minimax` 标记（`git rev-parse qualifier-2026-10-04-minimax` 可获取完整 SHA），并记录 `bundle/manifest.json` 的版本和摘要。当前目标包是 OctoDining 1.2.1。
 2. 在 Linux 使用已记录的 OctoSense Shell 版本 `4a541777` 和 Octos 内核 `056173e` 构建宿主；具体依赖、环境和构建入口见 [ARCHITECTURE](ARCHITECTURE.md) 与上游仓库文档。应用 bundle 位于 `bundle/`。评审需要自行配置宿主模型 provider；仓库不含 API key。
 3. 运行 `python3 scripts/build-octos-bundle.py`，以 OctoScript-App-Design-Flow 的 `tools/octo check bundle` 做本地预检。若已经签名或冻结，勿在同一个检出目录重建；对开发副本运行该命令，并按包发布规范重新 stamp。
 4. 在 OctoSense Shell 中安装此 bundle，打开 OctoDining，输入日期、餐次、到店时间和预算，点击“查找 / 换一批”，再点击“让 OctoSense Agent 比较”。检查建议只引用画面中至多三个候选。用户点“确认候选”后，检查状态显示“已保存并读回核验”和预算摘要；重启应用检查计划恢复。
