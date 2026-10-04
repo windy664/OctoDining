@@ -2,7 +2,7 @@
 
 更新：2026-10-04。基本功能通过 `card-host` 交互验收；OctoSense Shell 已安装运行 OctoDining 1.2.1，并使用真实 MiniMax-M3 完成 Agent 建议、用户确认与计划读回闭环。[空计划运行记录](evidence/shell-minimax-clean-20261004.json)证明从零新建计划；[同版本 Shell 截图记录](evidence/shell-minimax-20261004.json)、[Agent 建议截图](evidence/shell-minimax-agent-20261004.png)及[计划读回截图](evidence/shell-minimax-plan-20261004.png)来自另一次已有计划的运行。
 
-当前 `master` 中的 1.2.2 正在做第三步 UI 修正：已通过 14 项 card-host 回归、原生截图检查和 unsigned Hub 预检；标准 OctoSense Shell 窗口未在新版重新验收。[修正记录](evidence/ui-scroll-122-20261004.md)保留了检查与限制。唯一冻结交付标签 `qualifier-2026-10-04-final` 仍指向已完成真实 Agent 闭环的 1.2.1。
+当前 `master` 中的 1.2.2 正在做第三步 UI 修正：已通过 14 项 card-host 回归、原生截图检查和 unsigned Hub 预检；标准 OctoSense Shell 窗口也已验收滚动到后两个候选、确认保存及预算读回。新版没有重新调用模型。[修正记录](evidence/ui-scroll-122-20261004.md)保留了检查与限制。唯一冻结交付标签 `qualifier-2026-10-04-final` 仍指向已完成真实 Agent 闭环的 1.2.1。
 
 ## 当前交付判断
 
@@ -16,7 +16,7 @@
 | Agent 能力 | `octos.turn.start` 候选比较、请求前条件复核、序号校验、失效回调丢弃和响应 JSON 类型校验已进入源码；card-host 验证无服务回退，Shell 已验证授权拒绝与未配置模型时仍可人工确认 |
 | App Hub 检查 | 冻结后的 bundle 1.2.1 已重新通过 unsigned `hub check`，见[最终预检](evidence/hub-precheck-20261004.md)；开发中的 1.2.2 也已通过本地预检，见 [UI 修正记录](evidence/ui-scroll-122-20261004.md)。仅声明 `storage`、`octos.turn.start`，网络主机为空；正式发布签名未完成 |
 | 运行宿主 | OctoSense `4a541777` 与锁定依赖下，Linux `cargo check --locked -p octosense`、`cargo build --locked -p octosense` 已通过；Octos `2.0.3-rc.13 (056173e)` 内核已构建。隔离 Shell 中通过 App Hub 安装并运行 OctoDining 1.2.1，`octos.turn.start` → Octos kernel → MiniMax-M3 返回候选建议；用户确认后 `plans-a.json` 写入并读回。首次授权在干净 profile 中通过；拒绝授权和无模型回退也已实测。Agent 会话 ledger 因上游会话路径过长而退到内存，本次不声称 Agent 对话持久化 |
-| 页面外观 | `bundle/screenshots/01-main.png` 和 `02-plan-confirmed.png` 是 1.2.2 的 card-host 原生画面；Shell 真实 MiniMax Agent 建议与计划读回截图属于 1.2.1，见上方证据链接 |
+| 页面外观 | `bundle/screenshots/01-main.png` 和 `02-plan-confirmed.png` 是 1.2.2 的 card-host 原生画面；1.2.2 的[标准 Shell 候选滚动](evidence/shell-ui122-candidates-20261004.png)与[计划读回](evidence/shell-ui122-confirmed-20261004.png)也已采集。Shell 真实 MiniMax Agent 建议截图属于 1.2.1 |
 | 商店资料 | `bundle/listing.json` 已改为 OctoDining 文案，列出已在 Linux 实测的平台、队伍名「跃珩科技」及仓库 Issues 支持地址；隐私说明见 [PRIVACY](PRIVACY.md)。上架前仍须核对发布者身份与有效截图；菜单来源和授权未补齐 |
 | 许可与隐私 | 代码 Apache-2.0；菜单的采集来源、日期和再分发许可待确认，详见[数据来源说明](DATA_PROVENANCE.md)。请求仅发送本次需求、候选和当日计划摘要 |
 | 赛事登记 | 队伍主题已在[官方 Issue #5](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/5#issuecomment-5854778542)登记：跃珩科技、成员 id Torine、餐谱规划、已加群；初赛仓库已在[官方 Issue #13](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/13#issuecomment-5924251291)登记。个人报名表是否完成尚无证据 |

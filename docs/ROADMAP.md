@@ -11,7 +11,7 @@
 - 输入日期、金额或需求变化后让旧候选失效；不支持的饮食安全要求明确拒绝猜测。
 - 两份轮换记录损坏时恢复仍有效的副本；写盘失败保留上一份有效记录；两份都无效时暂停写入并保留原文件。
 
-**验收证据：** `python3 scripts/test-basic-app.py` 通过 14 组真实 card-host UI bridge 检查，公开摘要见 [测试报告](evidence/basic-app-20261004.json)。1.2.1 在 Shell 中完成候选、Agent 建议和计划保存；[真实 MiniMax 截图](evidence/shell-minimax-agent-20261004.png)已采集。1.2.2 将候选列表与建议合入同一滚动区，card-host 再次通过 14 项回归和原生截图检查；新版 Shell 窗口待复核，见 [UI 修正记录](evidence/ui-scroll-122-20261004.md)。
+**验收证据：** `python3 scripts/test-basic-app.py` 通过 14 组真实 card-host UI bridge 检查，公开摘要见 [测试报告](evidence/basic-app-20261004.json)。1.2.1 在 Shell 中完成候选、Agent 建议和计划保存；[真实 MiniMax 截图](evidence/shell-minimax-agent-20261004.png)已采集。1.2.2 将候选列表与建议合入同一滚动区，card-host 再次通过 14 项回归和原生截图检查；标准 Shell 窗口已验证滚动到后两个候选、确认保存和预算读回，见 [UI 修正记录](evidence/ui-scroll-122-20261004.md)。新版未重新调用模型。
 
 **基本功能范围外：** 七日周计划、历史不重样、实时菜单与价格、订单支付。保留 HTML/Rust 参考实现。
 
