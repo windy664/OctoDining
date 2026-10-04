@@ -13,7 +13,7 @@
 | 持久化 | 双文件轮换；测试覆盖文件损坏恢复、保存故障保护、双副本无效时锁写 |
 | Agent 能力 | `octos.turn.start` 候选比较、请求前条件复核、序号校验、失效回调丢弃和响应 JSON 类型校验已进入源码；card-host 已验证无服务时的回退 |
 | App Hub 检查 | bundle 1.2.0 已通过 unsigned hub check；声明 `storage`、`octos.turn.start`。签名警告和 listing 模板占位仍待处理 |
-| 运行宿主 | OctoSense `4a541777` 与锁定依赖下，Linux `cargo check --locked -p octosense`、`cargo build --locked -p octosense` 已通过；Octos `2.0.3-rc.13 (056173e)` 内核已构建。通过隔离 profile 的 `octos-kernel chat` 验证了 DeepSeek `deepseek-v4-flash` provider 与真实回复；Shell 应用 peer、用户授权和 `octos.turn.start` 仍未联调。Kimi 与 DeepSeek key 均曾发到聊天中，应轮换 |
+| 运行宿主 | OctoSense `4a541777` 与锁定依赖下，Linux `cargo check --locked -p octosense`、`cargo build --locked -p octosense` 已通过；Octos `2.0.3-rc.13 (056173e)` 内核已构建。隔离 profile 的 `octos-kernel chat` 收到 DeepSeek `deepseek-v4-flash` 回复；OctoSense Shell 的 4 个真实内核基线测试通过（News peer、Shell relay、会话共享，mock LLM）。测试没有操作真实首次授权界面，也没有运行 OctoDining 包；本项目的 Shell 授权和 `octos.turn.start` 仍未联调。Kimi 与 DeepSeek key 均曾发到聊天中，应轮换 |
 | 页面外观 | 功能验证页面可交互；隐藏窗口截图端点返回 404，未完成视觉验收 |
 | 商店资料 | `bundle/listing.json` 仍有示例发布者/平台信息，不可发布 |
 | 许可与隐私 | 代码 Apache-2.0；菜单的采集来源、日期和再分发许可待确认。请求仅发送本次需求、候选和当日计划摘要 |
@@ -27,7 +27,7 @@ Agent 不会搜索整份菜单、创建新候选或自动保存。菜单不提�
 
 ## 验收记录
 
-`python3 scripts/test-basic-app.py` 在 card-host UI bridge 上完整通过 14 组预算、非法输入、Agent 服务不可用回退、候选筛选、计划保存/恢复、日期隔离、修改/取消、写盘故障和损坏文件恢复检查。报告为 `.local-state/acceptance-20261004-105105/results.json`。测试使用相对日期验证空白计划日，截图端点仍返回 404；报告不是 OctoSense Shell 或真实 Agent 的成功请求证据。查看 [开发路线](ROADMAP.md) 中最新验证状态。
+`python3 scripts/test-basic-app.py` 在 card-host UI bridge 上完整通过 14 组预算、非法输入、Agent 服务不可用回退、候选筛选、计划保存/恢复、日期隔离、修改/取消、写盘故障和损坏文件恢复检查。报告为 `.local-state/acceptance-20261004-105105/results.json`。测试使用相对日期验证空白计划日，截图端点仍返回 404；报告不是 OctoSense Shell 或真实 Agent 的成功请求证据。OctoSense 自身的 4 个真实内核基线测试通过，但测试目标是 News 而非本应用，详见 [开发路线](ROADMAP.md)。
 
 ## 交付前还需要
 
