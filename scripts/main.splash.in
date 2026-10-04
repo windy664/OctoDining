@@ -476,7 +476,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
         tab_choose := Action{width: Fill text: "安排餐饮" on_click: || show_page(false)}
         tab_history := Action{width: Fill text: "查看计划" on_click: || show_page(true)}
     }
-    selection := View{width: Fill height: Fill flow: Down spacing: 8
+    selection := ScrollYView{width: Fill height: Fill flow: Down spacing: 8
         View{width: Fill height: Fit flow: Right spacing: 4
             a1 := Action{width: Fill text: "A1" on_click: || apply_tier(0)}
             a2 := Action{width: Fill text: "A2" on_click: || apply_tier(1)}

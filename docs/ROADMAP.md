@@ -11,7 +11,7 @@
 - 输入日期、金额或需求变化后让旧候选失效；不支持的饮食安全要求明确拒绝猜测。
 - 两份轮换记录损坏时恢复仍有效的副本；写盘失败保留上一份有效记录；两份都无效时暂停写入并保留原文件。
 
-**验收证据：** `python3 scripts/test-basic-app.py` 通过 15 项真实 card-host UI bridge 用例，记录在 `.local-state/acceptance-20261003-204851/results.json`。运行端点未能生成截图（隐藏窗口的 `/g?raw=1` 返回 404）；截图外观尚未验收。该结果不证明 OctoSense Shell 兼容性。
+**验收证据：** `python3 scripts/test-basic-app.py --port 8174` 通过 14 组真实 card-host UI bridge 检查，记录在 `.local-state/acceptance-20261004-115655/results.json`。在 OctoSense Shell 的标准卡片窗口中发现候选区超出可视范围，已将候选/确认区域改为可滚动视图并升级 bundle 到 1.2.1；Shell 中滚动后已能查找候选并保存计划。运行端点未能生成截图（隐藏窗口的 `/g?raw=1` 返回 404）；完整视觉外观尚未验收。
 
 **基本功能范围外：** 七日周计划、历史不重样、实时菜单与价格、订单支付。保留 HTML/Rust 参考实现。
 
@@ -24,11 +24,11 @@
 - 条件变化或候选失效时递增请求代次并释放界面忙碌状态；迟到回调直接丢弃，不能清掉较新请求的忙碌状态。
 - 响应解析要求 JSON 对象、数值候选序号和字符串理由；无效格式显示回退信息，不成为可确认建议。
 - Agent 只建议；用户必须手动确认，应用才保存并核验计划。
-- card-host 中验证服务不可用反馈，OctoSense Shell 中继续验收授权拒绝、成功请求、服务失败、过期响应和确认后的持久化结果。
+- card-host 中验证服务不可用反馈，OctoSense Shell 中已完成成功请求及确认后的持久化读回；授权拒绝、服务失败、过期响应仍待验收。
 
 **当前进度：** OctoScript 页面和 manifest 已接入精确的 `octos.turn.start` 权限；card-host 验收了服务不可用回退。OctoSense 主仓库 `4a541777` 的 Linux `cargo check --locked -p octosense` 与 `cargo build --locked -p octosense` 已通过；并按该锁文件构建 Octos `2.0.3-rc.13 (056173e)`，产物 SHA-256 前缀为 `35d1d279c6b04061`。OctoSense Shell 已在独立 `/tmp` home/app-data 启动，并配置临时锚签名的本地测试目录；未使用真实发布密钥。先前将 Kimi Coding Plan key 错配到 Moonshot Open Platform 并得到的 HTTP 429 不可用于判断 Coding Plan。之后对正确的 Coding Plan endpoint（`https://api.kimi.com/coding/v1`）分别以 `k3` 和 `kimi-for-coding` 发起最小请求，均返回 HTTP 401 `invalid_authentication_error`，没有模型回复；认证失败本身不能区分 key 无效、过期或撤销，也不能排除所选模型不在当前计划权限内。Kimi 官方文档列出的下一步是确认 key 来自 Kimi Code Console、仍有效且有对应模型权限。临时 key 与 provider profile 已删除。
 
-**OctoSense Shell 基线测试（2026-10-04）：** 在 OctoSense `4a541777` 工作树运行 `OCTOS_SHELL_TEST_KERNEL=.../target/debug/octos-kernel cargo test --locked --features mobile-apps -p octosense-shell real_kernel -- --nocapture`，4 个匹配测试通过。真实 Octos 内核配合仓库 mock LLM 验证了 Shell 的脚本应用 peer 准备、`peer_list`、会话共享，以及 Agent 工具经 Shell relay 到宿主服务再返回。测试直接预置了同意状态，没有点击首次授权界面；测试应用是 News，不是 OctoDining。它证明 Shell 的通用 peer/relay 基线可工作，不能代替 OctoDining bundle 在 Shell 内触发 `host.request("octos.turn.start")` 的验收。
+**OctoSense Shell 基线测试（2026-10-04）：** 在 OctoSense `4a541777` 工作树运行 `OCTOS_SHELL_TEST_KERNEL=.../target/debug/octos-kernel cargo test --locked --features mobile-apps -p octosense-shell real_kernel -- --nocapture`，4 个匹配测试通过。真实 Octos 内核配合仓库 mock LLM 验证了 Shell 的脚本应用 peer 准备、`peer_list`、会话共享，以及 Agent 工具经 Shell relay 到宿主服务再返回。测试直接预置了同意状态，没有点击首次授权界面；测试应用是 News，不是 OctoDining。随后另用隔离 home/app-data 和临时签名本地目录，在 OctoSense Shell 的 App Hub 中安装并更新 OctoDining 1.2.1，确认滚动后的候选操作可用。点击“让 OctoSense Agent 比较”后，应用 `host.request("octos.turn.start")` 经 Shell → Octos 内核 → 本机 OpenAI-compatible mock 模型返回有效建议；用户确认候选 1 后，应用写入 `plans-a.json` 并读回验证，预算摘要同步更新。此为应用到宿主再到内核的真实 Shell 调用链，但模型响应来自本机 mock，不能称为 DeepSeek 成功联调；隔离 profile 中该应用权限已处于允许状态，本轮没有首次授权界面的人工确认截图。临时目录和签名密钥仅用于本地测试，不是发布签名。
 
 **本轮运行观察：** 首次启动时，Shell 的系统助手显示“尚未设置模型提供方”。按官方 OpenAI-compatible 配置使用 provider `moonshot-coding`、中国区 endpoint `https://api.kimi.com/coding/v1`；`k3` 与 `kimi-for-coding` 各做一次最小请求，均返回 HTTP 401 `invalid_authentication_error`。没有模型回复，也没有消耗到可验证的模型输出。该响应不能单独证明 key 无效，因为官方模型文档也将缺少对应模型计划权限列为 401 可能原因。旧 key 仅暂存在权限为 0600 的隔离 secret 文件，随后已删除；因其曾在聊天中明文发送，建议在 Kimi Code Console 撤销并重新生成。拿到新 key 后先核对 Coding Plan 归属和模型权限，再在 OctoSense 中完成授权、成功回复及拒绝/失败回退测试。当前测试 Shell 已正常退出。参考：[Kimi Code 模型与权限说明](https://www.kimi.com/code/docs/kimi-code/models.html)、[Kimi Code FAQ](https://www.kimi.ai/help/kimi-code/faq)。
 
