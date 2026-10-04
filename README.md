@@ -4,7 +4,7 @@
 
 OctoDining 面向打工人、学生和其他需要控制餐饮开销的人，目标是结合预算、口味、已有计划和真实菜单，帮助用户选餐、确认计划并持续调整。广州软件学院食堂菜单是首个数据集，产品范围不限校园。
 
-> **开发状态 · 2026-10-04：** 三步顺序是基本功能、接入系统 Agent、最后调整 UI。OctoDining 1.2.2 已通过 `card-host` 14 项功能回归、原生截图检查，并在标准 OctoSense Shell 卡片窗口完成“查找候选 → MiniMax-M3 建议 → 滚动查看 → 用户确认 → 保存并读回”闭环。[1.2.2 同版联调记录](docs/evidence/shell-ui122-minimax-20261004.json)来自已有计划；[1.2.1 空计划记录](docs/evidence/shell-minimax-clean-20261004.json)证明从零新建计划。拒绝授权与未配置模型时仍可手动选择的 Shell 记录属于 1.2.1。详见[参赛准备状态](docs/CONTEST_READINESS.md)。
+> **开发状态 · 2026-10-04：** 三步顺序是基本功能、接入系统 Agent、最后调整 UI。1.3.0 将首页改为餐品推荐与下方的 Agent 调整输入，副页改为七天餐表。此轮已通过 `card-host` 功能回归和原生截图检查；1.2.2 曾在标准 OctoSense Shell 完成“查找候选 → MiniMax-M3 建议 → 用户确认 → 保存并读回”闭环，见[同版联调记录](docs/evidence/shell-ui122-minimax-20261004.json)。1.3.0 的 Shell 模型闭环仍需同版复验。详见[参赛准备状态](docs/CONTEST_READINESS.md)。
 
 ## 现在有什么
 
@@ -15,10 +15,12 @@ OctoDining 面向打工人、学生和其他需要控制餐饮开销的人，目
 | 菜单快照 | `products_clean.json` 有 1,497 条商品记录，包含名称、店铺、类别、标价与营业时段 |
 | 六档预算与三餐 | A1–A6、早餐/午餐/晚餐、餐次上限和每日预算已进入 OctoScript |
 | 菜单候选 | 1,497 条快照，按价格、到店时间、餐次与关键词避辣筛选，展示最多三个店铺 |
+| 首页推荐 | 从菜单抽样，按预算、餐次与到店时段匹配；有历史计划时降低重复菜品和店铺的优先级；可换一道，不宣称实时或模型生成 |
 | 计划管理 | 按日期保存；支持同餐替换、查看、修改、取消、日预算调整和重启恢复；写入后读回核验，双份记录容错 |
-| 自动验收 | `python3 scripts/test-basic-app.py` 完整通过 14 组 UI bridge 检查；[公开报告](docs/evidence/basic-app-20261004.json)记录了测试项与当时的 1.2.1 包摘要，测试时工作树尚未冻结 |
+| 一周餐表 | 从所选日期起展示七天的已确认餐次与空白日；可从空白日进入安排，当前不自动生成整周菜单 |
+| 自动验收 | 1.3.0 的 `python3 scripts/test-basic-app.py` 完整通过 14 组 UI bridge 检查，另核验首页 Agent 入口和空白日入口；见[本轮记录](docs/evidence/home-week-130-20261004.md) |
 | OctoSense Agent | 页面请求前重验条件，校验当前候选序号；条件变化会使未完成回调失效，解析要求 JSON 对象、数字序号和字符串理由；仍须用户点候选确认。Shell 已用 MiniMax-M3 验证真实请求、界面建议及保存读回，也验证拒绝授权及未配置模型时可继续手动选择 |
-| 暂未包含 | 周计划、历史去重、实时价格/库存、营养与过敏信息、下单和支付 |
+| 暂未包含 | 整周自动排餐、实时价格/库存、营养与过敏信息、下单和支付 |
 | 商店资料 | `listing.json` 已改为项目内容，平台只列已实测 Linux；两张截图来自 card-host 实机画面，发布者身份与菜单再分发许可须核对 |
 
 菜单是本地快照，候选筛选是规则过滤，不代表实时库存、现价或当天营业状态。任何菜单文本也不能证明辣度、营养或过敏原安全。
@@ -47,7 +49,7 @@ flowchart LR
 
 1. **基本功能（已完成开发预览验收）。** 六档预算、三餐候选、保存/替换/修改/取消、日期与预算核算、重启恢复和存储失败保护。
 2. **系统 Agent（已完成首轮真实模型验收）。** 宿主 Agent 经 MiniMax-M3 比较当前候选并解释取舍；Shell 中的真实模型闭环及拒绝/无模型回退已验证。菜品、价格与计划变更由应用校验，最终选择由用户确认。
-3. **完善 UI 与交付（本轮完成）。** 1.2.2 将候选与 Agent 建议合并为同一滚动区域，已通过 `card-host` 回归、标准 Shell 窗口的真实 MiniMax 建议、滚动及确认保存检查。
+3. **完善 UI 与交付（1.3.0 验证中）。** 首屏以推荐餐品为主、Agent 输入为辅；副页展示一周餐表。`card-host` 功能回归和截图已完成，标准 Shell 的 1.3.0 同版复验仍待完成。
 
 每一步的验收条件见 [开发路线](docs/ROADMAP.md)。
 
@@ -68,7 +70,7 @@ curl --fail http://127.0.0.1:8141/snap
 curl --fail http://127.0.0.1:8141/quit
 ```
 
-`8141` 是测试控制接口，应用显示在原生窗口中；需要可见窗口时去掉 `--hidden`。两张包内截图由 `python3 scripts/capture-card-host.py` 通过 Makepad framebuffer 生成，脚本同时检查候选和保存状态；它们证明 card-host 画面。同版 1.2.2 的真实 MiniMax 建议、滚动和确认截图位于 `docs/evidence/`。已有 `scripts/preview.sh` 和 `start-demo.sh` 包含机器相关行为，不是 OctoSense Shell 启动入口。
+`8141` 是测试控制接口，应用显示在原生窗口中；需要可见窗口时去掉 `--hidden`。包内截图由 `python3 scripts/capture-card-host.py` 通过 Makepad framebuffer 生成，脚本同时检查候选和保存状态；它们证明 card-host 画面。1.2.2 的真实 MiniMax 建议、滚动和确认截图位于 `docs/evidence/`。已有 `scripts/preview.sh` 和 `start-demo.sh` 包含机器相关行为，不是 OctoSense Shell 启动入口。
 
 OctoSense Shell 的真实 MiniMax 闭环及早期 mock 基线均有记录；固定提交号和未验证部分见[参赛准备状态](docs/CONTEST_READINESS.md)。历史网页与 Rust 原型可单独检查：
 

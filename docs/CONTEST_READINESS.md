@@ -1,8 +1,8 @@
 # 参赛准备状态
 
-更新：2026-10-04。基本功能通过 `card-host` 交互验收；OctoSense Shell 已运行 OctoDining 1.2.2，并使用真实 MiniMax-M3 完成 Agent 建议、滚动查看、用户确认与计划读回闭环。[1.2.2 同版联调记录](evidence/shell-ui122-minimax-20261004.json)来自已有计划；[1.2.1 空计划运行记录](evidence/shell-minimax-clean-20261004.json)证明从零新建计划。
+更新：2026-10-04。1.3.0 将首页改为餐品推荐与下方的 Agent 调整输入，并加入七天餐表。`card-host` 14 组回归、空白日期安排入口及三张原生截图已验证。此前 OctoSense Shell 已运行 1.2.2，并使用真实 MiniMax-M3 完成 Agent 建议、滚动查看、用户确认与计划读回闭环；[同版联调记录](evidence/shell-ui122-minimax-20261004.json)来自已有计划，[1.2.1 空计划运行记录](evidence/shell-minimax-clean-20261004.json)证明从零新建计划。1.3.0 的 Shell 模型闭环尚未同版复验。
 
-当前 1.2.2 完成第三步 UI 修正：已通过 14 项 card-host 回归、原生截图检查、unsigned Hub 预检和标准 OctoSense Shell 的 MiniMax 闭环。[修正记录](evidence/ui-scroll-122-20261004.md)保留了检查与限制。唯一冻结交付标签 `qualifier-2026-10-04-final` 对应 1.2.2；早期 1.2.1 的证据仍保留以供对照。
+当前 1.3.0 完成推荐优先的页面调整：已通过 14 项 card-host 回归、原生截图检查、unsigned Hub 预检和七天空白日期导航测试。既有标准 Shell 的 MiniMax 闭环证据属于 1.2.2，不能作为 1.3.0 同版实测。冻结交付标签 `qualifier-2026-10-04-final` 暂对应 1.2.2，待 1.3.0 Shell 同版复验后再决定是否移动。
 
 ## 当前交付判断
 
@@ -14,9 +14,9 @@
 | 数据健全 | 金额按分计算；确认计划保留商品 ID、名称、店铺、原快照价格、营业时段与用户需求 |
 | 持久化 | 双文件轮换；测试覆盖文件损坏恢复、保存故障保护、双副本无效时锁写 |
 | Agent 能力 | `octos.turn.start` 候选比较、请求前条件复核、序号校验、失效回调丢弃和响应 JSON 类型校验已进入源码；card-host 验证无服务回退，Shell 已验证授权拒绝与未配置模型时仍可人工确认 |
-| App Hub 检查 | 1.2.2 通过 unsigned `tools/octo check bundle`，最终摘要见 [UI 修正记录](evidence/ui-scroll-122-20261004.md)；临时本地签名目录也通过发布 gate。早期 1.2.1 预检见[历史记录](evidence/hub-precheck-20261004.md)。仅声明 `storage`、`octos.turn.start`，网络主机为空；正式发布签名未完成 |
+| App Hub 检查 | 1.3.0 通过 unsigned `tools/octo check bundle`；仅声明 `storage`、`octos.turn.start`，网络主机为空。1.2.2 的临时本地签名目录曾通过发布 gate，见[UI 修正记录](evidence/ui-scroll-122-20261004.md)；1.3.0 尚未正式签名 |
 | 运行宿主 | OctoSense `4a541777` 与锁定依赖下，Linux `cargo check --locked -p octosense`、`cargo build --locked -p octosense` 已通过；Octos `2.0.3-rc.13 (056173e)` 内核已构建。隔离 Shell 中 1.2.2 经本地测试目录签名加载，`octos.turn.start` → Octos kernel → MiniMax-M3 返回候选建议；用户确认后计划写入并读回。首次授权在 1.2.1 干净 profile 中通过；拒绝授权和无模型回退也已在 1.2.1 实测。Agent 会话 ledger 因上游会话路径过长而退到内存，本次不声称 Agent 对话持久化 |
-| 页面外观 | `bundle/screenshots/01-main.png` 和 `02-plan-confirmed.png` 是 1.2.2 的 card-host 原生画面；同版 Shell 的[真实 MiniMax 建议](evidence/shell-ui122-minimax-agent-20261004.png)、[滚动到后两个候选](evidence/shell-ui122-minimax-scrolled-20261004.png)与[确认读回](evidence/shell-ui122-minimax-confirmed-20261004.png)也已采集 |
+| 页面外观 | 1.3.0 的[首页推荐](evidence/home-week-20261004/01-home-recommendation.png)、[候选](evidence/home-week-20261004/02-candidates.png)和[一周餐表](evidence/home-week-20261004/03-week-plan-confirmed.png)是 card-host 原生画面，也已放入 `bundle/screenshots/`。1.2.2 的[真实 MiniMax 建议](evidence/shell-ui122-minimax-agent-20261004.png)与[确认读回](evidence/shell-ui122-minimax-confirmed-20261004.png)是此前 Shell 证据 |
 | 商店资料 | `bundle/listing.json` 已改为 OctoDining 文案，列出已在 Linux 实测的平台、队伍名「跃珩科技」及仓库 Issues 支持地址；隐私说明见 [PRIVACY](PRIVACY.md)。上架前仍须核对发布者身份与有效截图；菜单来源和授权未补齐 |
 | 许可与隐私 | 代码 Apache-2.0；菜单的采集来源、日期和再分发许可待确认，详见[数据来源说明](DATA_PROVENANCE.md)。请求仅发送本次需求、候选和当日计划摘要 |
 | 赛事登记 | 队伍主题已在[官方 Issue #5](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/5#issuecomment-5854778542)登记：跃珩科技、成员 id Torine、餐谱规划、已加群；初赛仓库已在[官方 Issue #13](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/13#issuecomment-5924251291)登记。个人报名表是否完成尚无证据 |
@@ -30,7 +30,7 @@ Agent 不会搜索整份菜单、创建新候选或自动保存。菜单不提�
 
 ## 验收记录
 
-`python3 scripts/test-basic-app.py --port 8174` 通过 14 组预算、非法输入、Agent 服务不可用回退、候选筛选、计划保存/恢复、日期隔离、修改/取消、写盘故障和损坏文件恢复检查。[公开报告](evidence/basic-app-20261004.json)保留测试脚本当时的 1.2.1 manifest、14 项检查、无截图及工作树未冻结的状态；复跑仍应以最终提交为准。[空计划 MiniMax 联调记录](evidence/shell-minimax-clean-20261004.json)记录一次实际 LLM 响应、新建计划和读回；[已有计划的 Shell 截图记录](evidence/shell-minimax-20261004.json)记录另两次真实 LLM 响应及界面图像，两组证据不可当作同一次运行。先前[本机 mock 联调记录](evidence/shell-mock-20261004.md)仅作基线。[Shell 失败路径记录](evidence/shell-failures-20261004.json)验证拒绝授权和未配置模型仍可人工确认。
+1.3.0 的 `python3 scripts/test-basic-app.py --port 8207` 通过 14 组预算、非法输入、Agent 服务不可用回退、候选筛选、计划保存/恢复、日期隔离、修改/取消、写盘故障和损坏文件恢复检查；新增首页入口、七天空白日导航与截图检查见[本轮记录](evidence/home-week-130-20261004.md)。[旧公开报告](evidence/basic-app-20261004.json)保留 1.2.1 的 manifest 与当时工作树状态。[空计划 MiniMax 联调记录](evidence/shell-minimax-clean-20261004.json)记录一次实际 LLM 响应、新建计划和读回；[已有计划的 Shell 截图记录](evidence/shell-minimax-20261004.json)记录另两次真实 LLM 响应及界面图像，两组证据不可当作同一次运行。[Shell 失败路径记录](evidence/shell-failures-20261004.json)验证拒绝授权和未配置模型仍可人工确认。
 
 ## 评审复现顺序
 

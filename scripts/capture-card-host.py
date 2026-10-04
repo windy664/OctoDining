@@ -45,10 +45,20 @@ def main():
         return json.loads(get("snap"))["s"]
 
     def click(widget_id=None, label=None):
-        nodes = [node for node in snap() if node.get("i") == widget_id or node.get("t") == label]
+        def matching():
+            return [node for node in snap() if ((widget_id is not None and node.get("i") == widget_id) or (label is not None and node.get("t") == label)) and node.get("r", [0, 0, 0, 0])[2] > 0 and node["r"][3] > 0]
+        nodes = matching()
+        if not nodes:
+            get("m?k=scroll&x=200&y=610&dy=-2000&wait=1")
+            for _ in range(8):
+                nodes = matching()
+                if nodes:
+                    break
+                get("m?k=scroll&x=200&y=610&dy=250&wait=1")
         if not nodes:
             raise RuntimeError(f"Missing widget {widget_id or label!r}")
         x, y, w, h = nodes[-1]["r"]
+        print("click", widget_id or label, (x, y, w, h), flush=True)
         get(f"click?x={x + w / 2}&y={y + h / 2}&wait=1")
 
     def capture(name, previous_mtime=0):
@@ -74,17 +84,19 @@ def main():
             cwd=ROOT, env=env, check=True,
         )
         started = True
-        before = framebuffer.stat().st_mtime_ns if framebuffer.exists() else 0
+        capture("01-home-recommendation.png")
+        before = framebuffer.stat().st_mtime_ns
+        click(widget_id="manual")
         click(widget_id="find")
-        if not any("找到 3 个候选" in node.get("t", "") for node in snap() if node.get("i") == "status"):
-            raise RuntimeError("Candidate lookup did not complete")
-        capture("01-main.png", before)
+        if not any("找到 " in node.get("t", "") and "个候选" in node.get("t", "") for node in snap() if node.get("i") == "status"):
+            raise RuntimeError("Candidate lookup did not complete: " + repr([node.get("t") for node in snap() if node.get("i") == "status"]))
+        capture("02-candidates.png", before)
         before = framebuffer.stat().st_mtime_ns
         click(label="确认候选 1")
         if not any("已保存并读回核验" in node.get("t", "") for node in snap() if node.get("i") == "status"):
             raise RuntimeError("Plan was not saved and read back")
         click(widget_id="tab_history")
-        capture("02-plan-confirmed.png", before)
+        capture("03-week-plan-confirmed.png", before)
         print("card-host native capture complete; model and OctoSense Shell are outside this script")
     finally:
         if started:

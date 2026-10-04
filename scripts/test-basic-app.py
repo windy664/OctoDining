@@ -34,9 +34,20 @@ class App:
         return [x for x in json.loads(self.get('snap'))['s'] if x.get('ty') != 'Splash']
 
     def node(self, key):
-        nodes = self.snap()
-        matches = [x for x in nodes if x.get('i') == key or x.get('t') == key]
-        matches = [x for x in matches if x.get('r', [0,0,0,0])[2] > 0 and x['r'][3] > 0]
+        def visible():
+            nodes = self.snap()
+            matches = [x for x in nodes if x.get('i') == key or x.get('t') == key]
+            return nodes, [x for x in matches if x.get('r', [0,0,0,0])[2] > 0 and x['r'][3] > 0]
+        nodes, matches = visible()
+        if not matches:
+            # The conditions and weekly plan are real native scroll views.
+            # Start at the top, then look through the currently open view.
+            self.get('m', k='scroll', x=200, y=610, dy=-2000, wait=1)
+            for _ in range(8):
+                nodes, matches = visible()
+                if matches:
+                    break
+                self.get('m', k='scroll', x=200, y=610, dy=250, wait=1)
         if not matches:
             raise AssertionError(f'Missing widget {key!r}; visible texts: {[n.get("t") for n in nodes if n.get("t")]}')
         return matches[-1]
@@ -119,6 +130,7 @@ def main():
     try:
         start(); started = True
         app.status('本地规划已就绪')
+        app.click('manual')
         for i,amount in enumerate([15,22,32,45,65,100],1):
             app.click(f'a{i}')
             assert app.text('daily') == f'{amount}.00'
@@ -173,6 +185,7 @@ def main():
         record('Decimal budget persistence and stale candidates invalidated')
         app.quit();started=False
         start();started=True
+        app.click('manual')
         assert app.text('daily')=='35.25'
         assert f'已计划 ¥{total/100:.2f}' in app.text('summary')
         app.click('tab_history');app.node('取消午餐');app.node('取消晚餐')
@@ -194,6 +207,7 @@ def main():
         app.quit();started=False
         start();started=True
         app.status('恢复另一份有效记录')
+        app.click('manual')
         app.click('tab_history');app.node('取消午餐')
         record('Corrupt journal copy recovers last valid record')
         shot=work/'plans.png'
@@ -208,6 +222,7 @@ def main():
         for p in jail.glob('plans-*.json'):p.write_text('{broken')
         start();started=True
         app.status('已暂停保存')
+        app.click('manual')
         app.click('save_daily');app.status('已暂停保存')
         assert all(p.read_text()=='{broken' for p in jail.glob('plans-*.json'))
         record('Unreadable storage locks writes without resetting data')
