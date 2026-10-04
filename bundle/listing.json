@@ -12,7 +12,7 @@
     "support": "https://github.com/windy664/OctoDining/issues",
     "privacy_policy_url": "https://github.com/windy664/OctoDining/blob/master/docs/PRIVACY.md"
   },
-  "release_notes": "1.2.1：修复 OctoSense Shell 标准卡片窗口中候选与确认操作被截断的问题。",
+  "release_notes": "1.2.2：候选列表与 Agent 建议改用同一滚动区，改善小窗口中的查看与确认操作。",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

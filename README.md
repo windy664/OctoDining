@@ -4,7 +4,7 @@
 
 OctoDining 面向打工人、学生和其他需要控制餐饮开销的人，目标是结合预算、口味、已有计划和真实菜单，帮助用户选餐、确认计划并持续调整。广州软件学院食堂菜单是首个数据集，产品范围不限校园。
 
-> **开发状态 · 2026-10-04：** 基本选餐和计划管理已在 OctoScript `card-host` 完成 14 组 UI bridge 检查。OctoDining 1.2.1 已在隔离的 OctoSense Shell 中完成“查找候选 → 请求系统 Agent → 用户确认 → 保存并读回”的运行闭环，系统 Agent 实际使用 MiniMax-M3；另已验证拒绝授权与未配置模型时仍可手动选择。[空计划联调记录](docs/evidence/shell-minimax-clean-20261004.json)证明新建计划；[Shell 截图记录](docs/evidence/shell-minimax-20261004.json)来自另一次同版本、已有计划的运行。详见[参赛准备状态](docs/CONTEST_READINESS.md)。
+> **开发状态 · 2026-10-04：** 三步顺序是基本功能、接入系统 Agent、最后调整 UI。OctoDining 1.2.1 已在隔离的 OctoSense Shell 中完成“查找候选 → MiniMax-M3 建议 → 用户确认 → 保存并读回”的真实运行闭环；拒绝授权与未配置模型时仍可手动选择。正在调整 UI 的 1.2.2 已通过 `card-host` 14 项功能回归和原生截图检查，尚未完成新版 Shell 窗口复核。[空计划联调记录](docs/evidence/shell-minimax-clean-20261004.json)和[Shell 截图记录](docs/evidence/shell-minimax-20261004.json)均属于 1.2.1；详见[参赛准备状态](docs/CONTEST_READINESS.md)。
 
 ## 现在有什么
 
@@ -47,7 +47,7 @@ flowchart LR
 
 1. **基本功能（已完成开发预览验收）。** 六档预算、三餐候选、保存/替换/修改/取消、日期与预算核算、重启恢复和存储失败保护。
 2. **系统 Agent（已完成首轮真实模型验收）。** 宿主 Agent 经 MiniMax-M3 比较当前候选并解释取舍；Shell 中的真实模型闭环及拒绝/无模型回退已验证。菜品、价格与计划变更由应用校验，最终选择由用户确认。
-3. **完善 UI 与交付。** 核对不同窗口尺寸与可读性，采集当前版本真实截图，补齐资料和可复现演示。
+3. **完善 UI 与交付（进行中）。** 1.2.2 将候选与 Agent 建议合并为同一滚动区域，已通过 `card-host` 回归和截图检查；标准 Shell 窗口仍待复核。补齐资料和可复现演示。
 
 每一步的验收条件见 [开发路线](docs/ROADMAP.md)。
 
