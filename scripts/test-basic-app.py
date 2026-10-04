@@ -129,8 +129,8 @@ def main():
     started = False
     try:
         start(); started = True
-        app.status('本地规划已就绪')
         app.click('manual')
+        app.status('本地规划已就绪')
         for i,amount in enumerate([15,22,32,45,65,100],1):
             app.click(f'a{i}')
             assert app.text('daily') == f'{amount}.00'
@@ -206,8 +206,8 @@ def main():
         target.rmdir();target.write_text('{broken')
         app.quit();started=False
         start();started=True
-        app.status('恢复另一份有效记录')
         app.click('manual')
+        app.status('恢复另一份有效记录')
         app.click('tab_history');app.node('取消午餐')
         record('Corrupt journal copy recovers last valid record')
         shot=work/'plans.png'
@@ -221,8 +221,8 @@ def main():
         # Both invalid files must never silently reset or overwrite user data.
         for p in jail.glob('plans-*.json'):p.write_text('{broken')
         start();started=True
-        app.status('已暂停保存')
         app.click('manual')
+        app.status('已暂停保存')
         app.click('save_daily');app.status('已暂停保存')
         assert all(p.read_text()=='{broken' for p in jail.glob('plans-*.json'))
         record('Unreadable storage locks writes without resetting data')

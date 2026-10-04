@@ -21,9 +21,9 @@ let agentStamp = ""
 let homePick = -1
 let homeSkip = -1
 let onHome = true
-let ink = #x1d1d1f
-let muted = #x6e6e73
-let blue = #x0066cc
+let ink = #x203d32
+let muted = #x697970
+let blue = #x315e45
 
 fn cash(cents){
     if cents < 0 { return "-" + cash(-cents) }
@@ -199,6 +199,11 @@ fn selection_stamp(){
 }
 fn show_home(){
     onHome = true
+    ui.home_nav.set_visible(false)
+    ui.intro.set_visible(true)
+    ui.summary_card.set_visible(false)
+    ui.status_card.set_visible(false)
+    ui.footer_note.set_visible(false)
     ui.home.set_visible(true)
     ui.home_actions.set_visible(true)
     ui.hero.set_visible(true)
@@ -213,6 +218,11 @@ fn show_home(){
 }
 fn show_page(history){
     onHome = false
+    ui.home_nav.set_visible(true)
+    ui.intro.set_visible(false)
+    ui.summary_card.set_visible(true)
+    ui.status_card.set_visible(true)
+    ui.footer_note.set_visible(true)
     ui.home.set_visible(false)
     ui.home_actions.set_visible(false)
     ui.hero.set_visible(!history)
@@ -240,12 +250,14 @@ fn refresh_summary(){
     ui.summary.set_text(summary)
     ui.tier_label.set_text("当前 A" + (selectedTier + 1) + " · 原档日预算 ¥" + cash(tiers[selectedTier]) + "（可改）")
     ui.slot_label.set_text("正在安排：" + slotNames[selectedSlot] + " · 确认会替换同日同餐次")
+    ui.home_caption.set_text("为你推荐 · " + slotNames[selectedSlot])
     refresh_home()
 }
 fn refresh_home(){
     homePick = -1
     if ui.date.text().trim() != currentDate || !valid_date(currentDate) {
         ui.home_name.set_text("先打开一个有效日期")
+        ui.home_price.set_text("")
         ui.home_meta.set_text("日期变化后会重新计算推荐")
         ui.home_reason.set_text("")
         return
@@ -256,6 +268,7 @@ fn refresh_home(){
     let request = ui.request.text().trim()
     if daily < 0 || budget < 0 || arrival < 0 || request.len() > 500 || regex("过敏|素食|清淡|高蛋白|不吃肉|不吃牛肉|不吃猪肉|不吃奶|不吃蛋|花生|海鲜", "").test(request) {
         ui.home_name.set_text("暂不能可靠推荐")
+        ui.home_price.set_text("")
         ui.home_meta.set_text("请核对预算、时间和饮食限制")
         ui.home_reason.set_text("菜单不含完整营养或过敏原信息。")
         return
@@ -263,6 +276,7 @@ fn refresh_home(){
     let cap = min(budget, daily - sum_meals(current_meals(), selectedSlot))
     if cap < 100 {
         ui.home_name.set_text("本餐预算不足")
+        ui.home_price.set_text("")
         ui.home_meta.set_text("先调整预算或已有计划")
         ui.home_reason.set_text("")
         return
@@ -287,6 +301,10 @@ fn refresh_home(){
             let spicy = regex("辣|麻|椒", "").test(p.name + " " + p.category)
             if !avoid || !spicy {
                 let score = abs(p.cents - round(cap * 0.75))
+                if regex("饭", "").test(p.name) { score -= 950 }
+                else if regex("面|粉|米线|饺子|馄饨|云吞", "").test(p.name) { score -= 300 }
+                score += p.name.len() * 18
+                if regex("\\+|[0-9]素|[0-9]荤|特价|【|】", "").test(p.name) { score += 1500 }
                 for id in recentIds { if id == i { score += 900 } }
                 for store in recentStores { if store == p.store { score += 80 } }
                 if score < bestScore { bestScore = score homePick = i }
@@ -295,13 +313,15 @@ fn refresh_home(){
     }
     if homePick < 0 {
         ui.home_name.set_text("暂无符合条件的餐品")
+        ui.home_price.set_text("")
         ui.home_meta.set_text("请调整预算、到店时间或口味")
         ui.home_reason.set_text("推荐只使用已收录的菜单快照。")
         return
     }
     let pick = allProducts[homePick]
-    ui.home_name.set_text(pick.name + " · ¥" + cash(pick.cents))
-    ui.home_meta.set_text(pick.store + " · " + pick.business_hours)
+    ui.home_name.set_text(pick.name)
+    ui.home_price.set_text("¥" + cash(pick.cents))
+    ui.home_meta.set_text(pick.store + " · " + ui.arrival.text().trim() + " 可到店")
     if recentIds.len() == 0 {
         ui.home_reason.set_text("根据菜单价格、餐次和到店时段推荐；暂无已存历史计划。")
     } else {
@@ -399,6 +419,11 @@ fn find_candidates(){
         ui.status.set_text("没有符合预算、时段和口味的候选，请调整条件。")
     } else {
         onHome = false
+        ui.home_nav.set_visible(true)
+        ui.intro.set_visible(false)
+        ui.summary_card.set_visible(true)
+        ui.status_card.set_visible(true)
+        ui.footer_note.set_visible(true)
         ui.home.set_visible(false)
         ui.home_actions.set_visible(false)
         ui.hero.set_visible(false)
@@ -592,49 +617,58 @@ fn boot(){
 
 start_timeout(0.05, || boot())
 let Action = ButtonFlat{height: 36 padding: Inset{left: 12 right: 12}
-    draw_bg +: {color: #xeef0f4 color_hover: #xe3e7ed color_down: #xd7dce4 border_radius: 10.0 border_size: 0.0}
+    draw_bg +: {color: #xe9ede6 color_hover: #xdde6d9 color_down: #xd4dfd1 border_radius: 11.0 border_size: 0.0}
     draw_text +: {color: ink color_hover: ink color_down: ink}}
 let Primary = ButtonFlat{height: 46 padding: Inset{left: 16 right: 16}
-    draw_bg +: {color: #x1d1d1f color_hover: #x353539 color_down: #x48484c border_radius: 13.0 border_size: 0.0}
+    draw_bg +: {color: #x244a38 color_hover: #x315a49 color_down: #x183c2e border_radius: 13.0 border_size: 0.0}
     draw_text +: {color: #xffffff color_hover: #xffffff color_down: #xffffff}}
 let Accent = ButtonFlat{height: 38 padding: Inset{left: 12 right: 12}
-    draw_bg +: {color: #x007aff color_hover: #x006be6 color_down: #x0059c7 border_radius: 11.0 border_size: 0.0}
+    draw_bg +: {color: #x244a38 color_hover: #x315a49 color_down: #x183c2e border_radius: 11.0 border_size: 0.0}
     draw_text +: {color: #xffffff color_hover: #xffffff color_down: #xffffff}}
 let Field = TextInput{width: Fill height: 42
-    draw_bg +: {color: #xf5f5f7 color_hover: #xf5f5f7 color_focus: #xffffff color_empty: #xf5f5f7 border_radius: 11.0}
+    draw_bg +: {color: #xffffff color_hover: #xffffff color_focus: #xffffff color_empty: #xffffff border_radius: 11.0}
     draw_text +: {color: ink color_hover: ink color_focus: ink color_empty: muted color_empty_hover: muted}}
-SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 10 draw_bg.color: #xf5f5f7
-    View{width: Fill height: Fit flow: Right spacing: 10 align: Align{y: 0.5}
-        Label{text: "OctoDining" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 18}}
-        Label{text: "· 你的用餐 Agent" draw_text.color: muted draw_text.text_style.font_size: 12}
-        Action{text: "首页" on_click: || show_home()}
+SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.color: #xf8f8f2
+    View{width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5}
+        Label{text: "✳" draw_text.color: ink draw_text.text_style.font_size: 20}
+        Label{text: "octodining." draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 17}}
+        home_nav := Action{text: "首页" on_click: || show_home()}
+        Action{text: "一周餐表 ↗" on_click: || show_page(true)}
     }
-    RoundedView{width: Fill height: Fit flow: Down spacing: 3 padding: Inset{left: 14 right: 14 top: 10 bottom: 10} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
+    intro := View{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 3 right: 3 top: 7 bottom: 6}
+        Label{text: "今天，吃点好的。" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 28}}
+        Label{text: "为你留一道合适的菜。" draw_text.color: muted draw_text.text_style.font_size: 13}
+    }
+    summary_card := RoundedView{width: Fill height: Fit flow: Down spacing: 3 padding: Inset{left: 14 right: 14 top: 10 bottom: 10} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
         Label{text: "当前计划" draw_text.color: muted draw_text.text_style.font_size: 11}
         summary := Label{width: Fill text: "正在读取计划…" draw_text.color: ink draw_text.text_style.font_size: 13}
     }
-    home := View{width: Fill height: Fit flow: Down spacing: 10
-        RoundedView{width: Fill height: Fit flow: Down spacing: 7 padding: Inset{left: 17 right: 17 top: 16 bottom: 15} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 20.0
-            Label{text: "为你推荐 · 菜单与近期计划" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 12}}
-            home_name := Label{width: Fill text: "正在挑选…" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 23}}
-            home_meta := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 12}
-            home_reason := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 11}
-            View{width: Fill height: Fit flow: Right spacing: 8
-                Action{text: "换一道" on_click: || next_home_pick()}
-                Action{text: "查看一周餐表" on_click: || show_page(true)}
+    home := View{width: Fill height: Fit flow: Down
+        RoundedView{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 9 right: 9 top: 9 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 18.0
+            Image{width: Fill height: 150 src: http_resource("{{assets}}/assets/dining-still-life.png") fit: ImageFit.CropToFill}
+            View{width: Fill height: Fit flow: Down spacing: 5 padding: Inset{left: 10 right: 10 top: 10 bottom: 4}
+                View{width: Fill height: Fit flow: Right spacing: 12 align: Align{y: 0.5}
+                    home_caption := Label{text: "为你推荐 · 晚餐" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 12}}
+                    Action{text: "换一道 ↗" on_click: || next_home_pick()}
+                }
+                home_name := Label{width: Fill text: "正在挑选…" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 22}}
+                home_price := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 20}}
+                home_meta := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 12}
+                home_reason := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 10}
             }
         }
     }
-    hero := RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 17 right: 17 top: 14 bottom: 14} show_bg: true draw_bg.color: #xeaf3ff draw_bg.border_radius: 18.0
-        hero_title := Label{text: "想调整？告诉 Agent" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 17}}
-        hero_subtitle := Label{width: Fill text: "说说想吃什么，Agent 会比较可用餐品；由你决定是否更新餐表。" draw_text.color: muted draw_text.text_style.font_size: 12}
-        request := Field{text: "" empty_text: "例如：换个便宜点的，别太辣" on_change: |text| invalidate()}
-        agent_start := Primary{width: Fill text: "请 Agent 调整这餐" on_click: || plan_with_agent()}
-        hero_note := Label{width: Fill text: "菜单为本地快照；尚未下单，确认后才保存计划。" draw_text.color: muted draw_text.text_style.font_size: 11}
+    hero := View{width: Fill height: Fit flow: Down spacing: 7 padding: Inset{left: 3 right: 3 top: 8 bottom: 3}
+        hero_title := Label{text: "想换个口味？问问 Agent。" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 16}}
+        hero_subtitle := Label{width: Fill text: "描述你的想法，由你决定是否更新餐表。" draw_text.color: muted draw_text.text_style.font_size: 12}
+        View{width: Fill height: Fit flow: Right spacing: 7
+            request := Field{text: "" empty_text: "比如：换个便宜点的，别太辣" on_change: |text| invalidate()}
+            agent_start := Primary{width: 72 text: "发送 ↗" on_click: || plan_with_agent()}
+        }
+        hero_note := Label{width: Fill text: "Agent 比较菜单候选；确认后才保存，不会下单。" draw_text.color: muted draw_text.text_style.font_size: 11}
     }
     home_actions := View{width: Fill height: Fit flow: Right spacing: 8
-        manual := Action{width: Fill text: "调整预算与时间" on_click: || show_page(false)}
-        Action{width: Fill text: "我的一周餐表" on_click: || show_page(true)}
+        manual := Action{text: "调整预算与时间 →" on_click: || show_page(false)}
     }
     date_bar := RoundedView{width: Fill height: Fit flow: Right spacing: 8 padding: Inset{left: 10 right: 10 top: 8 bottom: 8} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 14.0
         date := Field{text: "" empty_text: "YYYY-MM-DD" on_change: |text| invalidate()}
@@ -692,7 +726,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 10 draw_bg.co
             Action{text: "调整条件" on_click: || show_page(false)}
             next_batch := Action{text: "换一批候选" on_click: || find_candidates()}
         }
-        RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 14 right: 14 top: 13 bottom: 13} show_bg: true draw_bg.color: #xeaf3ff draw_bg.border_radius: 16.0
+        RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 14 right: 14 top: 13 bottom: 13} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 16.0
             Label{text: "Agent 的建议" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 14}}
             agent_result := Label{width: Fill text: "先生成候选，再请系统 Agent 比较。" draw_text.color: ink draw_text.text_style.font_size: 12}
             ask_agent := Action{text: "重新请 Agent 比较" on_click: || ask_agent()}
@@ -741,8 +775,8 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 10 draw_bg.co
             }
         }}
     }
-    RoundedView{width: Fill height: Fit flow: Down padding: Inset{left: 12 right: 12 top: 8 bottom: 8} show_bg: true draw_bg.color: #xe8ebf0 draw_bg.border_radius: 12.0
+    status_card := RoundedView{width: Fill height: Fit flow: Down padding: Inset{left: 12 right: 12 top: 8 bottom: 8} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 12.0
         status := Label{width: Fill text: "正在启动…" draw_text.color: ink draw_text.text_style.font_size: 12}
     }
-    Label{width: Fill text: "金额是计划开销，未下单 · 菜单非实时" draw_text.color: muted draw_text.text_style.font_size: 10}
+    footer_note := Label{width: Fill text: "金额是计划开销，未下单 · 菜单非实时" draw_text.color: muted draw_text.text_style.font_size: 10}
 }

@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "subtitle": "为你推荐一餐，和 Agent 一起调整餐表",
-  "description": "OctoDining 先根据菜单快照、预算、餐次、到店时间与已存计划推荐一道菜。你可以输入需求，请 OctoSense Agent 比较最多三个可用候选，检查建议后自行确认。副页展示未来七天已确认的餐次与待安排日期；应用保存计划并读回核验，也支持修改和取消。菜单共 1,497 条快照，不代表实时价格、库存、营养、过敏原或当天营业状态。本应用不下单、不付款。",
+  "description": "OctoDining 先根据菜单快照、预算、餐次、到店时间与已存计划推荐一道菜。你可以输入需求，请 OctoSense Agent 比较最多三个可用候选，检查建议后自行确认。副页展示未来七天已确认的餐次与待安排日期；应用保存计划并读回核验，也支持修改和取消。首页餐桌图是氛围配图，并非推荐菜品的实拍。菜单共 1,497 条快照，不代表实时价格、库存、营养、过敏原或当天营业状态。本应用不下单、不付款。",
   "category": "lifestyle",
   "keywords": ["餐饮", "预算", "选餐", "计划"],
   "screenshots": ["screenshots/01-home-recommendation.png", "screenshots/02-candidates.png", "screenshots/03-week-plan-confirmed.png"],
@@ -12,7 +12,7 @@
     "support": "https://github.com/windy664/OctoDining/issues",
     "privacy_policy_url": "https://github.com/windy664/OctoDining/blob/master/docs/PRIVACY.md"
   },
-  "release_notes": "1.3.0：首页展示有依据的餐品推荐，Agent 输入放在推荐下方；新增未来七天的餐表视图与空白日期安排入口。",
+  "release_notes": "1.3.1：首页改为暖白、深绿的编辑式布局，以单个推荐和简洁输入为视觉重点；新增仅作氛围展示的插画。",
   "age_rating": "all",
   "license": "Apache-2.0"
 }
