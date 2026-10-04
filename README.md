@@ -4,7 +4,7 @@
 
 OctoDining 面向打工人、学生和其他需要控制餐饮开销的人，目标是结合预算、口味、已有计划和真实菜单，帮助用户选餐、确认计划并持续调整。广州软件学院食堂菜单是首个数据集，产品范围不限校园。
 
-> **开发状态 · 2026-10-04：** 三步顺序是基本功能、接入系统 Agent、最后调整 UI。OctoDining 1.2.1 已在隔离的 OctoSense Shell 中完成“查找候选 → MiniMax-M3 建议 → 用户确认 → 保存并读回”的真实运行闭环；拒绝授权与未配置模型时仍可手动选择。1.2.2 已通过 `card-host` 14 项功能回归、原生截图检查，并在标准 OctoSense Shell 卡片窗口复核滚动及确认保存；新版没有重新调用模型。[1.2.1 空计划联调记录](docs/evidence/shell-minimax-clean-20261004.json)与[1.2.2 UI 修正记录](docs/evidence/ui-scroll-122-20261004.md)分别说明两次验收。
+> **开发状态 · 2026-10-04：** 三步顺序是基本功能、接入系统 Agent、最后调整 UI。OctoDining 1.2.2 已通过 `card-host` 14 项功能回归、原生截图检查，并在标准 OctoSense Shell 卡片窗口完成“查找候选 → MiniMax-M3 建议 → 滚动查看 → 用户确认 → 保存并读回”闭环。[1.2.2 同版联调记录](docs/evidence/shell-ui122-minimax-20261004.json)来自已有计划；[1.2.1 空计划记录](docs/evidence/shell-minimax-clean-20261004.json)证明从零新建计划。拒绝授权与未配置模型时仍可手动选择的 Shell 记录属于 1.2.1。详见[参赛准备状态](docs/CONTEST_READINESS.md)。
 
 ## 现在有什么
 
@@ -47,7 +47,7 @@ flowchart LR
 
 1. **基本功能（已完成开发预览验收）。** 六档预算、三餐候选、保存/替换/修改/取消、日期与预算核算、重启恢复和存储失败保护。
 2. **系统 Agent（已完成首轮真实模型验收）。** 宿主 Agent 经 MiniMax-M3 比较当前候选并解释取舍；Shell 中的真实模型闭环及拒绝/无模型回退已验证。菜品、价格与计划变更由应用校验，最终选择由用户确认。
-3. **完善 UI 与交付（进行中）。** 1.2.2 将候选与 Agent 建议合并为同一滚动区域，已通过 `card-host` 回归和标准 Shell 窗口的滚动、确认保存检查。补齐资料和可复现演示。
+3. **完善 UI 与交付（本轮完成）。** 1.2.2 将候选与 Agent 建议合并为同一滚动区域，已通过 `card-host` 回归、标准 Shell 窗口的真实 MiniMax 建议、滚动及确认保存检查。
 
 每一步的验收条件见 [开发路线](docs/ROADMAP.md)。
 
@@ -68,7 +68,7 @@ curl --fail http://127.0.0.1:8141/snap
 curl --fail http://127.0.0.1:8141/quit
 ```
 
-`8141` 是测试控制接口，应用显示在原生窗口中；需要可见窗口时去掉 `--hidden`。两张包内截图由 `python3 scripts/capture-card-host.py` 通过 Makepad framebuffer 生成，脚本同时检查候选和保存状态；它们证明 card-host 画面。另有两张真实 MiniMax 联调的 Shell 截图位于 `docs/evidence/`。已有 `scripts/preview.sh` 和 `start-demo.sh` 包含机器相关行为，不是 OctoSense Shell 启动入口。
+`8141` 是测试控制接口，应用显示在原生窗口中；需要可见窗口时去掉 `--hidden`。两张包内截图由 `python3 scripts/capture-card-host.py` 通过 Makepad framebuffer 生成，脚本同时检查候选和保存状态；它们证明 card-host 画面。同版 1.2.2 的真实 MiniMax 建议、滚动和确认截图位于 `docs/evidence/`。已有 `scripts/preview.sh` 和 `start-demo.sh` 包含机器相关行为，不是 OctoSense Shell 启动入口。
 
 OctoSense Shell 的真实 MiniMax 闭环及早期 mock 基线均有记录；固定提交号和未验证部分见[参赛准备状态](docs/CONTEST_READINESS.md)。历史网页与 Rust 原型可单独检查：
 

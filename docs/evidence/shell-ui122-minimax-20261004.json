@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-04",
+  "app_version": "1.2.2",
+  "bundle_blake3": "660889d5a9e6e2a9d3f1a26a53fba937e2bc416a75843e4a85d80d072c4b7de4",
+  "host": "OctoSense Shell 4a541777; isolated Linux app data and locally signed test catalog",
+  "provider": {
+    "family_id": "minimax-cn",
+    "model_id": "MiniMax-M3",
+    "endpoint_host": "api.minimax.cn",
+    "credential_in_repository": false
+  },
+  "starting_state": "2026-10-04 已有晚餐计划 ¥13.90；非空计划测试",
+  "steps": [
+    "在标准 990×602 布局点卡片窗口查找晚餐候选，状态显示找到 3 个候选",
+    "点击让 OctoSense Agent 比较，应用通过 octos.turn.start 请求宿主 Agent",
+    "界面收到 Agent 建议候选 3：与用户已计划的晚餐一致，价格 ¥13.90 在上限内，18:30 在营业时段内",
+    "在同一结果滚动区下滑，确认候选 2 和确认候选 3 按钮进入视野",
+    "用户手动点击确认候选 3，状态显示已保存并读回核验：晚餐 · 干蒸排骨饭；当日已计划 ¥13.90、剩余 ¥18.10"
+  ],
+  "screenshots": [
+    "shell-ui122-minimax-agent-20261004.png",
+    "shell-ui122-minimax-scrolled-20261004.png",
+    "shell-ui122-minimax-confirmed-20261004.png"
+  ],
+  "limitations": [
+    "这是已有计划的候选比较和再次确认；从零新建计划另见 1.2.1 的空计划运行记录",
+    "菜单和价格来自本地快照，不代表实时库存或下单",
+    "本次没有重新测试授权拒绝、格式错误或过期响应路径"
+  ],
+  "process_exit": "OctoSense Shell 经远程 quit 正常退出"
+}
