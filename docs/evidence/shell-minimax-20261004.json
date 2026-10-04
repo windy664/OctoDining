@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-04",
+  "app_version": "1.2.1",
+  "host": "OctoSense Shell 4a541777 / Octos 2.0.3-rc.13 056173e",
+  "provider": "minimax-cn",
+  "model": "MiniMax-M3",
+  "route": "https://api.minimax.cn/v1",
+  "model_source": "live provider; no mock server in this isolated run",
+  "auth": "fresh profile consent granted in Shell; consent.json allowed=true",
+  "flow": [
+    "local candidate search returned 3 choices",
+    "octos.turn.start sent the displayed candidates to system Agent",
+    "MiniMax response appeared in app UI",
+    "user confirmed candidate 1",
+    "app saved plan and read it back"
+  ],
+  "ui": {
+    "summary": "2026-10-04 · 已计划 ¥10.00 · 剩余 ¥22.00",
+    "agent_result": "Agent 建议候选 1：价格最低且18:30在营业时段内，无其他偏好时最稳妥。\n仅为建议；请核对信息并自行确认。",
+    "status": "找到 3 个候选 · 本餐可用 ¥14.00。再次查找可换一批。"
+  },
+  "saved_plan": {
+    "date": "2026-10-04",
+    "daily_cents": 3200,
+    "meals": [
+      {
+        "slot": 2,
+        "product_id": 3,
+        "cents": 1000,
+        "name": "卤汁腐竹饭",
+        "store": "匠心卤（食堂二楼）",
+        "hours": "16:30-19:00, 10:30-13:00",
+        "arrival": "18:30",
+        "note": "",
+        "saved_at": 1791086145.8175058
+      }
+    ]
+  },
+  "llm_turns": [
+    {
+      "input_tokens": 1,
+      "output_tokens": 522,
+      "cache_read_tokens": 7518,
+      "response_content_len": 109
+    },
+    {
+      "input_tokens": 298,
+      "output_tokens": 909,
+      "cache_read_tokens": 7519,
+      "response_content_len": 95
+    }
+  ],
+  "screenshots": [
+    "shell-minimax-agent-20261004.png",
+    "shell-minimax-plan-20261004.png"
+  ],
+  "limitations": [
+    "menu is a local snapshot, not live availability",
+    "Agent offers advice; user confirms and app persists",
+    "Octos log warned session ledger path was too long and used in-memory fallback; persistence of Agent transcript is not claimed",
+    "The screenshots are from a separate seeded-data run; the clean-data verification is recorded without a screenshot because the hidden Linux /g capture timed out."
+  ],
+  "data_start": "app data contained one dinner plan from an earlier mock run; this screenshot run replaced/confirmed that candidate, so see shell-minimax-clean-20261004.json for proof of creation from empty app data"
+}

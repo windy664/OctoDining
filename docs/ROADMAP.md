@@ -24,7 +24,7 @@
 - 条件变化或候选失效时递增请求代次并释放界面忙碌状态；迟到回调直接丢弃，不能清掉较新请求的忙碌状态。
 - 响应解析要求 JSON 对象、数值候选序号和字符串理由；无效格式显示回退信息，不成为可确认建议。
 - Agent 只建议；用户必须手动确认，应用才保存并核验计划。
-- card-host 中验证服务不可用反馈；OctoSense Shell 中已完成 mock provider 的成功请求与持久化读回，并验证拒绝授权、未配置模型时仍可人工确认。格式错误和过期响应仍待 Shell 验收。
+- card-host 中验证服务不可用反馈；OctoSense Shell 中已完成 MiniMax-M3 真实 provider 的成功请求与计划持久化读回，并验证拒绝授权、未配置模型时仍可人工确认。格式错误和过期响应仍待 Shell 验收。
 
 **当前进度：** OctoScript 页面和 manifest 已接入精确的 `octos.turn.start` 权限；card-host 验收了服务不可用回退。OctoSense 主仓库 `4a541777` 的 Linux `cargo check --locked -p octosense` 与 `cargo build --locked -p octosense` 已通过；并按该锁文件构建 Octos `2.0.3-rc.13 (056173e)`，产物 SHA-256 前缀为 `35d1d279c6b04061`。OctoSense Shell 已在独立 `/tmp` home/app-data 启动，并配置临时锚签名的本地测试目录；未使用真实发布密钥。先前将 Kimi Coding Plan key 错配到 Moonshot Open Platform 并得到的 HTTP 429 不可用于判断 Coding Plan。之后对正确的 Coding Plan endpoint（`https://api.kimi.com/coding/v1`）分别以 `k3` 和 `kimi-for-coding` 发起最小请求，均返回 HTTP 401 `invalid_authentication_error`，没有模型回复；认证失败本身不能区分 key 无效、过期或撤销，也不能排除所选模型不在当前计划权限内。Kimi 官方文档列出的下一步是确认 key 来自 Kimi Code Console、仍有效且有对应模型权限。临时 key 与 provider profile 已删除。
 
@@ -43,7 +43,7 @@
 ## 第三步：功能稳定后再完善 UI 和提交
 
 - 根据真实截图检查不同窗口尺寸、滚动、长菜名和错误状态，再调整视觉层级。
-- 两张 card-host 功能截图已采集；补充与冻结 bundle 相符的 Shell Agent 画面或短演示。
+- 两张 card-host 功能截图及两张同版 Shell/MiniMax Agent 画面已采集；连续短演示仍可补录。
 - `bundle/listing.json` 已改为餐饮规划文案并只声明已实测 Linux；上架前复核发布者身份、隐私说明、截图和菜单再分发许可。
 - 重新构建、检查并记录源码提交、bundle 摘要、宿主版本和可复现启动说明。
 - 以同一冻结提交提供公开仓库、Apache-2.0 许可、有效运行截图/短演示、输入与授权/Agent/人工确认/结果核验的复现步骤。队伍主题和初赛仓库地址分别已登记在官方 Issue #5 与 #13；个人报名表状态待核。
@@ -51,5 +51,7 @@
 **通过条件：** 参赛者可依说明复现完整任务；展示材料来自同一提交，并准确标明数据快照与未实现能力。
 
 ## 赛事优先级
+
+2026-10-04 补充：在全新隔离 Shell 中配置 `minimax-cn` / `MiniMax-M3`，完成首次应用授权、真实 `octos.turn.start` 建议、人工确认及 `plans-a.json` 写入读回。[空计划运行](evidence/shell-minimax-clean-20261004.json)证明新建计划；[另一次已有计划的运行](evidence/shell-minimax-20261004.json)提供两次模型响应和原生截图。密钥只在本机 0600 profile 中，仓库没有密钥。上游 Octos ledger 对此应用的长会话 ID 报路径过长并退到内存；因此 Agent 对话跨重启持久化尚未通过，不影响应用计划文件读回。
 
 官方初赛截止为北京时间 2026-10-04 23:59。先冻结并交付可运行的功能闭环与真实 Agent 证据。Hub 预检可作为包结构证据，不能代替在注明版本的宿主中启动和完成任务；现阶段公开仓库与可运行作品即可参评，无需等待 App Hub 上架。UI 润色、聊天分享、天气、日历、ROM 扩展和工具链悬赏不应挤占未完成的主任务。[赛事提交说明](https://github.com/gosimfoundation/hackathon-agenticapp26/blob/main/docs/app-hub-submission.md)

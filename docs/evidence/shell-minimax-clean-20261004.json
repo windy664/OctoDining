@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-04",
+  "app_version": "1.2.1",
+  "host": "OctoSense Shell 4a541777 / Octos 2.0.3-rc.13 056173e",
+  "provider": "minimax-cn",
+  "model": "MiniMax-M3",
+  "route": "https://api.minimax.cn/v1",
+  "data_start": "fresh app data with no plans-a.json or plans-b.json; initial UI summary 已计划 ¥0.00 · 剩余 ¥32.00",
+  "auth": "fresh Shell profile; first-use consent accepted; consent.json allowed=true",
+  "flow": [
+    "local menu search returned 3 choices with ¥14 meal cap",
+    "app invoked octos.turn.start through Shell and Octos",
+    "live MiniMax-M3 reply validated and displayed as candidate 3",
+    "user clicked 确认候选 3",
+    "app created plans-a.json and read it back"
+  ],
+  "agent_result": "Agent 建议候选 3：干蒸排骨饭为晚餐正餐，¥13.90在¥14上限内，到店18:30距20:00闭店有缓冲；卤汁腐竹饭16:30-19:00时段临近收摊，蛋炒饭过于简单。\n仅为建议；请核对信息并自行确认。",
+  "ui_after_confirmation": {
+    "summary": "2026-10-04 · 已计划 ¥13.90 · 剩余 ¥18.10",
+    "status": "已保存并读回核验：晚餐 · 干蒸排骨饭。仅为计划，未下单。"
+  },
+  "saved_plan": {
+    "date": "2026-10-04",
+    "daily_cents": 3200,
+    "meals": [
+      {
+        "slot": 2,
+        "product_id": 108,
+        "cents": 1390,
+        "name": "干蒸排骨饭",
+        "store": "炊班主干蒸排骨（二食堂）",
+        "hours": "10:00-20:00",
+        "arrival": "18:30",
+        "note": "",
+        "saved_at": 1791090802.0324647
+      }
+    ]
+  },
+  "llm_turns": [
+    {
+      "input_tokens": 7379,
+      "output_tokens": 755,
+      "cache_read_tokens": 128,
+      "response_content_len": 191
+    }
+  ],
+  "screenshots": "This clean-data run has no image capture: Makepad remote /g timed out on the hidden Linux backend. Two image captures in shell-minimax-20261004.json are from the same app/provider version but a separate seeded-data run.",
+  "limitations": [
+    "local menu snapshot, not live stock or pricing",
+    "Agent only suggested; user confirmed and app persisted",
+    "Octos ledger reported long session path and used in-memory fallback; Agent transcript persistence not claimed"
+  ]
+}
