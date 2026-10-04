@@ -18,7 +18,7 @@
 | 商店资料 | `bundle/listing.json` 已改为 OctoDining 文案，列出已在 Linux 实测的平台、队伍名「跃珩科技」及仓库 Issues 支持地址；隐私说明见 [PRIVACY](PRIVACY.md)。上架前仍须核对发布者身份与有效截图；菜单来源和授权未补齐 |
 | 许可与隐私 | 代码 Apache-2.0；菜单的采集来源、日期和再分发许可待确认，详见[数据来源说明](DATA_PROVENANCE.md)。请求仅发送本次需求、候选和当日计划摘要 |
 | 赛事登记 | 队伍主题已在[官方 Issue #5](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/5#issuecomment-5854778542)登记：跃珩科技、成员 id Torine、餐谱规划、已加群；初赛仓库已在[官方 Issue #13](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/13#issuecomment-5924251291)登记。个人报名表是否完成尚无证据 |
-| 冻结版本 | 原始初赛版保留在 `qualifier-2026-10-04`，首次真实模型证据版在 `qualifier-2026-10-04-minimax`；含最终预检与数据来源说明的交付版固定为 `qualifier-2026-10-04-final`。官方 Issue #13 已指向本公开仓库 |
+| 冻结版本 | 唯一保留的交付标签为 `qualifier-2026-10-04-final`；早期工作仍可由提交号 `4a46a95`、`1b9e473` 追溯。官方 Issue #13 已指向本公开仓库 |
 
 ## 当前完整任务路径
 

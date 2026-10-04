@@ -1,6 +1,6 @@
 # OctoDining 1.2.1 最终包预检
 
-2026-10-04，在 `qualifier-2026-10-04-minimax` 提交的 `bundle/` 上执行只读检查：
+2026-10-04，在提交 `1b9e473` 的 `bundle/` 上执行只读检查；最终标签的应用包字节与该提交一致：
 
 ```text
 $ hub check bundle --allow-unsigned
