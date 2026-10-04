@@ -338,6 +338,8 @@ fn ask_agent(){
         + "；用户需求：" + ui.request.text() + "；当天已计划：" + prior + "。\n"
         + "候选如下：\n" + options
         + "仅返回 JSON：{\"choice\":候选序号(从1开始，无法推荐则0),\"reason\":\"简短取舍理由\"}。不要提供其他文本。"
+    agentChoice = -1
+    agentStamp = ""
     ui.agent_result.set_text("正在请求 OctoSense 系统 Agent…")
     agentBusy = true
     host.request("octos.turn.start", {text: prompt}, fn(r){
@@ -345,29 +347,46 @@ fn ask_agent(){
         agentBusy = false
         if stamp != candidateStamp || stamp != selection_stamp() {
             agentChoice = -1
+            agentStamp = ""
             ui.agent_result.set_text("条件已变化；这次 Agent 结果已丢弃，请重新查找。")
             return
         }
         if !r.is_ok {
             agentChoice = -1
+            agentStamp = ""
             ui.agent_result.set_text("系统 Agent 暂不可用：" + r.error + "。你仍可自行选择候选。")
             return
         }
-        let answer = r.data.text.parse_json()
-        let choice = -1
-        try { choice = answer.choice } { choice = -1 }
-        if !(choice >= 0 && choice <= candidates.len()) || choice != floor(choice) {
+        let answer = nil
+        try { answer = r.data.text.parse_json() } { answer = nil }
+        if !answer.is_object() {
             agentChoice = -1
+            agentStamp = ""
+            ui.agent_result.set_text("Agent 已回复，但建议格式无法核验。请自行查看候选。")
+            return
+        }
+        let choice = -1
+        try {
+            let value = answer.choice
+            if value.is_number() { choice = value }
+        } { choice = -1 }
+        if !(choice >= 0 && choice <= candidates.len() && choice == floor(choice)) {
+            agentChoice = -1
+            agentStamp = ""
             ui.agent_result.set_text("Agent 已回复，但建议格式无法核验。请自行查看候选。")
             return
         }
         if choice == 0 {
             agentChoice = -1
+            agentStamp = ""
             ui.agent_result.set_text("Agent 没有选出合适候选；你仍可自行判断。")
             return
         }
-        let reason = ""
-        try { reason = answer.reason } { reason = "未提供取舍理由" }
+        let reason = "未提供取舍理由"
+        try {
+            let value = answer.reason
+            if value.is_string() { reason = value }
+        } { reason = "未提供取舍理由" }
         if reason.len() > 300 { reason = "理由过长，已省略" }
         agentChoice = choice - 1
         agentStamp = stamp

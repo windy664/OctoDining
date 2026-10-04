@@ -4,7 +4,7 @@
 
 OctoDining 面向打工人、学生和其他需要控制餐饮开销的人，目标是结合预算、口味、已有计划和真实菜单，帮助用户选餐、确认计划并持续调整。广州软件学院食堂菜单是首个数据集，产品范围不限校园。
 
-> **开发状态 · 2026-10-03：** 基本选餐和计划管理已在 OctoScript `card-host` 完成 15 项自动交互验收；Agent 建议入口、`octos.turn.start` 权限和响应校验已接入。OctoSense Linux `cargo check` 与桌面可执行构建通过；Shell 已启动，但 Kimi Coding Plan 在正确 endpoint 上返回 401，暂时没有真实 Agent 回复。需先核对 key 状态和模型权限，再验收用户授权与真实请求。开发预览不能当作系统 Agent 演示。
+> **开发状态 · 2026-10-04：** 基本选餐和计划管理已在 OctoScript `card-host` 完成 14 组 UI bridge 检查；Agent 建议入口、`octos.turn.start` 权限、迟到响应丢弃和严格响应校验已接入。DeepSeek `deepseek-v4-flash` API 已按 OctoSense 配置地址得到 HTTP 200；OctoSense Shell 的 provider 配置、应用授权与真实 `octos.turn.start` 仍待验收。开发预览和直接 API 调用不能当作系统 Agent 演示。
 
 ## 现在有什么
 
@@ -16,8 +16,8 @@ OctoDining 面向打工人、学生和其他需要控制餐饮开销的人，目
 | 六档预算与三餐 | A1–A6、早餐/午餐/晚餐、餐次上限和每日预算已进入 OctoScript |
 | 菜单候选 | 1,497 条快照，按价格、到店时间、餐次与关键词避辣筛选，展示最多三个店铺 |
 | 计划管理 | 按日期保存；支持同餐替换、查看、修改、取消、日预算调整和重启恢复；写入后读回核验，双份记录容错 |
-| 自动验收 | `python3 scripts/test-basic-app.py` 的 14 组 UI bridge 检查通过；最近结果见 `.local-state/acceptance-20261003-233543/results.json`，截图接口返回 404 |
-| OctoSense Agent | 页面请求 `octos.turn.start` 并校验当前候选序号；条件变化会使未完成回调失效，迟到结果不能阻塞新请求；仍须用户点候选确认。card-host 已验收服务不可用回退；Shell 请求待验收 |
+| 自动验收 | `python3 scripts/test-basic-app.py` 最近完整通过 14 组 UI bridge 检查；结果见 `.local-state/acceptance-20261003-235914/results.json`，截图接口返回 404 |
+| OctoSense Agent | 页面请求 `octos.turn.start` 并校验当前候选序号；条件变化会使未完成回调失效，解析要求 JSON 对象、数字序号和字符串理由；仍须用户点候选确认。card-host 已验收服务不可用回退；Shell 请求待验收 |
 | 暂未包含 | 周计划、历史去重、实时价格/库存、营养与过敏信息、下单和支付 |
 | 商店资料 | `listing.json` 仍是示例模板，发布者、平台与截图需在 UI/交付阶段据实填写 |
 

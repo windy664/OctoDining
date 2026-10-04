@@ -1,6 +1,6 @@
 # 当前开发路线
 
-更新：2026-10-03。按“基本功能 → 系统 Agent → UI”迭代。只把有对应运行证据的部分标为完成。
+更新：2026-10-04。按“基本功能 → 系统 Agent → UI”迭代。只把有对应运行证据的部分标为完成。
 
 ## 第一步：基本功能 — 已完成 card-host 验收
 
@@ -21,6 +21,7 @@
 - 将用户需求、预算、餐次、至多三个已筛候选及当天已有计划传给宿主。
 - 限定响应为候选序号与理由；校验序号属于本次候选，且响应回来时请求条件未变化。
 - 条件变化或候选失效时递增请求代次并释放界面忙碌状态；迟到回调直接丢弃，不能清掉较新请求的忙碌状态。
+- 响应解析要求 JSON 对象、数值候选序号和字符串理由；无效格式显示回退信息，不成为可确认建议。
 - Agent 只建议；用户必须手动确认，应用才保存并核验计划。
 - card-host 中验证服务不可用反馈，OctoSense Shell 中继续验收授权拒绝、成功请求、服务失败、过期响应和确认后的持久化结果。
 
@@ -28,7 +29,9 @@
 
 **本轮运行观察：** 首次启动时，Shell 的系统助手显示“尚未设置模型提供方”。按官方 OpenAI-compatible 配置使用 provider `moonshot-coding`、中国区 endpoint `https://api.kimi.com/coding/v1`；`k3` 与 `kimi-for-coding` 各做一次最小请求，均返回 HTTP 401 `invalid_authentication_error`。没有模型回复，也没有消耗到可验证的模型输出。该响应不能单独证明 key 无效，因为官方模型文档也将缺少对应模型计划权限列为 401 可能原因。旧 key 仅暂存在权限为 0600 的隔离 secret 文件，随后已删除；因其曾在聊天中明文发送，建议在 Kimi Code Console 撤销并重新生成。拿到新 key 后先核对 Coding Plan 归属和模型权限，再在 OctoSense 中完成授权、成功回复及拒绝/失败回退测试。当前测试 Shell 已正常退出。参考：[Kimi Code 模型与权限说明](https://www.kimi.com/code/docs/kimi-code/models.html)、[Kimi Code FAQ](https://www.kimi.ai/help/kimi-code/faq)。
 
-随后修正了一处异步竞态：用户修改条件或重新查找后，旧 `octos.turn.start` 回调不能把新请求标记为空闲/忙碌，也不再阻止用户发起新一轮建议；旧响应按请求代次丢弃。bundle 通过 `octo check bundle`，card-host 回归脚本通过 14 组检查（`.local-state/acceptance-20261003-233543/results.json`）。当前 card-host 没有 octos 服务，这条测试只验收无服务回退和应用基本功能，不代表模拟或真实模型成功；视觉截图仍未生成。
+2026-10-04：用户提供 DeepSeek API key 后，按 OctoSense 使用的 `/v1/chat/completions` 地址和模型 `deepseek-v4-flash` 最小请求返回 HTTP 200（服务端将模型名规范化为 `deepseek-flash`）；禁用思考模式的一次代码审查成功返回，记录用量为 2,158 tokens。随后用隔离 `OCTOS_HOME`、进程环境中的 `DEEPSEEK_API_KEY`，通过本机 `octos-kernel chat --provider deepseek --model deepseek-v4-flash --base-url https://api.deepseek.com/v1 --api-type openai` 得到结构化回复；Octos 记录 12,258 输入、70 输出 tokens。该命令证明 Octos 内核 provider 可用，但没有经过 OctoSense Shell 的应用 peer 或用户授权。key 未写入仓库或磁盘配置，但已在聊天中发送，建议在 DeepSeek 控制台轮换。OctoSense 本机目录登记了同一模型和默认 `DEEPSEEK_API_KEY`。参考：[DeepSeek 首次 API 调用](https://api-docs.deepseek.com/guides/codex)、[模型与价格](https://api-docs.deepseek.com/quick_start/pricing/)、[思考模式](https://api-docs.deepseek.com/guides/thinking_mode/)。
+
+随后修正了一处异步竞态，并严格校验 Agent JSON 对象、数值序号和文本理由；用户再次请求时清除上次建议，旧响应按请求代次丢弃。bundle 通过 `octo check bundle`，最新完整 card-host 回归通过 14 组检查（`.local-state/acceptance-20261003-235914/results.json`）。card-host 没有 octos 服务；检查覆盖基本功能和无服务回退，不代表模拟或真实 Agent 成功。视觉截图仍未生成。
 
 **通过条件：** Shell 中真实 Agent 请求与系统授权有记录；建议对应实际候选；用户确认后计划写入、读回和预算均正确；拒绝、错误或过期时没有假成功。本地预览、hub check、临时目录签名或单独构建内核均不算通过。
 
