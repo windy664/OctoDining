@@ -20,6 +20,7 @@ let agentChoice = -1
 let agentStamp = ""
 let homePick = -1
 let homeSkip = -1
+let homeShowingSaved = false
 let onHome = true
 let ink = #x203d32
 let muted = #x697970
@@ -255,19 +256,37 @@ fn refresh_summary(){
 }
 fn refresh_home(){
     homePick = -1
+    homeShowingSaved = false
     if ui.date.text().trim() != currentDate || !valid_date(currentDate) {
         ui.home_name.set_text("先打开一个有效日期")
+        ui.home_cta.set_text("调整条件")
         ui.home_price.set_text("")
         ui.home_meta.set_text("日期变化后会重新计算推荐")
         ui.home_reason.set_text("")
         return
     }
+    for meal in current_meals() {
+        if meal.slot == selectedSlot && homeSkip < 0 {
+            homePick = meal.product_id
+            homeShowingSaved = true
+            ui.home_caption.set_text("今天" + slotNames[selectedSlot] + " · 已安排")
+            ui.home_name.set_text(meal.name)
+            ui.home_price.set_text("¥" + cash(meal.cents))
+            ui.home_meta.set_text(meal.store + " · " + meal.arrival + " 到店")
+            ui.home_reason.set_text("已经写入今日餐表。想换口味，可以点“换一道”。")
+            ui.home_cta.set_text("查看今日餐表")
+            return
+        }
+    }
+    ui.home_caption.set_text("今天" + slotNames[selectedSlot] + " · 为你推荐")
+    ui.home_cta.set_text("就吃这道 · 加入餐表")
     let daily = money_value(ui.daily.text())
     let budget = money_value(ui.budget.text())
     let arrival = clock_value(ui.arrival.text().trim())
     let request = ui.request.text().trim()
     if daily < 0 || budget < 0 || arrival < 0 || request.len() > 500 || regex("过敏|素食|清淡|高蛋白|不吃肉|不吃牛肉|不吃猪肉|不吃奶|不吃蛋|花生|海鲜", "").test(request) {
         ui.home_name.set_text("暂不能可靠推荐")
+        ui.home_cta.set_text("调整条件")
         ui.home_price.set_text("")
         ui.home_meta.set_text("请核对预算、时间和饮食限制")
         ui.home_reason.set_text("菜单不含完整营养或过敏原信息。")
@@ -276,6 +295,7 @@ fn refresh_home(){
     let cap = min(budget, daily - sum_meals(current_meals(), selectedSlot))
     if cap < 100 {
         ui.home_name.set_text("本餐预算不足")
+        ui.home_cta.set_text("调整条件")
         ui.home_price.set_text("")
         ui.home_meta.set_text("先调整预算或已有计划")
         ui.home_reason.set_text("")
@@ -313,6 +333,7 @@ fn refresh_home(){
     }
     if homePick < 0 {
         ui.home_name.set_text("暂无符合条件的餐品")
+        ui.home_cta.set_text("调整条件")
         ui.home_price.set_text("")
         ui.home_meta.set_text("请调整预算、到店时间或口味")
         ui.home_reason.set_text("推荐只使用已收录的菜单快照。")
@@ -331,6 +352,17 @@ fn refresh_home(){
 fn next_home_pick(){
     homeSkip = homePick
     refresh_home()
+}
+fn confirm_home_pick(){
+    if homeShowingSaved { show_page(true) return }
+    if homePick < 0 || !storageReady { show_page(false) return }
+    let id = homePick
+    let before = journal.revision
+    hide_candidates()
+    candidates = [id]
+    candidateStamp = selection_stamp()
+    choose_meal(0)
+    if journal.revision == before { show_page(false) }
 }
 fn apply_slot(slot){
     selectedSlot = slot
@@ -468,6 +500,7 @@ fn choose_meal(index){
     next.days[d].meals = kept
     if store_record(next) {
         hide_candidates()
+        homeSkip = -1
         refresh_summary()
         show_page(true)
         ui.status.set_text("已保存并读回核验：" + slotNames[selectedSlot] + " · " + p.name + "。仅为计划，未下单。")
@@ -602,7 +635,6 @@ fn boot(){
     if a != nil { journal = a activeFile = "plans-a.json" }
     if b != nil { if b.revision > journal.revision { journal = b activeFile = "plans-b.json" } }
     currentDate = today()
-    if activeFile != "" { currentDate = journal.last_date }
     ui.date.set_text(currentDate)
     show_home()
     open_date()
@@ -632,7 +664,12 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
     View{width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5}
         Label{text: "✳" draw_text.color: ink draw_text.text_style.font_size: 20}
         Label{text: "octodining." draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 17}}
-        home_nav := Action{text: "首页" on_click: || show_home()}
+        home_nav := Action{text: "首页" on_click: || {
+            ui.date.set_text(today())
+            homeSkip = -1
+            open_date()
+            show_home()
+        }}
         Action{text: "我的一周餐表" on_click: || show_page(true)}
     }
     intro := View{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 3 right: 3 top: 7 bottom: 6}
@@ -644,17 +681,23 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
         summary := Label{width: Fill text: "正在读取计划…" draw_text.color: ink draw_text.text_style.font_size: 13}
     }
     home := View{width: Fill height: Fit flow: Down
-        RoundedView{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 9 right: 9 top: 9 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 18.0
-            Image{width: Fill height: 150 src: http_resource("{{assets}}/assets/dining-still-life.png") fit: ImageFit.CropToFill}
-            View{width: Fill height: Fit flow: Down spacing: 5 padding: Inset{left: 10 right: 10 top: 10 bottom: 4}
-                View{width: Fill height: Fit flow: Right spacing: 12 align: Align{y: 0.5}
-                    home_caption := Label{text: "为你推荐 · 晚餐" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 12}}
-                    Action{text: "换一道 ↗" on_click: || next_home_pick()}
+        RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 16 bottom: 16} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 18.0
+            View{width: Fill height: Fit flow: Right spacing: 12
+                View{width: Fill height: Fit flow: Down spacing: 6
+                    home_caption := Label{text: "今天晚餐 · 为你推荐" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 12}}
+                    home_name := Label{width: Fill text: "正在挑选…" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 23}}
+                    home_price := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 20}}
+                    home_meta := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 11}
                 }
-                home_name := Label{width: Fill text: "正在挑选…" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 22}}
-                home_price := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 20}}
-                home_meta := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 12}
-                home_reason := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 10}
+                View{width: 120 height: Fit flow: Down spacing: 3
+                    Image{width: 120 height: 135 src: http_resource("{{assets}}/assets/dining-still-life.png") fit: ImageFit.CropToFill}
+                    Label{text: "氛围图 · 非菜品实拍" draw_text.color: muted draw_text.text_style.font_size: 8}
+                }
+            }
+            home_reason := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 10}
+            View{width: Fill height: Fit flow: Right spacing: 8
+                home_cta := Primary{width: Fill text: "就吃这道 · 加入餐表" on_click: || confirm_home_pick()}
+                Action{text: "换一道" on_click: || next_home_pick()}
             }
         }
     }

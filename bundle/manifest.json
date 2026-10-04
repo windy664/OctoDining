@@ -5,9 +5,9 @@
   ],
   "id": "org.octosense.octodining",
   "integrity": {
-    "bundle_blake3": "e55cdd346526bb1bb477489fc6ca92a93110d62fba5f8d502282eb41181a9997"
+    "bundle_blake3": "ededd4cbd7113f6c8e911459d3918f06524060e929df72437357cc08d9faf5ad"
   },
-  "name": "OctoDining · 今晚吃什么",
+  "name": "OctoDining · 好好吃饭",
   "schema": 1,
-  "version": "1.3.2"
+  "version": "1.4.0"
 }

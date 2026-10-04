@@ -133,7 +133,8 @@ def main():
         app.node('history')
         app.click('首页')
         app.click('manual')
-        app.status('本地规划已就绪')
+        assert app.text('date') == date.today().isoformat()
+        app.status('已打开 ')
         for i,amount in enumerate([15,22,32,45,65,100],1):
             app.click(f'a{i}')
             assert app.text('daily') == f'{amount}.00'
