@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "subtitle": "好好吃饭 · Eat well on a budget",
-  "description": "OctoDining（好好吃饭）支持中文和 English。首次使用从月生活费扣除非餐饮开销与缓冲金，估算日餐饮预算；以后打开先显示今天已安排的餐品，否则根据预算、餐次与时间推荐。用户可请 OctoSense Agent 比较候选，再自行确认；一周餐表支持修改与取消，并在保存后读回核验。内置 1,497 条广州软件学院食堂菜单快照，商品名保留原文。外部菜单导入、自动采集和整周自动规划尚未接入；价格、营业状态、营养和过敏原均不保证实时准确。配图不是菜品实拍，应用不下单或付款。 English: Set a daily meal budget from your monthly allowance, see today's suggested or planned meal, and confirm choices in a seven-day view. The Agent can compare up to three candidates; you make the final choice. Menu names remain in source Chinese. The snapshot is not live availability or allergy information.",
+  "description": "OctoDining（好好吃饭）支持中文和 English。首次使用从月生活费扣除非餐饮开销与缓冲金，估算日餐饮预算；以后打开先显示今天已安排的餐品，否则根据预算、餐次与时间推荐。用户可请 OctoSense Agent 比较候选，再自行确认；一周餐表支持修改与取消，并在保存后读回核验。内置 1,497 条广州软件学院食堂菜单快照，商品名保留原文；其中 1,209 条关联专属菜单图片 URL，首页按所选商品加载，缺图时显示示意图。菜单配图不保证是该餐的实拍。图片从 img.pospal.cn 加载；价格、营业状态、营养和过敏原均不保证实时准确。外部菜单导入、自动采集和整周自动规划尚未接入；应用不下单或付款。 English: Set a daily meal budget from your monthly allowance, see today's suggested or planned meal, and confirm choices in a seven-day view. The Agent can compare up to three candidates; you make the final choice. Menu names remain in source Chinese. Menu images load from img.pospal.cn when available, with an illustrative fallback. The snapshot is not live availability or allergy information.",
   "category": "lifestyle",
   "keywords": ["餐饮", "预算", "选餐", "计划", "meal planning", "canteen"],
   "screenshots": ["screenshots/00-first-run-setup.png", "screenshots/01-home-recommendation.png", "screenshots/02-candidates.png", "screenshots/03-week-plan-confirmed.png", "screenshots/04-en-onboarding.png", "screenshots/05-en-home.png"],
@@ -12,7 +12,7 @@
     "support": "https://github.com/windy664/OctoDining/issues",
     "privacy_policy_url": "https://github.com/windy664/OctoDining/blob/master/docs/PRIVACY.md"
   },
-  "release_notes": "1.6.0：新增可记住选择的中文/English 界面切换，覆盖新手引导、今日推荐、一周餐表及 Agent 提示。食堂商品和店铺名仍显示原始中文。English UI is available; menu names remain in their source language.",
+  "release_notes": "1.6.1：从 menu.csv 关联 1,209 个非默认商品图片链接，首页推荐和已安排餐品按商品显示菜单配图；无图时保留示意图。图片从 img.pospal.cn 加载，需网络连接。",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

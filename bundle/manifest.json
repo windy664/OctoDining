@@ -1,13 +1,19 @@
 {
   "capabilities": [
     "storage",
-    "octos.turn.start"
+    "octos.turn.start",
+    "net"
   ],
   "id": "org.octosense.octodining",
   "integrity": {
-    "bundle_blake3": "b7a9034cc915927bd3c167fd4800c2c6ab9e9e38ecd57c023f1bb6e156803c2a"
+    "bundle_blake3": "9171b935cb8945009607b5eac221c66f6d635c843fb6e0bc9c72e5eeef7f9dff"
   },
   "name": "OctoDining · 好好吃饭",
+  "network": {
+    "hosts": [
+      "img.pospal.cn"
+    ]
+  },
   "schema": 1,
-  "version": "1.6.0"
+  "version": "1.6.1"
 }

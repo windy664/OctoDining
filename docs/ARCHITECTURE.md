@@ -39,8 +39,8 @@ sequenceDiagram
 
 ## 当前应用状态
 
-- `scripts/main.splash.in` 是 OctoScript 源模板；`products_clean.json` 提供本地快照；`scripts/build-octos-bundle.py` 生成 `bundle/main.splash` 并将菜单价换算成整数分。
-- `bundle/manifest.json` 只声明 `storage` 与 `octos.turn.start`，没有直连模型或菜单网络权限。
+- `scripts/main.splash.in` 是 OctoScript 源模板；`products_clean.json` 提供本地快照；`scripts/build-octos-bundle.py` 将它与 `menu.csv` 的商品图片 URL 对应，生成 `bundle/main.splash` 并将菜单价换算成整数分。
+- `bundle/manifest.json` 声明 `storage`、`octos.turn.start` 与 `net`；`net` 仅允许从 `img.pospal.cn` 加载菜单图片，没有直连模型或实时菜单服务接口。
 - 基本选餐与计划管理在 App Hub `card-host` 中有真实交互自动验收；验收报告保存于本地忽略目录 `.local-state/acceptance-*/results.json`。
 - 系统 Agent 请求界面与候选序号校验已加入源码；card-host 不提供该服务。OctoSense Shell 已通过首次授权与 MiniMax-M3 真实请求，空计划下确认后写入并读回，见[验收记录](evidence/shell-minimax-clean-20261004.json)。
 - 本机隐藏窗口的 `/g` 截图端点有时超时；另一次同版本 Shell 运行已成功取得[Agent 建议截图](evidence/shell-minimax-agent-20261004.png)及[计划读回截图](evidence/shell-minimax-plan-20261004.png)。

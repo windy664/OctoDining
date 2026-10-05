@@ -1,25 +1,25 @@
 # 参赛准备状态
 
-更新：2026-10-05。1.6.0 在首次预算设置和今日推荐的基础上增加中文 / English 切换，语言选择重启后保持。英文覆盖主要操作流程；商品、店铺名称保留菜单原文。[双语原生验收](evidence/bilingual-160-20261005.md)包括英文截图、语言保持和中文回归。外部菜单导入和整周自动规划仍未实现，见[产品流程](PRODUCT_POSITIONING.md)。此前 OctoSense Shell 的真实 MiniMax-M3 完整闭环属于 1.2.2，[同版联调记录](evidence/shell-ui122-minimax-20261004.json)不能作为 1.6.0 的模型验收。
+更新：2026-10-05。1.6.1 在中英文界面基础上，按 `menu.csv` 中的商品图 URL 为今日推荐和已安排的餐品加载菜单配图；1,209 条清洗记录有非默认图片，缺图时使用本地示意图。[本版原生截图](evidence/menu-images-161-20261005.md)记录中文与英文首页的实际图片。外部菜单导入和整周自动规划仍未实现，见[产品流程](PRODUCT_POSITIONING.md)。此前 OctoSense Shell 的真实 MiniMax-M3 完整闭环属于 1.2.2，[同版联调记录](evidence/shell-ui122-minimax-20261004.json)不能作为 1.6.1 的模型验收。
 
-当前 1.6.0 已通过首次使用预算设置及 14 项 card-host 中文回归、英文流程与语言保持检查、原生截图检查和 unsigned Hub 预检；1.3.0 曾另测七天空白日期导航。冻结交付标签 `qualifier-2026-10-04-final` 暂对应 1.2.2，待当前版本 Shell 同版复验后再决定是否移动。
+当前 1.6.1 已通过原生中英文截图中的图片加载、预算/候选/保存读回流程、15 组中文交互检查、英文流程与语言保持检查，以及 unsigned Hub 预检。冻结交付标签 `qualifier-2026-10-04-final` 暂对应 1.2.2，待当前版本 Shell 同版复验后再决定是否移动。
 
 ## 当前交付判断
 
 | 项目 | 状态与证据 |
 | --- | --- |
 | 产品任务 | 面向预算有限人群的餐饮规划，见 [BRIEF](BRIEF.md) |
-| 新人引导 | 1.6.0 支持内置食堂快照及月生活费、固定开销和缓冲金核算；中文 / English 切换并重启保持；外部菜单导入与七日自动草案待开发 |
-| 菜单快照 | 1,497 条记录，含名称、店铺、类别、标价和营业时段；已整理[文件来源与使用边界](DATA_PROVENANCE.md)，采集凭据和再分发授权待补 |
+| 新人引导 | 1.6.1 支持内置食堂快照及月生活费、固定开销和缓冲金核算；中文 / English 切换并重启保持；外部菜单导入与七日自动草案待开发 |
+| 菜单快照 | 1,497 条记录，含名称、店铺、类别、标价和营业时段；构建时与 `menu.csv` 匹配，1,209 条关联非默认商品图片 URL；[来源与使用边界](DATA_PROVENANCE.md)中的采集凭据和再分发授权待补 |
 | 基本功能 | A1–A6、三餐候选、预算与时段过滤、保存/重启恢复/修改/取消、写入核验通过 card-host UI 验收 |
 | 数据健全 | 金额按分计算；确认计划保留商品 ID、名称、店铺、原快照价格、营业时段与用户需求 |
 | 持久化 | 双文件轮换；测试覆盖文件损坏恢复、保存故障保护、双副本无效时锁写 |
 | Agent 能力 | `octos.turn.start` 候选比较、请求前条件复核、序号校验、失效回调丢弃和响应 JSON 类型校验已进入源码；card-host 验证无服务回退，Shell 已验证授权拒绝与未配置模型时仍可人工确认 |
-| App Hub 检查 | 1.6.0 通过 unsigned `tools/octo check bundle`；仅声明 `storage`、`octos.turn.start`，网络主机为空。1.2.2 的临时本地签名目录曾通过发布 gate，见[UI 修正记录](evidence/ui-scroll-122-20261004.md)；1.6.0 尚未正式签名 |
+| App Hub 检查 | 1.6.1 通过 unsigned `tools/octo check bundle`；声明 `storage`、`octos.turn.start`、`net`，网络仅允许 `img.pospal.cn` 加载图片。1.2.2 的临时本地签名目录曾通过发布 gate，见[UI 修正记录](evidence/ui-scroll-122-20261004.md)；1.6.1 尚未正式签名 |
 | 运行宿主 | OctoSense `4a541777` 与锁定依赖下，Linux `cargo check --locked -p octosense`、`cargo build --locked -p octosense` 已通过；Octos `2.0.3-rc.13 (056173e)` 内核已构建。隔离 Shell 中 1.2.2 经本地测试目录签名加载，`octos.turn.start` → Octos kernel → MiniMax-M3 返回候选建议；用户确认后计划写入并读回。首次授权在 1.2.1 干净 profile 中通过；拒绝授权和无模型回退也已在 1.2.1 实测。Agent 会话 ledger 因上游会话路径过长而退到内存，本次不声称 Agent 对话持久化 |
-| 页面外观 | 1.6.0 的[英文引导](evidence/bilingual-160-20261005/00-first-run-setup.png)、[今日推荐](evidence/bilingual-160-20261005/01-home-recommendation.png)、[候选](evidence/bilingual-160-20261005/02-candidates.png)和[一周餐表](evidence/bilingual-160-20261005/03-week-plan-confirmed.png)是 card-host 原生画面；引导和首页已放入 `bundle/screenshots/`，连同旧版四张中文实机图。1.2.2 的[真实 MiniMax 建议](evidence/shell-ui122-minimax-agent-20261004.png)与[确认读回](evidence/shell-ui122-minimax-confirmed-20261004.png)是此前 Shell 证据 |
+| 页面外观 | 1.6.1 的[中文首页](evidence/menu-images-161-20261005/zh/01-home-recommendation.png)与[英文首页](evidence/menu-images-161-20261005/en/01-home-recommendation.png)显示实际加载的菜单配图；本版另有中英文引导、候选和一周餐表原生截图，六张已更新到 `bundle/screenshots/`。1.2.2 的[真实 MiniMax 建议](evidence/shell-ui122-minimax-agent-20261004.png)与[确认读回](evidence/shell-ui122-minimax-confirmed-20261004.png)是此前 Shell 证据 |
 | 商店资料 | `bundle/listing.json` 已改为 OctoDining 文案，列出已在 Linux 实测的平台、队伍名「跃珩科技」及仓库 Issues 支持地址；隐私说明见 [PRIVACY](PRIVACY.md)。上架前仍须核对发布者身份与有效截图；菜单来源和授权未补齐 |
-| 许可与隐私 | 代码 Apache-2.0；菜单的采集来源、日期和再分发许可待确认，详见[数据来源说明](DATA_PROVENANCE.md)。请求仅发送本次需求、候选和当日计划摘要 |
+| 许可与隐私 | 代码 Apache-2.0；菜单的采集来源、日期和图片使用许可待确认，详见[数据来源说明](DATA_PROVENANCE.md)。菜单图片请求发往 `img.pospal.cn`；Agent 请求另发送本次需求、候选和当日计划摘要 |
 | 赛事登记 | 队伍主题已在[官方 Issue #5](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/5#issuecomment-5854778542)登记：跃珩科技、成员 id Torine、餐谱规划、已加群；初赛仓库已在[官方 Issue #13](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/13#issuecomment-5924251291)登记。个人报名表是否完成尚无证据 |
 | 冻结版本 | 唯一保留的交付标签为 `qualifier-2026-10-04-final`，对应 1.2.2；早期 1.2.1 工作可由提交号 `08d344f` 追溯。官方 Issue #13 已指向本公开仓库 |
 
@@ -31,7 +31,7 @@ Agent 不会搜索整份菜单、创建新候选或自动保存。菜单不提�
 
 ## 验收记录
 
-1.6.0 的 `python3 scripts/test-basic-app.py --port 8247` 通过首次预算设置、低预算提示，以及 14 组预算、非法输入、Agent 服务不可用回退、候选筛选、计划保存/恢复、日期隔离、修改/取消、写盘故障和损坏文件恢复检查。`python3 scripts/test-language.py` 通过英文操作、重启保持和切回中文，见[双语记录](evidence/bilingual-160-20261005.md)。首页一键确认、显示已安排和入口回当天见[1.4.0 记录](evidence/decision-first-140-20261004.md)，七天空白日导航见[1.3.0 记录](evidence/home-week-130-20261004.md)。[空计划 MiniMax 联调记录](evidence/shell-minimax-clean-20261004.json)记录一次实际 LLM 响应、新建计划和读回；[已有计划的 Shell 截图记录](evidence/shell-minimax-20261004.json)记录另两次真实 LLM 响应及界面图像，两组证据不可当作同一次运行。[Shell 失败路径记录](evidence/shell-failures-20261004.json)验证拒绝授权和未配置模型仍可人工确认。
+1.6.1 的 `python3 scripts/test-basic-app.py --port 8252` 通过首次预算设置、低预算提示，以及 14 组预算、非法输入、Agent 服务不可用回退、候选筛选、计划保存/恢复、日期隔离、修改/取消、写盘故障和损坏文件恢复检查。`python3 scripts/test-language.py` 通过英文操作、重启保持和切回中文；图片加载见[本版原生记录](evidence/menu-images-161-20261005.md)。首页一键确认、显示已安排和入口回当天见[1.4.0 记录](evidence/decision-first-140-20261004.md)，七天空白日导航见[1.3.0 记录](evidence/home-week-130-20261004.md)。[空计划 MiniMax 联调记录](evidence/shell-minimax-clean-20261004.json)记录一次实际 LLM 响应、新建计划和读回；[已有计划的 Shell 截图记录](evidence/shell-minimax-20261004.json)记录另两次真实 LLM 响应及界面图像，两组证据不可当作同一次运行。[Shell 失败路径记录](evidence/shell-failures-20261004.json)验证拒绝授权和未配置模型仍可人工确认。
 
 ## 评审复现顺序
 

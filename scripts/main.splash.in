@@ -413,9 +413,20 @@ fn refresh_summary(){
     ui.home_caption.set_text(L("为你推荐 · ", "Suggested · ") + slot_label(selectedSlot))
     refresh_home()
 }
+fn set_home_image(productId){
+    if productId >= 0 && allProducts[productId].image_url != "" {
+        ui.dish_image.set_src(http_resource(allProducts[productId].image_url))
+        ui.dish_image.set_visible(true)
+        ui.image_note.set_text(L("菜单配图 · 仅供参考", "Menu image"))
+    } else {
+        ui.dish_image.set_visible(false)
+        ui.image_note.set_text(L("氛围图 · 非菜品实拍", "Illustrative only"))
+    }
+}
 fn refresh_home(){
     homePick = -1
     homeShowingSaved = false
+    set_home_image(-1)
     if ui.date.text().trim() != currentDate || !valid_date(currentDate) {
         ui.home_name.set_text(L("先打开一个有效日期", "Open a valid date first"))
         ui.home_cta.set_text(L("调整条件", "Edit settings"))
@@ -430,6 +441,7 @@ fn refresh_home(){
             homeShowingSaved = true
             ui.home_caption.set_text(L("今天", "Today · ") + slot_label(selectedSlot) + L(" · 已安排", " · planned"))
             ui.home_name.set_text(meal.name)
+            set_home_image(meal.product_id)
             ui.home_price.set_text("¥" + cash(meal.cents))
             ui.home_meta.set_text(meal.store + " · " + meal.arrival + L(" 到店", " arrival"))
             ui.home_reason.set_text(L("已经写入今日餐表。想换口味，可以点“换一道”。", "Saved to today's plan. Try another dish if you want a change."))
@@ -500,6 +512,7 @@ fn refresh_home(){
     }
     let pick = allProducts[homePick]
     ui.home_name.set_text(pick.name)
+    set_home_image(homePick)
     ui.home_price.set_text("¥" + cash(pick.cents))
     ui.home_meta.set_text(pick.store + " · " + ui.arrival.text().trim() + L(" 可到店", " arrival"))
     if recentIds.len() == 0 {
@@ -899,7 +912,10 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                     home_meta := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 11}
                 }
                 View{width: 120 height: Fit flow: Down spacing: 3
-                    Image{width: 120 height: 135 src: http_resource("{{assets}}/assets/dining-still-life.png") fit: ImageFit.CropToFill}
+                    View{width: 120 height: 120 flow: Overlay
+                        Image{width: 120 height: 120 src: http_resource("{{assets}}/assets/dining-still-life.png") fit: ImageFit.CropToFill}
+                        dish_image := Image{width: 120 height: 120 visible: false fit: ImageFit.CropToFill}
+                    }
                     image_note := Label{text: "氛围图 · 非菜品实拍" draw_text.color: muted draw_text.text_style.font_size: 8}
                 }
             }
