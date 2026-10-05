@@ -7,10 +7,11 @@
 | 范围 | 已验证 | 尚需完成 |
 | --- | --- | --- |
 | 1.7.0 card-host | 首次预算、内置/自定义菜单、下一餐推荐、候选、七日草案确认、记录实付、取消与恢复；中英文原生画面；本地持久化及故障保护 | card-host 不能证明 Shell 模型调用 |
-| 1.7.0 App Hub | unsigned 本地预检与截图资料 | 正式签名、发布者与菜单授权核对；预检不代替实际运行 |
-| 1.2.2 OctoSense Shell | 本地测试目录安装，`octos.turn.start` 经 Octos kernel 得到真实 MiniMax-M3 建议，用户确认后保存并读回；拒绝授权和无模型回退分别实测 | 1.7.0 尚未做同版 Shell / 模型闭环；Agent 响应过期和格式异常仍需 Shell 验收 |
+| 1.7.0 App Hub | unsigned 本地预检与截图资料；另以临时测试密钥发布到隔离目录并通过目录签名验证 | 正式签名、发布者与菜单授权核对；预检不代替实际运行 |
+| 1.7.0 OctoSense Shell | 本地测试目录加载、首次 Agent 授权、请求进入 Octos；供应商 HTTP 429 后手动选餐、保存读回与重启恢复通过，[本版记录](evidence/shell-170-20261005.md) | 限流导致本次无模型建议；仍需同版成功模型闭环及响应异常验收 |
+| 1.2.2 OctoSense Shell | 本地测试目录安装，`octos.turn.start` 经 Octos kernel 得到真实 MiniMax-M3 建议，用户确认后保存并读回；拒绝授权和无模型回退分别实测 | 不能代替 1.7.0 的真实模型成功证据 |
 
-冻结标签 `qualifier-2026-10-04-final` 仍指向 **1.2.2**；不得将本工作版截图和旧版真实模型记录说成同一次运行。[1.2.2 联调记录](evidence/shell-ui122-minimax-20261004.json)、[失败路径](evidence/shell-failures-20261004.json)与[1.7.0 原生截图](evidence/next-meal-170-20261005.md)分开保留。模型密钥只由宿主本地配置，仓库不含密钥。
+冻结标签 `qualifier-2026-10-04-final` 仍指向 **1.2.2**；不得将本工作版截图和旧版真实模型记录说成同一次运行。[1.2.2 联调记录](evidence/shell-ui122-minimax-20261004.json)、[1.7.0 Shell 部分联调](evidence/shell-170-20261005.md)与[1.7.0 card-host 截图](evidence/next-meal-170-20261005.md)分开保留。模型密钥只由宿主本地配置，仓库不含密钥。
 
 ## 当前任务路径
 
@@ -26,7 +27,7 @@
 
 - 源码采用 Apache 2.0；内置菜单的采集来源、日期、第三方图片与再分发许可还需补证，见[数据来源](DATA_PROVENANCE.md)。代码许可不涵盖第三方数据。
 - 赛事队伍主题已在[官方 Issue #5](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/5#issuecomment-5854778542)登记，初赛仓库已在[官方 Issue #13](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/13#issuecomment-5924251291)登记。**个人报名表是否完成无可核验记录**。
-- 若把 1.7.0 作为评审版本，需在 OctoSense Shell 用同一 bundle 完成授权、真实模型建议、用户确认、读回、重启和失败回退，记录版本、截图和复现步骤，再冻结提交号。当前不能移动旧标签代表这一结果。
+- 若把 1.7.0 作为评审版本，需在 OctoSense Shell 用同一 bundle 补齐**成功的真实模型建议**；授权、手动确认、读回、重启和限流回退已有同版证据。记录完整复现步骤后再冻结提交号；当前不能移动旧标签代表这一结果。
 - App Hub 正式发布仍需核对发布者身份、资料和菜单授权；官方目前以公开源码及可运行作品为主，不需要等待商店自动上架。
 
 复现 1.7.0 开发预览见[README](../README.md)；宿主与版本关系见[架构](ARCHITECTURE.md)。
