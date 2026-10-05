@@ -23,6 +23,7 @@ def main():
     octo = ROOT.parent / 'octosense-ws/OctoScript-App-Design-Flow/tools/octo'
     env = dict(os.environ)
     env.pop('WAYLAND_DISPLAY', None)
+    env['MAKEPAD_WRITE_FRAMEBUFFER_PNG'] = str(work / 'framebuffer.png')
 
     def start():
         subprocess.run([str(octo), 'run', str(ROOT / 'bundle'), '--hidden', '--detach',
@@ -39,12 +40,27 @@ def main():
         assert json.loads((work / 'org.octosense.octodining' / 'language.json').read_text())['lang'] == 'en'
         app.fill('setup_monthly', '1500.00')
         app.fill('setup_fixed', '540.00')
-        app.get('m', k='scroll', x=200, y=610, dy=250, wait=1)
-        app.click('setup_preview')
-        assert 'about ¥32.00/day' in app.text('setup_result')
+        for _ in range(3):
+            app.get('m', k='scroll', x=200, y=610, dy=250, wait=1)
+            app.click('setup_preview')
+            if 'about ¥32.00/day' in app.text('setup_result'):
+                break
+        assert 'about ¥32.00/day' in app.text('setup_result'), app.text('setup_result')
         app.click('setup_start')
         assert app.text('intro_title') == 'Eat well today.'
+        assert app.text('home_name') == '螺丝椒炒鸡蛋盖饭'
+        assert any(n.get('i') == 'home_image_wrap' and n.get('r', [0, 0, 0, 0])[2] > 0 for n in app.snap())
         app.click('manual')
+        app.fill('daily', '9.00')
+        app.click('save_daily')
+        app.click('home_nav')
+        assert app.text('home_name') == '芽菜肉沫面', app.text('home_name')
+        assert not any(n.get('i') == 'home_image_wrap' and n.get('r', [0, 0, 0, 0])[2] > 0 for n in app.snap())
+        time.sleep(.2)
+        (work / 'no-image-home.png').write_bytes((work / 'framebuffer.png').read_bytes())
+        app.click('manual')
+        app.fill('daily', '32.00')
+        app.click('save_daily')
         app.click('find')
         app.status('Found 3 options')
         app.click('ask_agent')

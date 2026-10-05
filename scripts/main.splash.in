@@ -302,7 +302,7 @@ fn refresh_language(){
     ui.intro_title.set_text(L("今天，吃点好的。", "Eat well today."))
     ui.intro_subtitle.set_text(L("为你留一道合适的菜。", "A meal picked for your day."))
     ui.summary_title.set_text(L("当前计划", "Current plan"))
-    ui.image_note.set_text(L("氛围图 · 非菜品实拍", "Illustrative only"))
+    ui.image_note.set_text(L("菜单配图 · 仅供参考", "Menu image"))
     ui.next_pick.set_text(L("换一道", "Try another"))
     ui.hero_title.set_text(L("想换一个？", "Want a change?"))
     ui.hero_note.set_text(L("Agent 先给建议，确认后才更新餐表。", "The Agent suggests; you confirm any plan change."))
@@ -416,11 +416,10 @@ fn refresh_summary(){
 fn set_home_image(productId){
     if productId >= 0 && allProducts[productId].image_url != "" {
         ui.dish_image.set_src(http_resource(allProducts[productId].image_url))
-        ui.dish_image.set_visible(true)
+        ui.home_image_wrap.set_visible(true)
         ui.image_note.set_text(L("菜单配图 · 仅供参考", "Menu image"))
     } else {
-        ui.dish_image.set_visible(false)
-        ui.image_note.set_text(L("氛围图 · 非菜品实拍", "Illustrative only"))
+        ui.home_image_wrap.set_visible(false)
     }
 }
 fn refresh_home(){
@@ -911,12 +910,9 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                     home_price := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 20}}
                     home_meta := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 11}
                 }
-                View{width: 120 height: Fit flow: Down spacing: 3
-                    View{width: 120 height: 120 flow: Overlay
-                        Image{width: 120 height: 120 src: http_resource("{{assets}}/assets/dining-still-life.png") fit: ImageFit.CropToFill}
-                        dish_image := Image{width: 120 height: 120 visible: false fit: ImageFit.CropToFill}
-                    }
-                    image_note := Label{text: "氛围图 · 非菜品实拍" draw_text.color: muted draw_text.text_style.font_size: 8}
+                home_image_wrap := View{width: 120 height: Fit flow: Down spacing: 3 visible: false
+                    dish_image := Image{width: 120 height: 120 fit: ImageFit.CropToFill}
+                    image_note := Label{text: "菜单配图 · 仅供参考" draw_text.color: muted draw_text.text_style.font_size: 8}
                 }
             }
             home_reason := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 10}
@@ -1007,8 +1003,13 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
             for i in candidates.len() {
                 let p = allProducts[candidates[i]]
                 RoundedView{width: Fill height: Fit flow: Down spacing: 7 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
-                    Label{width: Fill text: p.name + " · ¥" + cash(p.cents) draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 15}}
-                    Label{width: Fill text: p.store + " · " + p.business_hours draw_text.color: muted draw_text.text_style.font_size: 12}
+                    View{width: Fill height: Fit flow: Right spacing: 9
+                        View{width: Fill height: Fit flow: Down spacing: 5
+                            Label{width: Fill text: p.name + " · ¥" + cash(p.cents) draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 15}}
+                            Label{width: Fill text: p.store + " · " + p.business_hours draw_text.color: muted draw_text.text_style.font_size: 12}
+                        }
+                        if p.image_url != "" { Image{width: 72 height: 72 src: http_resource(p.image_url) fit: ImageFit.CropToFill} }
+                    }
                     if agentChoice == i && agentStamp == candidateStamp { Label{width: Fill text: L("OctoSense Agent 建议", "OctoSense Agent pick") draw_text.color: blue draw_text.text_style.font_size: 12} }
                     Accent{text: L("确认候选 ", "Confirm option ") + (i + 1) on_click: || choose_meal(i)}
                 }
@@ -1032,8 +1033,13 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                     }
                     for m in meals {
                         View{width: Fill height: Fit flow: Down spacing: 5
-                            Label{width: Fill text: slot_label(m.slot) + " · " + m.name + " · ¥" + cash(m.cents) draw_text.color: ink draw_text.text_style.font_size: 13}
-                            Label{width: Fill text: m.store + L(" · 到店 ", " · arrival ") + m.arrival draw_text.color: muted draw_text.text_style.font_size: 11}
+                            View{width: Fill height: Fit flow: Right spacing: 8
+                                View{width: Fill height: Fit flow: Down spacing: 5
+                                    Label{width: Fill text: slot_label(m.slot) + " · " + m.name + " · ¥" + cash(m.cents) draw_text.color: ink draw_text.text_style.font_size: 13}
+                                    Label{width: Fill text: m.store + L(" · 到店 ", " · arrival ") + m.arrival draw_text.color: muted draw_text.text_style.font_size: 11}
+                                }
+                                if allProducts[m.product_id].image_url != "" { Image{width: 60 height: 60 src: http_resource(allProducts[m.product_id].image_url) fit: ImageFit.CropToFill} }
+                            }
                             if date == currentDate {
                                 View{width: Fill height: Fit flow: Right spacing: 8
                                     Action{text: L("修改", "Edit ") + slot_label(m.slot) on_click: || edit_meal(m.slot)}
