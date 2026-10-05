@@ -1,10 +1,10 @@
 {
   "schema": 1,
-  "subtitle": "为你推荐一餐，和 Agent 一起调整餐表",
-  "description": "OctoDining（好好吃饭）首次使用先说明内置食堂快照，按每月可支配生活费扣除非餐饮固定开销与缓冲金，估算每日饭钱。以后打开先显示今天已安排的餐品；尚未安排时，根据预算、餐次与到店时间推荐一道菜，可一键加入餐表或换一道。你可以输入需求，请 OctoSense Agent 比较最多三个候选，检查建议后自行确认。副页展示未来七天已确认的餐次与待安排日期；应用保存计划并读回核验，也支持修改和取消。外部食堂表导入、自动采集和整周自动规划尚未接入。首页餐桌图是氛围配图，并非菜品实拍。内置菜单共 1,497 条快照，不代表实时价格、库存、营养、过敏原或当天营业状态。本应用不下单、不付款。",
+  "subtitle": "好好吃饭 · Eat well on a budget",
+  "description": "OctoDining（好好吃饭）支持中文和 English。首次使用从月生活费扣除非餐饮开销与缓冲金，估算日餐饮预算；以后打开先显示今天已安排的餐品，否则根据预算、餐次与时间推荐。用户可请 OctoSense Agent 比较候选，再自行确认；一周餐表支持修改与取消，并在保存后读回核验。内置 1,497 条广州软件学院食堂菜单快照，商品名保留原文。外部菜单导入、自动采集和整周自动规划尚未接入；价格、营业状态、营养和过敏原均不保证实时准确。配图不是菜品实拍，应用不下单或付款。 English: Set a daily meal budget from your monthly allowance, see today's suggested or planned meal, and confirm choices in a seven-day view. The Agent can compare up to three candidates; you make the final choice. Menu names remain in source Chinese. The snapshot is not live availability or allergy information.",
   "category": "lifestyle",
-  "keywords": ["餐饮", "预算", "选餐", "计划"],
-  "screenshots": ["screenshots/00-first-run-setup.png", "screenshots/01-home-recommendation.png", "screenshots/02-candidates.png", "screenshots/03-week-plan-confirmed.png"],
+  "keywords": ["餐饮", "预算", "选餐", "计划", "meal planning", "canteen"],
+  "screenshots": ["screenshots/00-first-run-setup.png", "screenshots/01-home-recommendation.png", "screenshots/02-candidates.png", "screenshots/03-week-plan-confirmed.png", "screenshots/04-en-onboarding.png", "screenshots/05-en-home.png"],
   "icon": "assets/icon.svg",
   "platforms": ["linux"],
   "publisher": {
@@ -12,7 +12,7 @@
     "support": "https://github.com/windy664/OctoDining/issues",
     "privacy_policy_url": "https://github.com/windy664/OctoDining/blob/master/docs/PRIVACY.md"
   },
-  "release_notes": "1.5.0：首次使用先选择内置食堂菜单，输入每月生活费、非餐饮固定开销与缓冲金；应用核算日餐饮预算，并更严格地筛除不完整的正餐候选。外部菜单导入与整周自动规划尚未接入。",
+  "release_notes": "1.6.0：新增可记住选择的中文/English 界面切换，覆盖新手引导、今日推荐、一周餐表及 Agent 提示。食堂商品和店铺名仍显示原始中文。English UI is available; menu names remain in their source language.",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

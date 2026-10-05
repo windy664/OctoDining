@@ -142,7 +142,7 @@ def main():
         app.click('使用这份菜单，开始选餐')
         assert json.loads((jail/'profile.json').read_text())['daily_cents']==3200
         record('First-run living allowance and non-food costs yield a persisted dining budget')
-        app.click('我的一周餐表')
+        app.click('week_nav')
         app.node('history')
         app.click('首页')
         app.click('manual')

@@ -28,6 +28,7 @@ def main():
     parser.add_argument("--octo", type=Path, default=DEFAULT_OCTO)
     parser.add_argument("--port", type=int, default=8189)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--language", choices=("zh", "en"), default="zh")
     args = parser.parse_args()
     output = args.output or ROOT / ".local-state" / ("screenshots-" + datetime.now().strftime("%Y%m%d-%H%M%S"))
     output = output.resolve()
@@ -99,25 +100,32 @@ def main():
             cwd=ROOT, env=env, check=True,
         )
         started = True
+        current_toggle = next((node.get("t") for node in snap() if node.get("i") == "lang_toggle"), "")
+        if current_toggle != ("中文" if args.language == "en" else "EN"):
+            click(widget_id="lang_toggle")
         capture("00-first-run-setup.png")
         fill("setup_monthly", "1500.00")
         fill("setup_fixed", "540.00")
-        click(label="看看如何分配")
-        if not any("每天约 ¥32.00" in node.get("t", "") for node in snap()):
-            raise RuntimeError("First-run budget calculation failed")
-        click(label="使用这份菜单，开始选餐")
+        get("m?k=scroll&x=200&y=610&dy=250&wait=1")
+        click(widget_id="setup_preview")
+        expected_budget = "每天约 ¥32.00" if args.language == "zh" else "about ¥32.00/day"
+        if not any(expected_budget in node.get("t", "") for node in snap()):
+            raise RuntimeError("First-run budget calculation failed: " + repr([(node.get("i"), node.get("t")) for node in snap() if node.get("t")]))
+        click(widget_id="setup_start")
         if not any(node.get("i") == "home_name" for node in snap()):
             raise RuntimeError("First-run setup did not open the meal-first home")
         capture("01-home-recommendation.png")
         before = framebuffer.stat().st_mtime_ns
         click(widget_id="manual")
         click(widget_id="find")
-        if not any("找到 " in node.get("t", "") and "个候选" in node.get("t", "") for node in snap() if node.get("i") == "status"):
+        found = "找到 " if args.language == "zh" else "Found "
+        if not any(found in node.get("t", "") for node in snap() if node.get("i") == "status"):
             raise RuntimeError("Candidate lookup did not complete: " + repr([node.get("t") for node in snap() if node.get("i") == "status"]))
         capture("02-candidates.png", before)
         before = framebuffer.stat().st_mtime_ns
-        click(label="确认候选 1")
-        if not any("已保存并读回核验" in node.get("t", "") for node in snap() if node.get("i") == "status"):
+        click(label="确认候选 1" if args.language == "zh" else "Confirm option 1")
+        verified = "已保存并读回核验" if args.language == "zh" else "Saved and read back"
+        if not any(verified in node.get("t", "") for node in snap() if node.get("i") == "status"):
             raise RuntimeError("Plan was not saved and read back")
         click(widget_id="tab_history")
         capture("03-week-plan-confirmed.png", before)
