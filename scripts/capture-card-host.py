@@ -78,6 +78,10 @@ def main():
         raise RuntimeError(f"Could not fill {widget_id}: {actual!r}")
 
     def capture(name, previous_mtime=0):
+        # Product images arrive asynchronously after the UI frame. Give the
+        # native renderer time to replace its black loading rectangle.
+        if name != "00-first-run-setup.png":
+            time.sleep(1.5)
         deadline = time.monotonic() + 5
         while time.monotonic() < deadline:
             if framebuffer.exists() and framebuffer.stat().st_mtime_ns > previous_mtime:

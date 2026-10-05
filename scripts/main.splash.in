@@ -1,5 +1,10 @@
 let menuJson = __MENU_JSON__
 let allProducts = menuJson.parse_json()
+let breakfastPool = __BREAKFAST_POOL__.parse_json()
+let menuKind = "gzis-snapshot"
+let menuSource = "广州软件学院食堂快照"
+let menuUpdated = ""
+let menuTimezone = 480
 let tiers = [1500 2200 3200 4500 6500 10000]
 let limits = "[[400,700,700],[600,1000,1000],[800,1400,1400],[1200,2000,2200],[1500,2800,3200],[2200,2200,2200]]".parse_json()
 let slotNames = ["早餐" "午餐" "晚餐"]
@@ -21,7 +26,15 @@ let agentStamp = ""
 let homePick = -1
 let homeSkip = -1
 let homeShowingSaved = false
+let homeSeen = []
 let onHome = true
+let checkinSlot = -1
+let checkinDate = ""
+let importCustomOpen = false
+let weekDraft = []
+let weekDraftRevision = -1
+let weekDraftStart = ""
+let weekDraftProfileDaily = -1
 let profileReady = false
 let profileDaily = 3200
 let english = false
@@ -30,6 +43,10 @@ let muted = #x697970
 let blue = #x315e45
 
 fn L(zh, en){ if english { return en } zh }
+fn home_day_label(){
+    if currentDate == today() { return L("今天", "Today") }
+    L("明天", "Tomorrow")
+}
 fn slot_label(slot){
     if english { let names = ["Breakfast" "Lunch" "Dinner"] return names[slot] }
     slotNames[slot]
@@ -61,9 +78,40 @@ fn week_date(start, offset){
     }
     "" + y + "-" + pad(m) + "-" + pad(d)
 }
+fn canteen_time(){
+    // The bundled canteen is in Guangzhou (UTC+8). card-host defaults to UTC,
+    // while a Shell may provide its own local offset. Infer that offset from
+    // the epoch so both hosts show the same canteen-local meal and date.
+    let epoch = local_time(0)
+    let host_offset = epoch.hour * 60 + epoch.minute
+    if epoch.day == 31 { host_offset -= 1440 }
+    local_time(time_now() + (menuTimezone - host_offset) * 60)
+}
 fn today(){
-    let d = local_time()
+    let d = canteen_time()
     "" + d.year + "-" + pad(d.month) + "-" + pad(d.day)
+}
+fn next_meal_target(){
+    let now = canteen_time()
+    let minute = now.hour * 60 + now.minute
+    let date = today()
+    let slot = 0
+    if minute >= 600 { slot = 1 }
+    if minute >= 840 { slot = 2 }
+    if minute >= 1200 { date = week_date(date, 1) slot = 0 }
+    for attempt in 4 {
+        let eaten = false
+        let index = day_index(journal, date)
+        if index >= 0 {
+            for meal in journal.days[index].meals {
+                if meal.slot == slot && meal_eaten_at(meal) != nil { eaten = true }
+            }
+        }
+        if !eaten { return {date: date slot: slot} }
+        slot += 1
+        if slot > 2 { date = week_date(date, 1) slot = 0 }
+    }
+    {date: date slot: slot}
 }
 fn valid_date(text){
     if !regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "").test(text) { return false }
@@ -113,17 +161,121 @@ fn open_at(hours, current){
     }
     false
 }
-fn matches_meal(p){
+fn matches_meal_for(p, slot){
     let text = p.name + " " + p.category
-    if regex("勿点|专用|补差|打包费|餐具|加料|加粉|加饭|加面|配菜|小料", "").test(text) { return false }
-    if selectedSlot == 0 {
+    if regex("勿点|专用|补差|打包费|餐具|加料|加粉|加饭|加面|配菜|小料|升级", "").test(text) { return false }
+    if slot == 0 {
         return regex("包子|馒头|粥|肠粉|油条|饺|馄饨|云吞|三明治|鸡蛋|煎蛋", "").test(text)
             && !regex("饮|奶茶|果切|水果|咖啡|甜品|蛋糕|豆浆|牛奶|加料", "").test(text)
+            && !regex("^鸡蛋$|^煎蛋$|^煎鸡蛋$|^鸡蛋泥$|^肉沫干蒸鸡蛋$", "").test(p.name)
     }
     regex("饭|粉|面|米线|馄饨|云吞|饺子|套餐|堡", "").test(text)
         && regex("肉|鸡|鸭|猪|牛|鱼|虾|蛋|肘|排骨|叉烧|云吞|饺|腊|煲仔|麻婆", "").test(p.name)
-        && !regex("饮|奶茶|果切|水果|咖啡|甜品|蛋糕|面包|早餐|粥类|豆浆|油条|斋|清汤|青菜|白饭|米饭|单点|小份|半份", "").test(text)
+        && !regex("饮|奶茶|果切|水果|咖啡|甜品|蛋糕|面包|早餐|粥类|豆浆|油条|斋|清汤|青菜|白饭|米饭|单点|小份|半份|小碗", "").test(text)
         && p.cents >= 800
+}
+fn matches_meal(p){ matches_meal_for(p, selectedSlot) }
+fn valid_custom_menu(doc){
+    if !doc.is_object() { return false }
+    let valid = false
+    try {
+        valid = doc.schema == 1 && doc.source.is_string() && doc.source.trim() != "" && doc.source.len() <= 100
+            && doc.updated.is_string() && valid_date(doc.updated)
+            && doc.products.is_array() && doc.products.len() >= 3 && doc.products.len() <= 200
+            && doc.breakfast_pool.is_array()
+            && doc.timezone_minutes >= -720 && doc.timezone_minutes <= 840
+            && doc.timezone_minutes == floor(doc.timezone_minutes)
+    } { valid = false }
+    if !valid { return false }
+    let keys = []
+    for product in doc.products {
+        let good = false
+        try {
+            good = product.name.is_string() && product.name.trim() != "" && product.name.len() <= 100
+                && product.store.is_string() && product.store.trim() != "" && product.store.len() <= 100
+                && product.category.is_string() && product.category.len() <= 80
+                && product.business_hours.is_string() && product.business_hours.len() <= 120
+                && product.image_url == ""
+                && product.cents >= 100 && product.cents <= 50000 && product.cents == floor(product.cents)
+        } { good = false }
+        if !good { return false }
+        let hoursGood = false
+        for period in product.business_hours.split(",") {
+            let parts = period.trim().split("-")
+            if parts.len() != 2 { return false }
+            let start = clock_value(parts[0].trim())
+            let end = clock_value(parts[1].trim())
+            if start < 0 || end < 0 || start == end { return false }
+            hoursGood = true
+        }
+        if !hoursGood { return false }
+        let key = product.store + "|" + product.name + "|" + product.business_hours
+        for old in keys { if old == key { return false } }
+        keys.push(key)
+    }
+    for id in doc.breakfast_pool {
+        if !(id >= 0 && id < doc.products.len()) || id != floor(id) { return false }
+    }
+    true
+}
+fn import_custom_menu(){
+    if profileReady || journal.days.len() > 0 {
+        ui.setup_import_result.set_text(L("已有餐表。为保护商品 ID 与历史记录，请在新的应用数据空间导入另一份菜单。", "Existing plans use menu IDs. Import another menu in a fresh app data space."))
+        return
+    }
+    let source = ui.setup_import_source.text().trim()
+    let updated = ui.setup_import_date.text().trim()
+    let timezone = ui.setup_import_timezone.text().trim().to_f64()
+    let raw = ui.setup_import_json.text().trim()
+    if source == "" || source.len() > 100 || !valid_date(updated) || raw.len() > 150000 || !(timezone >= -12 && timezone <= 14) || timezone != floor(timezone) {
+        ui.setup_import_result.set_text(L("填写来源、更新日期、UTC 时区（-12 至 +14），并粘贴不超过 150 KB 的 JSON 菜单。", "Enter source, update date, UTC offset (-12 to +14), and at most 150 KB of JSON."))
+        return
+    }
+    let rows = raw.parse_json()
+    if !rows.is_array() || rows.len() < 3 || rows.len() > 200 {
+        ui.setup_import_result.set_text(L("菜单须是含 3–200 条商品的 JSON 数组。", "Menu must be a JSON array of 3–200 items."))
+        return
+    }
+    let products = []
+    let pool = []
+    for row in rows {
+        let good = false
+        let product = nil
+        try {
+            product = {name: row.name store: row.store category: row.category business_hours: row.business_hours cents: row.cents image_url: ""}
+            good = true
+        } { good = false }
+        if !good {
+            ui.setup_import_result.set_text(L("有商品缺少 name、store、category、business_hours 或 cents 字段。", "An item is missing a required field."))
+            return
+        }
+        products.push(product)
+        if regex("包子|馒头|粥|肠粉|油条|饺|馄饨|云吞|三明治|鸡蛋|煎蛋", "").test(product.name + " " + product.category)
+            && open_at(product.business_hours, clock_value("08:00")) { pool.push(products.len() - 1) }
+    }
+    let doc = {schema: 1 source: source updated: updated timezone_minutes: timezone * 60 products: products breakfast_pool: pool}
+    if !valid_custom_menu(doc) {
+        ui.setup_import_result.set_text(L("导入失败：请检查价格（整数分）、营业时段、重复商品及图片字段。原菜单保留。", "Import failed: check prices in cents, hours, duplicates and fields. Existing menu kept."))
+        return
+    }
+    let saved = false
+    try {
+        fs.write("custom-menu.json", doc.to_json())
+        let checked = fs.read("custom-menu.json").parse_json()
+        if valid_custom_menu(checked) { saved = true }
+    } { saved = false }
+    if !saved {
+        ui.setup_import_result.set_text(L("菜单未能保存并读回，原菜单保留。", "Menu could not be saved and read back; existing menu kept."))
+        return
+    }
+    allProducts = products
+    breakfastPool = pool
+    menuKind = "custom-v1"
+    menuSource = source
+    menuUpdated = updated
+    menuTimezone = timezone * 60
+    ui.setup_menu_info.set_text(L("已导入：", "Imported: ") + source + " · " + updated + L(" · ", " · ") + products.len() + L(" 道餐品", " items"))
+    ui.setup_import_result.set_text(L("菜单已验证并读回。继续完成预算设置后启用。", "Menu verified and read back. Finish budget setup to use it."))
 }
 fn day_index(doc, date){
     for i in doc.days.len() { if doc.days[i].date == date { return i } }
@@ -134,13 +286,32 @@ fn current_meals(){
     if i < 0 { return [] }
     journal.days[i].meals
 }
+fn meal_eaten_at(meal){
+    let value = nil
+    try { value = meal.eaten_at } { value = nil }
+    value
+}
+fn meal_actual_cents(meal){
+    let value = nil
+    try { value = meal.actual_cents } { value = nil }
+    value
+}
 fn sum_meals(meals, omit){
     let amount = 0
-    for m in meals { if m.slot != omit { amount += m.cents } }
+    for m in meals {
+        if m.slot != omit {
+            if meal_eaten_at(m) != nil { amount += meal_actual_cents(m) }
+            else { amount += m.cents }
+        }
+    }
     amount
 }
 fn record_valid(doc){
     if doc.schema != 1 || !(doc.revision >= 1) || doc.revision != floor(doc.revision) || !valid_date(doc.last_date) { return false }
+    let stored_menu = nil
+    try { stored_menu = doc.menu } { stored_menu = nil }
+    if stored_menu != nil && stored_menu != menuKind { return false }
+    if stored_menu == nil && menuKind != "gzis-snapshot" { return false }
     if doc.days.len() > 90 { return false }
     let dates = []
     for day in doc.days {
@@ -149,6 +320,7 @@ fn record_valid(doc){
         for date in dates { if date == day.date { return false } }
         dates.push(day.date)
         let slots = []
+        let pending_total = 0
         for m in day.meals {
             if !(m.slot >= 0 && m.slot < 3) || m.slot != floor(m.slot) { return false }
             for s in slots { if s == m.slot { return false } }
@@ -158,8 +330,16 @@ fn record_valid(doc){
             if m.cents != product.cents || m.name != product.name || m.store != product.store || m.hours != product.business_hours { return false }
             if clock_value(m.arrival) < 0 || !open_at(m.hours, clock_value(m.arrival)) || m.note.len() > 500 { return false }
             if !(m.saved_at >= 0) { return false }
+            let eaten_at = meal_eaten_at(m)
+            let actual_cents = meal_actual_cents(m)
+            if eaten_at != nil {
+                if !(eaten_at >= m.saved_at) || !(actual_cents >= 100 && actual_cents <= 50000) || actual_cents != floor(actual_cents) { return false }
+            } else if actual_cents != nil { return false }
+            if eaten_at == nil { pending_total += m.cents }
         }
-        if sum_meals(day.meals, -1) > day.daily_cents { return false }
+        // A real payment can exceed the original allowance; the record is
+        // still a fact and must remain readable. Pending plans stay bounded.
+        if pending_total > day.daily_cents { return false }
     }
     day_index(doc, doc.last_date) >= 0
 }
@@ -177,6 +357,7 @@ fn store_record(next){
         return false
     }
     next.revision = journal.revision + 1
+    next.menu = menuKind
     let target = "plans-a.json"
     if activeFile == target { target = "plans-b.json" }
     let written = false
@@ -211,6 +392,8 @@ fn hide_candidates(){
 fn invalidate(){
     hide_candidates()
     homeSkip = -1
+    homeSeen = []
+    clear_week_draft()
     if onHome { show_home() } else { show_page(false) }
     ui.status.set_text(L("条件已变化，请重新查找候选。已保存计划不变。", "Settings changed. Find new options; saved plans are unchanged."))
     refresh_summary()
@@ -242,7 +425,7 @@ fn show_home(){
 fn show_page(history){
     onHome = false
     ui.setup.set_visible(false)
-    ui.week_nav.set_visible(true)
+    ui.week_nav.set_visible(false)
     ui.home_nav.set_visible(true)
     ui.intro.set_visible(false)
     ui.summary_card.set_visible(true)
@@ -260,6 +443,23 @@ fn show_page(history){
     ui.history.set_visible(history)
     ui.results.set_visible(false)
     if history { ui.plans.render() }
+}
+fn clear_week_draft(){
+    weekDraft = []
+    weekDraftRevision = -1
+    weekDraftStart = ""
+    weekDraftProfileDaily = -1
+    ui.draft_panel.set_visible(false)
+}
+fn go_next_meal(){
+    let target = next_meal_target()
+    selectedSlot = target.slot
+    ui.date.set_text(target.date)
+    ui.arrival.set_text(defaultTimes[target.slot])
+    homeSkip = -1
+    homeSeen = []
+    open_date()
+    show_home()
 }
 fn show_setup(){
     onHome = false
@@ -282,13 +482,24 @@ fn show_setup(){
 }
 fn refresh_language(){
     ui.lang_toggle.set_text(L("EN", "中文"))
-    ui.home_nav.set_text(L("首页", "Home"))
+    ui.home_nav.set_text(L("下一顿", "Next meal"))
     ui.week_nav.set_text(L("餐表", "Week"))
     ui.setup_title.set_text(L("先把饭钱留出来。", "Set aside meal money."))
     ui.setup_intro.set_text(L("告诉我可支配生活费和必须先付的开销，再决定每天能用多少吃饭。", "Start with your monthly allowance and essential non-food costs."))
     ui.setup_menu_title.set_text(L("01 · 选择食堂菜单", "01 · Choose a canteen menu"))
-    ui.setup_menu_info.set_text(L("当前可用：广州软件学院食堂菜单快照 · 1,497 条商品。价格和营业时段可能已变化。", "Available now: a 1,497-item snapshot from Guangzhou Software Institute. Prices and hours may have changed."))
-    ui.setup_menu_limit.set_text(L("其他食堂的文件导入与自动采集尚未接入；没有你的菜单，就不声称能替你安排真实餐表。", "Other canteens cannot be imported yet. Menu item and shop names remain in source Chinese; without your menu we cannot plan real meals."))
+    if menuKind == "custom-v1" {
+        ui.setup_menu_info.set_text(L("已导入：", "Imported: ") + menuSource + " · " + menuUpdated + " · " + allProducts.len() + L(" 道餐品", " items"))
+    } else {
+        ui.setup_menu_info.set_text(L("当前可用：广州软件学院食堂菜单快照 · 1,497 条商品。价格和营业时段可能已变化。", "Available now: a 1,497-item snapshot from Guangzhou Software Institute. Prices and hours may have changed."))
+    }
+    ui.setup_menu_limit.set_text(L("也可粘贴自己的 JSON 菜单；当前宿主没有文件选择器，自动采集尚未接入。", "You can paste a JSON menu; this host has no file picker. Automatic collection is not available."))
+    ui.setup_import_toggle.set_text(L("导入自己的菜单 →", "Import your menu →"))
+    ui.setup_import_title.set_text(L("导入自己的食堂菜单（可选）", "Import your canteen menu (optional)"))
+    ui.setup_import_source_label.set_text(L("数据来源名称", "Source name"))
+    ui.setup_import_date_label.set_text(L("菜单更新日期 · YYYY-MM-DD", "Menu updated · YYYY-MM-DD"))
+    ui.setup_import_timezone_label.set_text(L("食堂时区 · UTC 偏移小时", "Canteen timezone · UTC offset hours"))
+    ui.setup_import_json_label.set_text(L("JSON 数组：name、store、category、business_hours、cents（整数分）", "JSON array: name, store, category, business_hours, cents (integer)"))
+    ui.setup_import.set_text(L("验证并导入菜单", "Validate and import"))
     ui.setup_budget_title.set_text(L("02 · 核算每月生活费", "02 · Work out your meal budget"))
     ui.setup_monthly_label.set_text(L("每月可支配生活费 · 元", "Monthly disposable allowance · CNY"))
     ui.setup_fixed_label.set_text(L("房租、交通等非餐饮固定开销 · 元", "Non-food essentials, such as rent and transport · CNY"))
@@ -299,9 +510,9 @@ fn refresh_language(){
     ui.setup_existing.set_text(L("重新核算只影响之后的新安排；已确认的餐次和预算不会被悄悄改写。", "Recalculating affects future choices only. Confirmed meals and budgets stay as they are."))
     ui.setup_start.set_text(L("使用这份菜单，开始选餐", "Use this menu and start"))
     ui.setup_back.set_text(L("返回今天", "Back to today"))
-    ui.intro_title.set_text(L("今天，吃点好的。", "Eat well today."))
-    ui.intro_subtitle.set_text(L("为你留一道合适的菜。", "A meal picked for your day."))
-    ui.summary_title.set_text(L("当前计划", "Current plan"))
+    ui.intro_title.set_text(L("下一顿，吃点好的。", "Your next good meal."))
+    ui.intro_subtitle.set_text(L("按食堂所在地时间找下一餐，可手动调整。", "Canteen time · change meal or date anytime."))
+    ui.summary_title.set_text(L("当日预算", "Daily budget"))
     ui.image_note.set_text(L("菜单配图 · 仅供参考", "Menu image"))
     ui.next_pick.set_text(L("换一道", "Try another"))
     ui.hero_title.set_text(L("想换一个？", "Want a change?"))
@@ -328,7 +539,14 @@ fn refresh_language(){
     ui.agent_heading.set_text(L("Agent 的建议", "Agent suggestion"))
     ui.ask_agent.set_text(L("重新请 Agent 比较", "Ask Agent again"))
     ui.week_title.set_text(L("我的一周餐表 · 从所选日期起七天", "My week · seven days from the selected date"))
-    ui.footer_note.set_text(L("金额是计划开销，未下单 · 菜单非实时", "Planned only · no order · menu not live · source names in Chinese"))
+    ui.make_draft.set_text(L("生成七天草案", "Draft seven days"))
+    ui.confirm_draft.set_text(L("确认整周草案", "Confirm week draft"))
+    ui.discard_draft.set_text(L("舍弃草案", "Discard draft"))
+    ui.checkin_title.set_text(L("记录实际用餐", "Record a meal eaten"))
+    ui.actual_price_label.set_text(L("实际支付 · 元", "Amount paid · CNY"))
+    ui.checkin_confirm.set_text(L("确认已吃并保存", "Save meal eaten"))
+    ui.checkin_cancel.set_text(L("暂不记录", "Not now"))
+    ui.footer_note.set_text(L("计划不是订单；已吃金额由你核对 · 菜单非实时", "Plans are not orders; check amounts paid · menu not live"))
     if ui.setup_monthly.text().trim() == "" || ui.setup_fixed.text().trim() == "" {
         ui.setup_result.set_text(L("先扣除非餐饮开销与缓冲金，再按 30 天估算饭钱。", "Subtract non-food costs and reserve, then estimate meals over 30 days."))
     } else { setup_calculation() }
@@ -349,9 +567,8 @@ fn switch_language(){
 }
 fn profile_limit(slot){
     if profileReady && money_value(ui.daily.text()) == profileDaily {
-        if slot == 0 { return floor(profileDaily * 0.22) }
-        if slot == 1 { return floor(profileDaily * 0.39) }
-        return profileDaily - floor(profileDaily * 0.22) - floor(profileDaily * 0.39)
+        if slot == 0 { return floor(profileDaily * 0.30) }
+        return floor(profileDaily * 0.40)
     }
     limits[selectedTier][slot]
 }
@@ -369,9 +586,9 @@ fn setup_calculation(){
         return -1
     }
     let note = L("按 30 天估算：每月可用于吃饭 ¥", "Over 30 days: monthly meals ¥") + cash(monthly - fixed - reserve)
-        + L("，每天约 ¥", ", about ¥") + cash(daily) + L("；早餐约 ¥", "/day. Breakfast ¥")
-        + cash(floor(daily * 0.22)) + L("，午餐约 ¥", ", lunch ¥") + cash(floor(daily * 0.39))
-        + L("，晚餐约 ¥", ", dinner ¥") + cash(daily - floor(daily * 0.22) - floor(daily * 0.39)) + L("。", ".")
+        + L("，每天约 ¥", ", about ¥") + cash(daily) + L("；弹性上限：早餐 ¥", "/day. Flexible caps: breakfast ¥")
+        + cash(floor(daily * 0.30)) + L("，午餐与晚餐各 ¥", ", lunch and dinner ¥") + cash(floor(daily * 0.40))
+        + L("，三餐合计仍不得超过日预算。", " each; the daily total still applies.")
     if daily < 3000 { note += L(" 预算偏紧，不能仅靠本菜单证明三餐足量；请调整分配或人工检查。", " This is tight. The menu cannot prove three adequate meals; review the split.") }
     else { note += L(" 这只是分配起点；份量和营养仍须人工核对。", " This is a starting split; check portions and nutrition yourself.") }
     ui.setup_result.set_text(note)
@@ -380,21 +597,21 @@ fn setup_calculation(){
 fn finish_setup(){
     let daily = setup_calculation()
     if daily < 0 { return }
-    let record = {schema: 1 menu: "gzis-snapshot" monthly_cents: monthly_value(ui.setup_monthly.text()) fixed_cents: monthly_value(ui.setup_fixed.text()) reserve_cents: monthly_value(ui.setup_reserve.text()) daily_cents: daily}
+    let record = {schema: 1 menu: menuKind monthly_cents: monthly_value(ui.setup_monthly.text()) fixed_cents: monthly_value(ui.setup_fixed.text()) reserve_cents: monthly_value(ui.setup_reserve.text()) daily_cents: daily}
     let saved = false
     try {
         fs.write("profile.json", record.to_json())
         let readback = fs.read("profile.json").parse_json()
-        if readback.schema == 1 && readback.menu == "gzis-snapshot" && readback.daily_cents == daily { saved = true }
+        if readback.schema == 1 && readback.menu == menuKind && readback.daily_cents == daily { saved = true }
     } { saved = false }
     if !saved { ui.setup_result.set_text(L("设置未能保存并读回；请检查存储后重试。", "Could not save and read back settings. Check storage and retry.")) return }
     profileDaily = daily
     profileReady = true
+    clear_week_draft()
     ui.date.set_text(today())
     ui.daily.set_text(cash(daily))
     ui.budget.set_text(cash(profile_limit(selectedSlot)))
-    open_date()
-    show_home()
+    go_next_meal()
 }
 fn plan_with_agent(){
     find_candidates()
@@ -403,14 +620,22 @@ fn plan_with_agent(){
 fn refresh_summary(){
     let total = sum_meals(current_meals(), -1)
     let daily = money_value(ui.daily.text())
-    let summary = currentDate + L(" · 已计划 ¥", " · Planned ¥") + cash(total)
+    let spent = 0
+    let pending = 0
+    for meal in current_meals() {
+        if meal_eaten_at(meal) != nil { spent += meal_actual_cents(meal) }
+        else { pending += meal.cents }
+    }
+    let summary = currentDate + L(" · 已计划 ¥", " · Planned ¥") + cash(pending)
+    if spent > 0 { summary += L(" · 已吃 ¥", " · Eaten ¥") + cash(spent) }
     if daily >= 0 {
-        summary = summary + L(" · 剩余 ¥", " · Left ¥") + cash(daily - total)
+        if total <= daily { summary += L(" · 剩余 ¥", " · Left ¥") + cash(daily - total) }
+        else { summary += L(" · 超支 ¥", " · Over budget ¥") + cash(total - daily) }
     }
     ui.summary.set_text(summary)
     ui.tier_label.set_text(L("当前 A", "Tier A") + (selectedTier + 1) + L(" · 原档日预算 ¥", " · default daily ¥") + cash(tiers[selectedTier]) + L("（可改）", " (editable)"))
     ui.slot_label.set_text(L("正在安排：", "Planning: ") + slot_label(selectedSlot) + L(" · 确认会替换同日同餐次", " · confirming replaces this meal on this date"))
-    ui.home_caption.set_text(L("为你推荐 · ", "Suggested · ") + slot_label(selectedSlot))
+    ui.home_caption.set_text(home_day_label() + " · " + slot_label(selectedSlot))
     refresh_home()
 }
 fn set_home_image(productId){
@@ -438,17 +663,19 @@ fn refresh_home(){
         if meal.slot == selectedSlot && homeSkip < 0 {
             homePick = meal.product_id
             homeShowingSaved = true
-            ui.home_caption.set_text(L("今天", "Today · ") + slot_label(selectedSlot) + L(" · 已安排", " · planned"))
+            let eaten_at = meal_eaten_at(meal)
+            ui.home_caption.set_text(home_day_label() + " · " + slot_label(selectedSlot))
             ui.home_name.set_text(meal.name)
             set_home_image(meal.product_id)
             ui.home_price.set_text("¥" + cash(meal.cents))
             ui.home_meta.set_text(meal.store + " · " + meal.arrival + L(" 到店", " arrival"))
-            ui.home_reason.set_text(L("已经写入今日餐表。想换口味，可以点“换一道”。", "Saved to today's plan. Try another dish if you want a change."))
+            if eaten_at != nil { ui.home_reason.set_text(L("这餐已记录为吃过，实际支付 ¥", "Recorded as eaten; amount paid ¥") + cash(meal_actual_cents(meal)) + L("。", ".")) }
+            else { ui.home_reason.set_text(L("已经写入餐表。想换口味，可以点“换一道”。", "Saved to your plan. Try another dish if you want a change.")) }
             ui.home_cta.set_text(L("查看今日餐表", "View today's plan"))
             return
         }
     }
-    ui.home_caption.set_text(L("今天", "Today · ") + slot_label(selectedSlot) + L(" · 为你推荐", " · suggested"))
+    ui.home_caption.set_text(home_day_label() + " · " + slot_label(selectedSlot))
     ui.home_cta.set_text(L("就吃这道 · 加入餐表", "Add this to my plan"))
     let daily = money_value(ui.daily.text())
     let budget = money_value(ui.budget.text())
@@ -487,7 +714,9 @@ fn refresh_home(){
     for sample in min(220, allProducts.len()) {
         let i = (sample * 7) % allProducts.len()
         let p = allProducts[i]
-        if i != homeSkip && p.cents <= cap && matches_meal(p) && open_at(p.business_hours, arrival) {
+        let seen = i == homeSkip
+        for previous in homeSeen { if previous == i { seen = true } }
+        if !seen && p.cents <= cap && matches_meal(p) && open_at(p.business_hours, arrival) {
             let spicy = regex("辣|麻|椒", "").test(p.name + " " + p.category)
             if !avoid || !spicy {
                 let score = abs(p.cents - round(cap * 0.75))
@@ -506,7 +735,7 @@ fn refresh_home(){
         ui.home_cta.set_text(L("调整条件", "Edit settings"))
         ui.home_price.set_text("")
         ui.home_meta.set_text(L("请调整预算、到店时间或口味", "Change budget, arrival time or taste"))
-        ui.home_reason.set_text(L("推荐只使用已收录的菜单快照。", "Suggestions use only the bundled menu snapshot."))
+        ui.home_reason.set_text(L("推荐只使用当前已核验的菜单记录。", "Suggestions use only the current verified menu records."))
         return
     }
     let pick = allProducts[homePick]
@@ -521,8 +750,14 @@ fn refresh_home(){
     }
 }
 fn next_home_pick(){
+    if homePick >= 0 { homeSeen.push(homePick) }
     homeSkip = homePick
     refresh_home()
+    if homePick < 0 && homeSeen.len() > 0 {
+        homeSeen = []
+        homeSkip = -1
+        refresh_home()
+    }
 }
 fn confirm_home_pick(){
     if homeShowingSaved { show_page(true) return }
@@ -551,6 +786,10 @@ fn open_date(){
     let date = ui.date.text().trim()
     if !valid_date(date) { ui.status.set_text(L("请填写有效日期，例如 2026-10-03。", "Enter a valid date, for example 2026-10-03.")) return }
     currentDate = date
+    clear_week_draft()
+    checkinSlot = -1
+    checkinDate = ""
+    ui.checkin.set_visible(false)
     let i = day_index(journal, date)
     if i >= 0 {
         selectedTier = journal.days[i].tier
@@ -568,6 +807,12 @@ fn open_date(){
 fn read_conditions(){
     if ui.date.text().trim() != currentDate || !valid_date(currentDate) {
         ui.status.set_text(L("日期已改动，请先点「打开日期」。", "Date changed. Open the date before continuing.")) return nil
+    }
+    for meal in current_meals() {
+        if meal.slot == selectedSlot && meal_eaten_at(meal) != nil {
+            ui.status.set_text(L("这餐已记录为吃过；若记错了，请先在餐表撤销用餐记录。", "This meal is marked eaten. Undo that record in the week plan before changing it."))
+            return nil
+        }
     }
     let daily = money_value(ui.daily.text())
     let budget = money_value(ui.budget.text())
@@ -669,7 +914,13 @@ fn choose_meal(index){
     if next == nil { return }
     let d = day_index(next, currentDate)
     let kept = []
-    for m in next.days[d].meals { if m.slot != selectedSlot { kept.push(m) } }
+    for m in next.days[d].meals {
+        if m.slot == selectedSlot && meal_eaten_at(m) != nil {
+            ui.status.set_text(L("这餐已记录为吃过；如需更正，请先在餐表撤销记录。", "This meal was recorded as eaten. Undo that record in the week plan before replacing it."))
+            return
+        }
+        if m.slot != selectedSlot { kept.push(m) }
+    }
     kept.push({slot: selectedSlot product_id: product_id cents: p.cents name: p.name store: p.store hours: p.business_hours arrival: ui.arrival.text().trim() note: condition.request saved_at: time_now()})
     next.days[d].meals = kept
     if store_record(next) {
@@ -678,6 +929,123 @@ fn choose_meal(index){
         refresh_summary()
         show_page(true)
         ui.status.set_text(L("已保存并读回核验：", "Saved and read back: ") + slot_label(selectedSlot) + " · " + p.name + L("。仅为计划，未下单。", ". Planned only; no order placed."))
+    }
+}
+fn week_meal_limit(daily, slot){
+    if slot == 0 { return floor(daily * 0.30) }
+    floor(daily * 0.40)
+}
+fn generate_week_draft(){
+    clear_week_draft()
+    if !storageReady { ui.status.set_text(L("记录无法读取，暂不能生成草案。", "Records unavailable; cannot make a draft.")) return }
+    let target = next_meal_target()
+    let chosen = []
+    let chosenStores = []
+    let gaps = 0
+    let repeats = 0
+    for offset in 7 {
+        let date = week_date(currentDate, offset)
+        let index = day_index(journal, date)
+        let daily = profileDaily
+        let tier = selectedTier
+        let confirmed = []
+        if index >= 0 {
+            daily = journal.days[index].daily_cents
+            tier = journal.days[index].tier
+            confirmed = journal.days[index].meals
+        } else if !profileReady { daily = tiers[selectedTier] }
+        let remaining = daily - sum_meals(confirmed, -1)
+        for slot in 3 {
+            let already = false
+            for meal in confirmed {
+                if meal.slot == slot {
+                    already = true
+                    chosen.push(meal.product_id)
+                    chosenStores.push(meal.store)
+                }
+            }
+            if !already {
+                let past = date < target.date || (date == target.date && slot < target.slot)
+                if !past {
+                    let cap = min(week_meal_limit(daily, slot), remaining)
+                    let arrival = clock_value(defaultTimes[slot])
+                    let best = -1
+                    let bestScore = 999999
+                    if cap >= 100 {
+                        let sampleCount = min(60, allProducts.len())
+                        if slot == 0 { sampleCount = breakfastPool.len() }
+                        for sample in sampleCount {
+                            let id = (sample * 37 + offset * 31 + slot * 17) % allProducts.len()
+                            if slot == 0 { id = breakfastPool[sample] }
+                            let p = allProducts[id]
+                            if p.cents <= cap && matches_meal_for(p, slot) && open_at(p.business_hours, arrival) {
+                                let score = abs(p.cents - round(cap * 0.75))
+                                if regex("饭", "").test(p.name) { score -= 800 }
+                                for old in chosen { if old == id { score += 3000 } }
+                                for store in chosenStores { if store == p.store { score += 120 } }
+                                if score < bestScore { bestScore = score best = id }
+                            }
+                        }
+                    }
+                    if best >= 0 {
+                        let p = allProducts[best]
+                        for old in chosen { if old == best { repeats += 1 break } }
+                        weekDraft.push({date: date slot: slot product_id: best daily_cents: daily tier: tier})
+                        chosen.push(best)
+                        chosenStores.push(p.store)
+                        remaining -= p.cents
+                    } else { gaps += 1 }
+                }
+            }
+        }
+    }
+    if weekDraft.len() == 0 {
+        ui.status.set_text(L("本周没有可新增的餐次；请检查已确认计划或预算。", "No new meals fit this week; check existing plans or budget."))
+        return
+    }
+    weekDraftRevision = journal.revision
+    weekDraftStart = currentDate
+    weekDraftProfileDaily = profileDaily
+    ui.draft_panel.set_visible(true)
+    ui.draft_summary.set_text(L("待确认 ", "Review ") + weekDraft.len() + L(" 餐，缺口 ", " meals; gaps ") + gaps + L(" 餐，重复 ", "; repeats ") + repeats + L(" 次。草案不会自动覆盖已确认计划。", ". The draft will not replace confirmed meals."))
+    ui.draft_items.render()
+    ui.status.set_text(L("已生成七天草案，请逐项核对；确认前不会写入餐表。", "Seven-day draft ready. Review it; nothing is saved until confirmation."))
+}
+fn confirm_week_draft(){
+    if weekDraft.len() == 0 || weekDraftRevision != journal.revision || weekDraftStart != currentDate || weekDraftProfileDaily != profileDaily {
+        clear_week_draft()
+        ui.status.set_text(L("草案已过期，请重新生成。", "Draft expired. Generate it again."))
+        return
+    }
+    let next = journal.to_json().parse_json()
+    for choice in weekDraft {
+        let d = day_index(next, choice.date)
+        if d < 0 {
+            if next.days.len() >= 90 { ui.status.set_text(L("已达到 90 天记录上限，草案未保存。", "90-day record limit reached; draft not saved.")) return }
+            next.days.push({date: choice.date daily_cents: choice.daily_cents tier: choice.tier meals: []})
+            d = next.days.len() - 1
+        }
+        let taken = false
+        for meal in next.days[d].meals { if meal.slot == choice.slot { taken = true } }
+        if taken { clear_week_draft() ui.status.set_text(L("已有餐次变化，草案已作废。", "A meal changed; draft discarded.")) return }
+        let p = allProducts[choice.product_id]
+        let cap = min(week_meal_limit(next.days[d].daily_cents, choice.slot), next.days[d].daily_cents - sum_meals(next.days[d].meals, -1))
+        let arrival = defaultTimes[choice.slot]
+        if p.cents > cap || !matches_meal_for(p, choice.slot) || !open_at(p.business_hours, clock_value(arrival)) {
+            clear_week_draft()
+            ui.status.set_text(L("有草案餐次已不符合预算或时段，未保存。", "A draft meal no longer fits budget or hours; nothing was saved."))
+            return
+        }
+        next.days[d].meals.push({slot: choice.slot product_id: choice.product_id cents: p.cents name: p.name store: p.store hours: p.business_hours arrival: arrival note: "" saved_at: time_now()})
+    }
+    next.last_date = currentDate
+    let count = weekDraft.len()
+    if store_record(next) {
+        clear_week_draft()
+        hide_candidates()
+        refresh_summary()
+        ui.plans.render()
+        ui.status.set_text(L("已确认并读回核验 ", "Confirmed and verified ") + count + L(" 餐；仅为计划，未下单。", " planned meals; no orders placed."))
     }
 }
 fn ask_agent(){
@@ -771,7 +1139,10 @@ fn cancel_meal(slot){
     if d < 0 { return }
     let next = journal.to_json().parse_json()
     let kept = []
-    for m in next.days[d].meals { if m.slot != slot { kept.push(m) } }
+    for m in next.days[d].meals {
+        if m.slot == slot && meal_eaten_at(m) != nil { ui.status.set_text(L("请先撤销已吃记录，再取消这餐。", "Undo the eaten record before cancelling this meal.")) return }
+        if m.slot != slot { kept.push(m) }
+    }
     next.days[d].meals = kept
     next.last_date = currentDate
     if store_record(next) {
@@ -783,12 +1154,85 @@ fn cancel_meal(slot){
     }
 }
 fn edit_meal(slot){
+    for meal in current_meals() {
+        if meal.slot == slot && meal_eaten_at(meal) != nil {
+            ui.status.set_text(L("请先撤销已吃记录，再修改这餐。", "Undo the eaten record before editing this meal."))
+            return
+        }
+    }
     apply_slot(slot)
     for m in current_meals() {
         if m.slot == slot { ui.arrival.set_text(m.arrival) ui.request.set_text(m.note) }
     }
     show_page(false)
     ui.status.set_text(L("正在修改", "Editing ") + slot_label(slot) + L("。确认新候选前，旧计划继续保留。", ". The existing meal stays until a replacement is confirmed."))
+}
+fn begin_checkin(slot){
+    let index = day_index(journal, currentDate)
+    if index < 0 || currentDate != today() { return }
+    for meal in journal.days[index].meals {
+        if meal.slot == slot && meal_eaten_at(meal) == nil {
+            checkinDate = currentDate
+            checkinSlot = slot
+            ui.actual_price.set_text(cash(meal.cents))
+            ui.checkin_hint.set_text(slot_label(slot) + " · " + meal.name + L("。请核对实际支付金额。", ". Check the amount you actually paid."))
+            ui.checkin.set_visible(true)
+            ui.status.set_text(L("请核对金额，再点确认已吃。", "Check the amount, then save the eaten meal."))
+            return
+        }
+    }
+}
+fn confirm_checkin(){
+    if checkinSlot < 0 || checkinDate != currentDate || currentDate != today() { return }
+    let actual = money_value(ui.actual_price.text())
+    if actual < 0 { ui.status.set_text(L("实际支付金额须为 ¥1–500，最多两位小数。", "Amount paid must be ¥1–500 with at most two decimals.")) return }
+    let next = journal.to_json().parse_json()
+    let d = day_index(next, checkinDate)
+    if d < 0 { return }
+    let found = false
+    for m in next.days[d].meals {
+        if m.slot == checkinSlot && meal_eaten_at(m) == nil {
+            m.eaten_at = time_now()
+            m.actual_cents = actual
+            found = true
+        }
+    }
+    if !found { return }
+    next.last_date = currentDate
+    if store_record(next) {
+        checkinSlot = -1
+        checkinDate = ""
+        ui.checkin.set_visible(false)
+        hide_candidates()
+        refresh_summary()
+        ui.plans.render()
+        let status = L("已记录吃过及实际支付 ¥", "Meal eaten; amount paid ¥") + cash(actual) + L("，并读回核验。", "; saved and verified.")
+        let d = day_index(journal, currentDate)
+        if d >= 0 && sum_meals(journal.days[d].meals, -1) > journal.days[d].daily_cents {
+            status += L(" 当日已超支，请检查待吃计划。", " The day is over budget; review upcoming meals.")
+        }
+        ui.status.set_text(status)
+    }
+}
+fn undo_checkin(slot){
+    let d = day_index(journal, currentDate)
+    if d < 0 { return }
+    let next = journal.to_json().parse_json()
+    let found = false
+    for m in next.days[d].meals {
+        if m.slot == slot && meal_eaten_at(m) != nil {
+            m.eaten_at = nil
+            m.actual_cents = nil
+            found = true
+        }
+    }
+    if !found { return }
+    next.last_date = currentDate
+    if store_record(next) {
+        refresh_summary()
+        ui.plans.render()
+        ui.status.set_text(L("已撤销用餐记录，餐表计划仍保留。", "Eaten record undone; the meal plan remains."))
+    }
 }
 fn save_budget(){
     if ui.date.text().trim() != currentDate { ui.status.set_text(L("请先打开输入的日期。", "Open the entered date first.")) return }
@@ -803,6 +1247,27 @@ fn boot(){
     if fs.exists("language.json") {
         try { english = fs.read("language.json").parse_json().lang == "en" } { english = false }
     }
+    let profile = nil
+    let customMenuBroken = false
+    if fs.exists("profile.json") {
+        try { profile = fs.read("profile.json").parse_json() } { profile = nil }
+        if profile != nil {
+            let custom = false
+            try { custom = profile.menu == "custom-v1" } { custom = false }
+            if custom {
+                let imported = nil
+                try { imported = fs.read("custom-menu.json").parse_json() } { imported = nil }
+                if valid_custom_menu(imported) {
+                    allProducts = imported.products
+                    breakfastPool = imported.breakfast_pool
+                    menuKind = "custom-v1"
+                    menuSource = imported.source
+                    menuUpdated = imported.updated
+                    menuTimezone = imported.timezone_minutes
+                } else { customMenuBroken = true }
+            }
+        }
+    }
     let a = nil
     let b = nil
     let existsA = fs.exists("plans-a.json")
@@ -811,10 +1276,10 @@ fn boot(){
     if existsB { b = read_record("plans-b.json") }
     if a != nil { journal = a activeFile = "plans-a.json" }
     if b != nil { if b.revision > journal.revision { journal = b activeFile = "plans-b.json" } }
-    if fs.exists("profile.json") {
+    if profile != nil && !customMenuBroken {
         try {
-            let p = fs.read("profile.json").parse_json()
-            if p.schema == 1 && p.menu == "gzis-snapshot" && p.daily_cents >= 100 && p.daily_cents <= 50000
+            let p = profile
+            if p.schema == 1 && p.menu == menuKind && p.daily_cents >= 100 && p.daily_cents <= 50000
                 && p.monthly_cents >= p.fixed_cents + p.reserve_cents + p.daily_cents * 30 {
                 profileDaily = p.daily_cents
                 profileReady = true
@@ -828,9 +1293,13 @@ fn boot(){
     ui.date.set_text(currentDate)
     if profileReady || journal.days.len() > 0 { show_home() }
     else { show_setup() }
-    open_date()
+    if profileReady || journal.days.len() > 0 { go_next_meal() }
+    else { open_date() }
     if !profileReady && journal.days.len() == 0 { show_setup() }
-    if (existsA || existsB) && activeFile == "" {
+    if customMenuBroken {
+        storageReady = false
+        ui.status.set_text(L("自定义菜单缺失或损坏，已暂停保存；请恢复原文件。", "Custom menu missing or damaged. Saving paused; restore the file."))
+    } else if (existsA || existsB) && activeFile == "" {
         storageReady = false
         ui.status.set_text(L("记录损坏或无法读取，已暂停保存，原文件保持不变。", "Records are damaged or unreadable. Saving is paused; files are unchanged."))
     } else {
@@ -858,12 +1327,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
         Label{text: "✳" draw_text.color: ink draw_text.text_style.font_size: 20}
         Label{text: "octodining." draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 17}}
         lang_toggle := Action{text: "EN" on_click: || switch_language()}
-        home_nav := Action{text: "首页" on_click: || {
-            ui.date.set_text(today())
-            homeSkip = -1
-            open_date()
-            show_home()
-        }}
+        home_nav := Action{text: "下一顿" on_click: || go_next_meal()}
         week_nav := Action{text: "餐表" on_click: || show_page(true)}
     }
     setup := ScrollYView{width: Fill height: Fill flow: Down spacing: 14
@@ -872,7 +1336,23 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
         RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 15 bottom: 15} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 17.0
             setup_menu_title := Label{text: "01 · 选择食堂菜单" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 15}}
             setup_menu_info := Label{width: Fill text: "当前可用：广州软件学院食堂菜单快照 · 1,497 条商品。价格和营业时段可能已变化。" draw_text.color: ink draw_text.text_style.font_size: 12}
-            setup_menu_limit := Label{width: Fill text: "其他食堂的文件导入与自动采集尚未接入；没有你的菜单，就不声称能替你安排真实餐表。" draw_text.color: muted draw_text.text_style.font_size: 11}
+            setup_menu_limit := Label{width: Fill text: "也可粘贴自己的 JSON 菜单；当前宿主没有文件选择器，自动采集尚未接入。" draw_text.color: muted draw_text.text_style.font_size: 11}
+            setup_import_toggle := Action{text: "导入自己的菜单 →" on_click: || {importCustomOpen = !importCustomOpen ui.setup_import_card.set_visible(importCustomOpen)}}
+        }
+        setup_import_card := RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 15 right: 15 top: 15 bottom: 15} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 17.0 visible: false
+            setup_import_title := Label{text: "导入自己的食堂菜单（可选）" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 14}}
+            setup_import_source_label := Label{text: "数据来源名称" draw_text.color: muted draw_text.text_style.font_size: 11}
+            setup_import_source := Field{text: "" empty_text: "学校食堂公开菜单"}
+            setup_import_date_label := Label{text: "菜单更新日期 · YYYY-MM-DD" draw_text.color: muted draw_text.text_style.font_size: 11}
+            setup_import_date := Field{text: "" empty_text: "2026-10-05"}
+            setup_import_timezone_label := Label{text: "食堂时区 · UTC 偏移小时" draw_text.color: muted draw_text.text_style.font_size: 11}
+            setup_import_timezone := Field{text: "8" empty_text: "8"}
+            setup_import_json_label := Label{width: Fill text: "JSON 数组：name、store、category、business_hours、cents（整数分）" draw_text.color: muted draw_text.text_style.font_size: 11}
+            setup_import_json := TextInput{width: Fill height: 120 is_multiline: true text: "" empty_text: "粘贴 JSON 菜单 / Paste JSON menu"
+                draw_bg +: {color: #xf8f8f2 color_hover: #xf8f8f2 color_focus: #xf8f8f2 color_empty: #xf8f8f2 border_radius: 11.0}
+                draw_text +: {color: ink color_hover: ink color_focus: ink color_empty: muted color_empty_hover: muted}}
+            setup_import := Action{text: "验证并导入菜单" on_click: || import_custom_menu()}
+            setup_import_result := Label{width: Fill text: "导入前须核对数据来源。图片暂不随自定义菜单导入。" draw_text.color: muted draw_text.text_style.font_size: 11}
         }
         RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 15 bottom: 15} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 17.0
             setup_budget_title := Label{text: "02 · 核算每月生活费" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 15}}
@@ -894,8 +1374,8 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
         setup_back := Action{text: "返回今天" on_click: || show_home()}
     }
     intro := View{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 3 right: 3 top: 7 bottom: 6}
-        intro_title := Label{text: "今天，吃点好的。" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 28}}
-        intro_subtitle := Label{text: "为你留一道合适的菜。" draw_text.color: muted draw_text.text_style.font_size: 13}
+        intro_title := Label{text: "下一顿，吃点好的。" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 28}}
+        intro_subtitle := Label{text: "按食堂所在地时间找下一餐，可手动调整。" draw_text.color: muted draw_text.text_style.font_size: 13}
     }
     summary_card := RoundedView{width: Fill height: Fit flow: Down spacing: 3 padding: Inset{left: 14 right: 14 top: 10 bottom: 10} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
         summary_title := Label{text: "当前计划" draw_text.color: muted draw_text.text_style.font_size: 11}
@@ -1018,6 +1498,32 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
     }
     history := View{width: Fill height: Fill flow: Down spacing: 10
         week_title := Label{width: Fill text: "我的一周餐表 · 从所选日期起七天" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 17}}
+        View{width: Fill height: Fit flow: Right spacing: 8
+            make_draft := Action{text: "生成七天草案" on_click: || generate_week_draft()}
+        }
+        draft_panel := RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 12 right: 12 top: 10 bottom: 10} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 15.0 visible: false
+            draft_summary := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style.font_size: 12}
+            draft_items := ScrollYView{width: Fill height: 155 flow: Down spacing: 4 on_render: || {
+                for choice in weekDraft {
+                    let p = allProducts[choice.product_id]
+                    Label{width: Fill text: choice.date + " · " + slot_label(choice.slot) + " · " + p.name + " · ¥" + cash(p.cents) draw_text.color: ink draw_text.text_style.font_size: 11}
+                }
+            }}
+            View{width: Fill height: Fit flow: Right spacing: 8
+                confirm_draft := Accent{text: "确认整周草案" on_click: || confirm_week_draft()}
+                discard_draft := Action{text: "舍弃草案" on_click: || clear_week_draft()}
+            }
+        }
+        checkin := RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 15.0 visible: false
+            checkin_title := Label{text: "记录实际用餐" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 14}}
+            checkin_hint := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style.font_size: 12}
+            actual_price_label := Label{text: "实际支付 · 元" draw_text.color: muted draw_text.text_style.font_size: 11}
+            actual_price := Field{text: "" empty_text: "0.00"}
+            View{width: Fill height: Fit flow: Right spacing: 8
+                checkin_confirm := Accent{text: "确认已吃并保存" on_click: || confirm_checkin()}
+                checkin_cancel := Action{text: "暂不记录" on_click: || {checkinSlot = -1 checkinDate = "" ui.checkin.set_visible(false)}}
+            }
+        }
         plans := ScrollYView{width: Fill height: Fill flow: Down spacing: 10 on_render: || {
             for offset in 7 {
                 let date = week_date(currentDate, offset)
@@ -1025,7 +1531,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                 let meals = []
                 if index >= 0 { meals = journal.days[index].meals }
                 RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
-                    Label{width: Fill text: date + L(" · 已计划 ¥", " · Planned ¥") + cash(sum_meals(meals, -1)) draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 14}}
+                    Label{width: Fill text: date + L(" · 预算占用 ¥", " · Budget used ¥") + cash(sum_meals(meals, -1)) draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 14}}
                     if meals.len() == 0 {
                         if date == currentDate { Label{text: L("这一天还没有已确认计划。", "No confirmed meals for this day yet.") draw_text.color: muted draw_text.text_style.font_size: 12} }
                         else { Label{text: L("待安排", "To plan") draw_text.color: muted draw_text.text_style.font_size: 12} }
@@ -1035,15 +1541,21 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                         View{width: Fill height: Fit flow: Down spacing: 5
                             View{width: Fill height: Fit flow: Right spacing: 8
                                 View{width: Fill height: Fit flow: Down spacing: 5
-                                    Label{width: Fill text: slot_label(m.slot) + " · " + m.name + " · ¥" + cash(m.cents) draw_text.color: ink draw_text.text_style.font_size: 13}
+                                    Label{width: Fill text: slot_label(m.slot) + " · " + m.name + " · ¥" + cash(m.cents) + (if meal_eaten_at(m) != nil { L(" · 已吃", " · eaten") } else { L(" · 待吃", " · planned") }) draw_text.color: ink draw_text.text_style.font_size: 13}
                                     Label{width: Fill text: m.store + L(" · 到店 ", " · arrival ") + m.arrival draw_text.color: muted draw_text.text_style.font_size: 11}
+                                    if meal_eaten_at(m) != nil { Label{width: Fill text: L("实际支付 ¥", "Paid ¥") + cash(meal_actual_cents(m)) draw_text.color: blue draw_text.text_style.font_size: 11} }
                                 }
                                 if allProducts[m.product_id].image_url != "" { Image{width: 60 height: 60 src: http_resource(allProducts[m.product_id].image_url) fit: ImageFit.CropToFill} }
                             }
                             if date == currentDate {
                                 View{width: Fill height: Fit flow: Right spacing: 8
-                                    Action{text: L("修改", "Edit ") + slot_label(m.slot) on_click: || edit_meal(m.slot)}
-                                    Action{text: L("取消", "Cancel ") + slot_label(m.slot) on_click: || cancel_meal(m.slot)}
+                                    if meal_eaten_at(m) == nil {
+                                        Action{text: L("修改", "Edit ") + slot_label(m.slot) on_click: || edit_meal(m.slot)}
+                                        Action{text: L("取消", "Cancel ") + slot_label(m.slot) on_click: || cancel_meal(m.slot)}
+                                        if date == today() { Action{text: if english { "Mark eaten" } else { "记录已吃" + slot_label(m.slot) } on_click: || begin_checkin(m.slot)} }
+                                    } else {
+                                        Action{text: if english { "Undo eaten" } else { "撤销已吃" + slot_label(m.slot) } on_click: || undo_checkin(m.slot)}
+                                    }
                                 }
                             }
                         }

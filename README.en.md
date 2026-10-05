@@ -2,31 +2,29 @@
 
 [中文说明](README.md) · **English**
 
-**Make a limited allowance cover meals you can see, review and change.**
+**Open the app and see your next meal.** OctoDining turns a monthly disposable allowance into a daily dining budget. It shows an existing confirmed meal first, or suggests a canteen dish to review and confirm. You can draft a seven-day plan, change individual meals, and record what you actually paid. An optional Octos Agent can compare up to three real candidates; the user confirms changes.
 
-OctoDining is a native OctoSense / OctoScript / Makepad prototype for students and others managing meal costs. On first launch, it estimates a daily meal budget from a monthly disposable allowance, non-food essentials and a reserve. On later launches, it shows today's confirmed meal or suggests one you can add to your plan. You can ask the host's Octos Agent to compare up to three menu candidates; you confirm any plan change yourself.
+This is a native **OctoSense / OctoScript / Makepad** prototype for students. It bundles a 1,497-item historical canteen snapshot from Guangzhou Software Institute. On first launch, you can also paste a JSON menu for another canteen. Menu prices, hours and images are snapshots, not proof of live availability, nutrition or allergen safety.
 
-The app has a **中文 / English** switch in its header. The choice survives a restart. The English UI covers onboarding, today's recommendation, budget and meal controls, the seven-day plan, status messages and Agent prompts. Dish and shop names stay in the original Chinese because the source menu has no verified English translations.
-
-| First-run budget | Today's meal | Seven-day plan |
+| Onboarding | Next meal | Seven-day plan |
 | :---: | :---: | :---: |
-| <img src="docs/evidence/no-placeholder-162-20261005/en/00-first-run-setup.png" alt="Native English onboarding screen" width="250"> | <img src="docs/evidence/no-placeholder-162-20261005/en/01-home-recommendation.png" alt="Native English home screen with a menu image and suggested dinner" width="250"> | <img src="docs/evidence/no-placeholder-162-20261005/en/03-week-plan-confirmed.png" alt="Native English seven-day plan after confirming dinner" width="250"> |
+| <img src="docs/evidence/next-meal-170-20261005/en/00-first-run-setup.png" alt="English onboarding" width="250"> | <img src="docs/evidence/next-meal-170-20261005/en/01-home-recommendation.png" alt="Next meal recommendation" width="250"> | <img src="docs/evidence/next-meal-170-20261005/en/03-week-plan-confirmed.png" alt="Seven-day plan" width="250"> |
 
-These are actual **1.6.2 card-host screenshots**, not mockups. The image comes from the source menu record; it may be promotional artwork rather than a photo of the exact dish. [See the image and text-only verification record](docs/evidence/no-placeholder-162-20261005.md).
+These are actual **1.7.0 card-host captures**. They do not demonstrate a live model in OctoSense Shell. [Screenshots and checks](docs/evidence/next-meal-170-20261005.md).
 
-The bundled canteen snapshot has 1,497 items from Guangzhou Software Institute. The build matches these records to `menu.csv`; 1,209 have non-default product-image URLs. Today's meal, candidates and the weekly plan show the associated image from `img.pospal.cn` when one exists. Items without an image use text-only cards; the generic stock image has been removed. Candidates are filtered by price, meal type, arrival time and a small set of request keywords. Lunch and dinner filtering rejects obvious extras or incomplete dishes using name-based rules; it cannot establish nutrition, portion size or allergen safety. Prices and opening hours are snapshots, not live data. The app does not place orders or take payment. Importing another canteen, automatic collection and filling an entire week are still planned.
+Onboarding asks for monthly disposable allowance, non-food fixed costs and a reserve. It estimates a daily dining budget over 30 days. You can use the bundled menu or paste a JSON menu with a source, update date, time zone, prices and business hours; invalid records are rejected. `scripts/menu-csv-to-json.py` converts a supported CSV into pasteable JSON. The app does not yet have a file picker or automatic collection.
 
-The seven-day view shows confirmed meals and empty dates. Plans are stored locally, read back after saving, and can be edited or cancelled. The Octos request is optional; when the Agent service is unavailable, manual candidate selection still works. A real MiniMax-M3 Agent loop was validated in OctoSense Shell for **1.2.2**. The current **1.6.2** UI and fallback have been tested in native card-host, but its Shell/model integration has not yet been revalidated. See [contest readiness](docs/CONTEST_READINESS.md) for the precise evidence and remaining gaps.
+The home screen uses canteen-local time to select the next uneaten meal. The weekly draft skips elapsed meals, shows any gaps and daily totals, and is written only after confirmation. It is **rule-generated, not Agent-generated**. Menu names and stores remain Chinese because no verified translations are available. Bundled product images load from `img.pospal.cn`; custom menus currently use text-only cards.
 
-To run the native development preview, follow the [official OctoScript quickstart](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/docs/QUICKSTART.md), then:
+Version 1.7.0 passed native card-host feature checks. A real MiniMax model loop in OctoSense Shell was validated for **1.2.2**, but **1.7.0 still needs same-version Shell/model verification**. See [contest readiness](docs/CONTEST_READINESS.md). The frozen `qualifier-2026-10-04-final` tag still points to that earlier version.
+
+To run a development preview, follow the [official OctoScript quickstart](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/docs/QUICKSTART.md):
 
 ```sh
 python3 scripts/build-octos-bundle.py
 OCTO_CLI=/path/to/OctoScript-App-Design-Flow/tools/octo
 "$OCTO_CLI" check bundle
-"$OCTO_CLI" run bundle --port 8141 --detach
+"$OCTO_CLI" run bundle --port 8141 --hidden --detach
 ```
 
-This `card-host` preview exercises the app without proving that the OctoSense Shell or a live model is connected. `scripts/test-basic-app.py` covers the Chinese meal-planning flow; `scripts/test-language.py` checks English onboarding, candidate confirmation, Agent fallback, persistence and switching back to Chinese. `scripts/capture-card-host.py --language en` captures English native screens in isolated storage.
-
-Source code is under [Apache 2.0](LICENSE-CODE). Menu source and redistribution limits are documented in [data provenance](docs/DATA_PROVENANCE.md); the code license does not grant rights to third-party menu data. See the [privacy notice](docs/PRIVACY.md) for local data and Agent requests.
+The card-host preview does not prove Shell Agent integration. Run `python3 scripts/test-basic-app.py`, `python3 scripts/test-language.py`, `python3 scripts/test-week-draft.py` and `python3 scripts/test-custom-menu.py` separately for local feature checks. Code uses [Apache 2.0](LICENSE-CODE); the license does not grant rights to third-party menu data or images. See [data provenance](docs/DATA_PROVENANCE.md) and [privacy](docs/PRIVACY.md).

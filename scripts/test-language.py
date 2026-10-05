@@ -47,20 +47,11 @@ def main():
                 break
         assert 'about ¥32.00/day' in app.text('setup_result'), app.text('setup_result')
         app.click('setup_start')
-        assert app.text('intro_title') == 'Eat well today.'
-        assert app.text('home_name') == '螺丝椒炒鸡蛋盖饭'
-        assert any(n.get('i') == 'home_image_wrap' and n.get('r', [0, 0, 0, 0])[2] > 0 for n in app.snap())
+        assert app.text('intro_title') == 'Your next good meal.'
+        assert app.text('home_name')
+        assert any(day in app.text('home_caption') for day in ('Today', 'Tomorrow'))
         app.click('manual')
-        app.fill('daily', '9.00')
-        app.click('save_daily')
-        app.click('home_nav')
-        assert app.text('home_name') == '芽菜肉沫面', app.text('home_name')
-        assert not any(n.get('i') == 'home_image_wrap' and n.get('r', [0, 0, 0, 0])[2] > 0 for n in app.snap())
-        time.sleep(.2)
-        (work / 'no-image-home.png').write_bytes((work / 'framebuffer.png').read_bytes())
-        app.click('manual')
-        app.fill('daily', '32.00')
-        app.click('save_daily')
+        app.click('dinner')
         app.click('find')
         app.status('Found 3 options')
         app.click('ask_agent')

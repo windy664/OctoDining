@@ -4,11 +4,12 @@
 Uses an isolated storage directory. No model calls or desktop input injection.
 """
 import argparse
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import time
 import urllib.parse
@@ -37,17 +38,24 @@ class App:
         def visible():
             nodes = self.snap()
             matches = [x for x in nodes if x.get('i') == key or x.get('t') == key]
-            return nodes, [x for x in matches if x.get('r', [0,0,0,0])[2] > 0 and x['r'][3] > 0]
+            min_height = 30 if key in ('setup_import_json', 'setup_import') else 0
+            return nodes, [x for x in matches if x.get('r', [0,0,0,0])[2] > 0 and x['r'][3] > min_height]
         nodes, matches = visible()
         if not matches:
             # The conditions and weekly plan are real native scroll views.
             # Start at the top, then look through the currently open view.
-            self.get('m', k='scroll', x=200, y=610, dy=-2000, wait=1)
+            scroll_x = 20 if key.startswith('setup_import') else 200
+            if key.startswith('setup_import'):
+                self.get('m', k='scroll', x=20, y=600, dy=650, wait=1)
+                nodes, matches = visible()
+                if matches:
+                    return matches[-1]
+            self.get('m', k='scroll', x=scroll_x, y=610, dy=-2000, wait=1)
             for _ in range(8):
                 nodes, matches = visible()
                 if matches:
                     break
-                self.get('m', k='scroll', x=200, y=610, dy=250, wait=1)
+                self.get('m', k='scroll', x=scroll_x, y=610, dy=250, wait=1)
         if not matches:
             raise AssertionError(f'Missing widget {key!r}; visible texts: {[n.get("t") for n in nodes if n.get("t")]}')
         return matches[-1]
@@ -65,7 +73,10 @@ class App:
             self.click(key)
             self.get('k', k='down', c='End')
             # Remote text entry can lose a focused frame after scrolling.
-            for _ in range(len(self.text(key)) + 2):
+            current = self.text(key)
+            if key == 'setup_import_json' and current == '粘贴 JSON 菜单 / Paste JSON menu':
+                current = ''
+            for _ in range(len(current) + 2):
                 self.get('k', k='down', c='Backspace')
                 self.get('k', k='up', c='Backspace')
             self.get('t', t=text, wait=1)
@@ -117,6 +128,7 @@ def main():
         # removing Wayland's protocol selector from the child environment.
         env = dict(os.environ)
         env.pop('WAYLAND_DISPLAY', None)
+        env['MAKEPAD_WRITE_FRAMEBUFFER_PNG'] = str(work / 'framebuffer.png')
         subprocess.run([str(args.octo),'run',str(ROOT/'bundle'),'--hidden','--detach','--port',str(args.port),'--app-data',str(work),'--timeout','30'],check=True,stdout=subprocess.DEVNULL,env=env)
         time.sleep(.2)
     def state():
@@ -141,13 +153,17 @@ def main():
         assert '每天约 ¥32.00' in app.text('setup_result')
         app.click('使用这份菜单，开始选餐')
         assert json.loads((jail/'profile.json').read_text())['daily_cents']==3200
+        canteen_minute = datetime.now().hour * 60 + datetime.now().minute
+        expected_slot = '早餐' if canteen_minute < 600 else '午餐' if canteen_minute < 840 else '晚餐' if canteen_minute < 1200 else '早餐'
+        assert expected_slot in app.text('home_caption'), app.text('home_caption')
         record('First-run living allowance and non-food costs yield a persisted dining budget')
         app.click('week_nav')
         app.node('history')
-        app.click('首页')
+        app.click('home_nav')
         app.click('manual')
         assert app.text('date') == date.today().isoformat()
         app.status('已打开 ')
+        app.click('dinner')
         for i,amount in enumerate([15,22,32,45,65,100],1):
             app.click(f'a{i}')
             assert app.text('daily') == f'{amount}.00'
@@ -189,6 +205,18 @@ def main():
         total=sum(m['cents'] for m in day()['meals'])
         assert total<=day()['daily_cents']
         record('Multiple meals respect daily budget')
+        app.click('记录已吃晚餐')
+        app.fill('actual_price','20.00')
+        app.click('checkin_confirm');app.status('已记录吃过')
+        eaten=next(m for m in day()['meals'] if m['slot']==2)
+        assert eaten['actual_cents']==2000 and eaten['eaten_at']>=eaten['saved_at']
+        assert '已吃 ¥20.00' in app.text('summary')
+        time.sleep(1)
+        if (work/'framebuffer.png').exists():
+            shutil.copyfile(work/'framebuffer.png',work/'meal-eaten.png')
+        app.click('撤销已吃晚餐');app.status('已撤销用餐记录')
+        assert next(m for m in day()['meals'] if m['slot']==2)['eaten_at'] is None
+        record('Meal check-in records paid amount, updates budget, and can be undone')
         empty_date=(date.fromisoformat(current_date)+timedelta(days=1)).isoformat()
         app.fill('date',empty_date);app.click('open_day');app.click('tab_history')
         assert '还没有已确认计划' in app.text('这一天还没有已确认计划。')
