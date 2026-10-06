@@ -22,6 +22,8 @@ The home screen uses canteen-local time to select the next uneaten meal. The wee
 
 Version 1.7.0 passed native card-host feature checks. A [same-version Shell run](docs/evidence/shell-170-20261005.md) verified loading, first-use Agent consent, a request entering Octos, and manual save/read-back/restart after the provider returned HTTP 429. **It did not obtain a model suggestion.** A successful real MiniMax loop remains proven for **1.2.2** only. See [contest readiness](docs/CONTEST_READINESS.md). The frozen `qualifier-2026-10-04-final` tag still points to that earlier version.
 
+**Version 1.8.0 is in development:** it adds an Agent proposal for swaps in the unconfirmed seven-day draft. See the [implementation and validation boundary](docs/evidence/agent-week-180-20261006.md). This environment cannot run the host, so there is no same-version runtime capture or successful model suggestion yet.
+
 To run a development preview, follow the [official OctoScript quickstart](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/docs/QUICKSTART.md):
 
 ```sh

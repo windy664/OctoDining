@@ -35,6 +35,11 @@ let weekDraft = []
 let weekDraftRevision = -1
 let weekDraftStart = ""
 let weekDraftProfileDaily = -1
+let weekAgentOffers = []
+let weekAgentChanges = []
+let weekAgentRequest = 0
+let weekAgentBusy = false
+let weekAgentStamp = ""
 let profileReady = false
 let profileDaily = 3200
 let english = false
@@ -445,11 +450,28 @@ fn show_page(history){
     if history { ui.plans.render() }
 }
 fn clear_week_draft(){
+    weekAgentRequest += 1
+    weekAgentBusy = false
+    weekAgentOffers = []
+    weekAgentChanges = []
+    weekAgentStamp = ""
     weekDraft = []
     weekDraftRevision = -1
     weekDraftStart = ""
     weekDraftProfileDaily = -1
     ui.draft_panel.set_visible(false)
+}
+fn week_draft_stamp(){
+    let stamp = "" + journal.revision + "|" + currentDate + "|" + profileDaily + "|" + menuKind + "|" + ui.week_agent_request.text().trim()
+    for choice in weekDraft { stamp += "|" + choice.date + ":" + choice.slot + ":" + choice.product_id }
+    stamp
+}
+fn clear_week_agent_proposal(){
+    weekAgentRequest += 1
+    weekAgentBusy = false
+    weekAgentChanges = []
+    weekAgentStamp = ""
+    ui.week_agent_result.set_text(L("写下想调整的口味或安排，再请 Agent 提案。", "Describe a preference, then ask the Agent for changes."))
 }
 fn go_next_meal(){
     let target = next_meal_target()
@@ -540,6 +562,10 @@ fn refresh_language(){
     ui.ask_agent.set_text(L("重新请 Agent 比较", "Ask Agent again"))
     ui.week_title.set_text(L("我的一周餐表 · 从所选日期起七天", "My week · seven days from the selected date"))
     ui.make_draft.set_text(L("生成七天草案", "Draft seven days"))
+    ui.week_agent_heading.set_text(L("让 Agent 调整这周", "Ask Agent to adjust the week"))
+    ui.week_agent_intro.set_text(L("先生成草案。Agent 只从已验证的换餐选项中提出改动，确认前不写入。", "Draft first. The Agent selects from verified swaps; nothing is saved before confirmation."))
+    ui.week_agent_ask.set_text(L("请 Agent 提案", "Ask Agent for changes"))
+    ui.week_agent_apply.set_text(L("应用建议到草案", "Apply to draft"))
     ui.confirm_draft.set_text(L("确认整周草案", "Confirm week draft"))
     ui.discard_draft.set_text(L("舍弃草案", "Discard draft"))
     ui.checkin_title.set_text(L("记录实际用餐", "Record a meal eaten"))
@@ -935,6 +961,162 @@ fn week_meal_limit(daily, slot){
     if slot == 0 { return floor(daily * 0.30) }
     floor(daily * 0.40)
 }
+fn prepare_week_agent_offers(){
+    weekAgentOffers = []
+    let seenDates = []
+    let summary = ""
+    for i in weekDraft.len() {
+        if weekAgentOffers.len() >= 7 { break }
+        let choice = weekDraft[i]
+        let seen = false
+        for date in seenDates { if date == choice.date { seen = true } }
+        if seen { continue }
+        let original = allProducts[choice.product_id]
+        let alternatives = []
+        for step in allProducts.len() {
+            let id = (choice.product_id + step + 1) % allProducts.len()
+            let p = allProducts[id]
+            if p.cents <= original.cents && p.name != original.name && matches_meal_for(p, choice.slot)
+                && open_at(p.business_hours, clock_value(defaultTimes[choice.slot])) {
+                let duplicate = false
+                for old in alternatives { if allProducts[old].name == p.name { duplicate = true } }
+                if !duplicate { alternatives.push(id) }
+                if alternatives.len() >= 2 { break }
+            }
+        }
+        if alternatives.len() > 0 {
+            seenDates.push(choice.date)
+            weekAgentOffers.push({draft_index: i alternatives: alternatives})
+            summary += weekAgentOffers.len() + ". " + choice.date + " " + slot_label(choice.slot) + ": " + original.name + " ¥" + cash(original.cents) + "\n"
+            for j in alternatives.len() {
+                let replacement = allProducts[alternatives[j]]
+                summary += "   " + (j + 1) + ") " + replacement.name + " ¥" + cash(replacement.cents)
+                    + " · " + replacement.store + " · " + replacement.business_hours + "\n"
+            }
+        }
+    }
+    if summary == "" { summary = L("当前草案没有可核验的换餐选项，仍可手动逐餐调整。", "No valid swaps found; you can still edit meals manually.") }
+    ui.week_agent_options.set_text(summary)
+    clear_week_agent_proposal()
+}
+fn ask_week_agent(){
+    if weekAgentBusy { return }
+    if weekDraft.len() == 0 || weekAgentOffers.len() == 0 || weekDraftRevision != journal.revision
+        || weekDraftStart != currentDate || weekDraftProfileDaily != profileDaily {
+        ui.week_agent_result.set_text(L("草案或换餐选项已失效，请重新生成。", "Draft or swap options expired. Generate again."))
+        return
+    }
+    let request = ui.week_agent_request.text().trim()
+    if request == "" {
+        ui.week_agent_result.set_text(L("先写下这周想怎么调整。", "Describe the change you want first."))
+        return
+    }
+    let stamp = week_draft_stamp()
+    let prompt = L("你是七日食堂餐表调整助手。只可从下列已验证的日期和餐品选项中提议调整，每个日期最多选择一个替代品。不能编造菜单、价格、营业时段、营养或过敏安全事实。", "You help adjust a seven-day canteen draft. Select only from the verified dates and meal alternatives, at most one per date. Do not invent menu, price, hours, nutrition or allergy facts. Reply in English. ")
+        + L("用户希望：", "User request: ") + request + L("。已确认餐次不在本次可改范围。\n", ". Confirmed meals are outside this draft.\n")
+        + ui.week_agent_options.text()
+        + L("仅返回 JSON：{\"changes\":[{\"meal\":日期编号,\"option\":替代品编号}],\"reason\":\"简短取舍理由\"}；不能满足需求则返回空数组并解释。", "Return JSON only: {\"changes\":[{\"meal\":date_number,\"option\":alternative_number}],\"reason\":\"brief rationale\"}. Return an empty array if the options cannot address the request.")
+    weekAgentRequest += 1
+    let requestId = weekAgentRequest
+    weekAgentBusy = true
+    weekAgentChanges = []
+    weekAgentStamp = ""
+    ui.week_agent_result.set_text(L("正在请 OctoSense Agent 比较本周换餐…", "Asking the OctoSense Agent to compare swaps…"))
+    host.request("octos.turn.start", {text: prompt}, fn(r){
+        if requestId != weekAgentRequest { return }
+        weekAgentBusy = false
+        if stamp != week_draft_stamp() || weekDraftRevision != journal.revision {
+            ui.week_agent_result.set_text(L("草案或需求已变化，旧建议已丢弃。", "Draft or request changed; old advice discarded."))
+            return
+        }
+        if !r.is_ok {
+            ui.week_agent_result.set_text(L("系统 Agent 暂不可用：", "System Agent unavailable: ") + r.error + L("。原草案可继续人工核对。", ". The original draft remains available."))
+            return
+        }
+        let answer = nil
+        try { answer = r.data.text.parse_json() } { answer = nil }
+        if answer == nil || !answer.is_object() {
+            ui.week_agent_result.set_text(L("Agent 回复格式无法核验，草案未改变。", "Invalid Agent response; draft unchanged."))
+            return
+        }
+        let raw = nil
+        let reason = nil
+        try { raw = answer.changes reason = answer.reason } { raw = nil }
+        if raw == nil || !raw.is_array() || raw.len() > weekAgentOffers.len() || reason == nil || !reason.is_string() {
+            ui.week_agent_result.set_text(L("Agent 换餐编号或理由无效，草案未改变。", "Invalid swap list or rationale; draft unchanged."))
+            return
+        }
+        let selected = []
+        for item in raw {
+            let meal = nil
+            let option = nil
+            if item != nil && item.is_object() { try { meal = item.meal option = item.option } {} }
+            if meal == nil || option == nil || !meal.is_number() || !option.is_number()
+                || meal != floor(meal) || option != floor(option) || meal < 1 || meal > weekAgentOffers.len() {
+                ui.week_agent_result.set_text(L("Agent 餐次或选项编号无效，草案未改变。", "Invalid meal or option number; draft unchanged."))
+                return
+            }
+            let offer = weekAgentOffers[meal - 1]
+            if option < 1 || option > offer.alternatives.len() {
+                ui.week_agent_result.set_text(L("Agent 选项不在可选范围内，草案未改变。", "Option out of range; draft unchanged."))
+                return
+            }
+            for old in selected {
+                if old.meal == meal {
+                    ui.week_agent_result.set_text(L("Agent 重复选择同一日期，草案未改变。", "Duplicate date; draft unchanged."))
+                    return
+                }
+            }
+            selected.push({meal: meal option: option})
+        }
+        if reason.len() > 300 { reason = L("理由过长，已省略", "Rationale too long; omitted") }
+        weekAgentChanges = selected
+        weekAgentStamp = stamp
+        if selected.len() == 0 {
+            ui.week_agent_result.set_text(L("Agent 建议不换餐：", "Agent suggests no swap: ") + reason + L("。草案未改变。", ". Draft unchanged."))
+        } else {
+            let changes = ""
+            for change in selected {
+                let offer = weekAgentOffers[change.meal - 1]
+                let choice = weekDraft[offer.draft_index]
+                changes += choice.date + " " + slot_label(choice.slot) + ": " + allProducts[choice.product_id].name
+                    + " → " + allProducts[offer.alternatives[change.option - 1]].name + "\n"
+            }
+            ui.week_agent_result.set_text(L("Agent 提议：\n", "Agent proposes:\n") + changes + L("理由：", "Reason: ") + reason
+                + L("\n先应用到草案并核对，再确认整周保存。", "\nApply to the draft, review, then confirm the week."))
+        }
+    })
+}
+fn apply_week_agent(){
+    if weekAgentChanges.len() == 0 || weekAgentStamp == "" || weekAgentStamp != week_draft_stamp()
+        || weekDraftRevision != journal.revision || weekDraftStart != currentDate || weekDraftProfileDaily != profileDaily {
+        clear_week_agent_proposal()
+        ui.status.set_text(L("Agent 提案已失效，请重新请求。", "Agent proposal expired. Ask again."))
+        return
+    }
+    let revised = weekDraft.to_json().parse_json()
+    for change in weekAgentChanges {
+        let offer = weekAgentOffers[change.meal - 1]
+        let choice = revised[offer.draft_index]
+        let original = allProducts[choice.product_id]
+        let alternateId = offer.alternatives[change.option - 1]
+        let alternate = allProducts[alternateId]
+        if alternate.cents > original.cents || !matches_meal_for(alternate, choice.slot)
+            || !open_at(alternate.business_hours, clock_value(defaultTimes[choice.slot])) {
+            clear_week_agent_proposal()
+            ui.status.set_text(L("换餐条件已变化，未修改草案。", "Swap no longer fits; draft unchanged."))
+            return
+        }
+        revised[offer.draft_index].product_id = alternateId
+    }
+    let count = weekAgentChanges.len()
+    weekDraft = revised
+    weekAgentOffers = []
+    clear_week_agent_proposal()
+    ui.week_agent_options.set_text(L("建议已应用到待确认草案；如需新提案，请重新生成。", "Changes applied to the unconfirmed draft. Regenerate for new options."))
+    ui.draft_items.render()
+    ui.status.set_text(L("Agent 建议已调整草案中的 ", "Agent changed ") + count + L(" 餐；尚未保存，请逐项核对后确认整周。", " draft meals. Review and confirm the week to save."))
+}
 fn generate_week_draft(){
     clear_week_draft()
     if !storageReady { ui.status.set_text(L("记录无法读取，暂不能生成草案。", "Records unavailable; cannot make a draft.")) return }
@@ -1007,6 +1189,7 @@ fn generate_week_draft(){
     weekDraftStart = currentDate
     weekDraftProfileDaily = profileDaily
     ui.draft_panel.set_visible(true)
+    prepare_week_agent_offers()
     ui.draft_summary.set_text(L("待确认 ", "Review ") + weekDraft.len() + L(" 餐，缺口 ", " meals; gaps ") + gaps + L(" 餐，重复 ", "; repeats ") + repeats + L(" 次。草案不会自动覆盖已确认计划。", ". The draft will not replace confirmed meals."))
     ui.draft_items.render()
     ui.status.set_text(L("已生成七天草案，请逐项核对；确认前不会写入餐表。", "Seven-day draft ready. Review it; nothing is saved until confirmation."))
@@ -1496,19 +1679,30 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
             }
         }}
     }
-    history := View{width: Fill height: Fill flow: Down spacing: 10
+    history := ScrollYView{width: Fill height: Fill flow: Down spacing: 10
         week_title := Label{width: Fill text: "我的一周餐表 · 从所选日期起七天" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 17}}
         View{width: Fill height: Fit flow: Right spacing: 8
             make_draft := Action{text: "生成七天草案" on_click: || generate_week_draft()}
         }
         draft_panel := RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 12 right: 12 top: 10 bottom: 10} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 15.0 visible: false
             draft_summary := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style.font_size: 12}
-            draft_items := ScrollYView{width: Fill height: 155 flow: Down spacing: 4 on_render: || {
+            draft_items := ScrollYView{width: Fill height: 125 flow: Down spacing: 4 on_render: || {
                 for choice in weekDraft {
                     let p = allProducts[choice.product_id]
                     Label{width: Fill text: choice.date + " · " + slot_label(choice.slot) + " · " + p.name + " · ¥" + cash(p.cents) draw_text.color: ink draw_text.text_style.font_size: 11}
                 }
             }}
+            week_agent_heading := Label{text: "让 Agent 调整这周" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 14}}
+            week_agent_intro := Label{width: Fill text: "先生成草案。Agent 只从已验证的换餐选项中提出改动，确认前不写入。" draw_text.color: muted draw_text.text_style.font_size: 11}
+            ScrollYView{width: Fill height: 135 flow: Down
+                week_agent_options := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style.font_size: 11}
+            }
+            week_agent_request := TextInput{width: Fill height: 40 text: "" empty_text: "少辣 / Less spicy…" on_change: |text| clear_week_agent_proposal()}
+            View{width: Fill height: Fit flow: Right spacing: 8
+                week_agent_ask := Action{text: "请 Agent 提案" on_click: || ask_week_agent()}
+                week_agent_apply := Action{text: "应用建议到草案" on_click: || apply_week_agent()}
+            }
+            week_agent_result := Label{width: Fill text: "写下想调整的口味或安排，再请 Agent 提案。" draw_text.color: ink draw_text.text_style.font_size: 11}
             View{width: Fill height: Fit flow: Right spacing: 8
                 confirm_draft := Accent{text: "确认整周草案" on_click: || confirm_week_draft()}
                 discard_draft := Action{text: "舍弃草案" on_click: || clear_week_draft()}
@@ -1524,7 +1718,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                 checkin_cancel := Action{text: "暂不记录" on_click: || {checkinSlot = -1 checkinDate = "" ui.checkin.set_visible(false)}}
             }
         }
-        plans := ScrollYView{width: Fill height: Fill flow: Down spacing: 10 on_render: || {
+        plans := View{width: Fill height: Fit flow: Down spacing: 10 on_render: || {
             for offset in 7 {
                 let date = week_date(currentDate, offset)
                 let index = day_index(journal, date)
