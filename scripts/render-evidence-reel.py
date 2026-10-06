@@ -33,6 +33,14 @@ SCENES = [
     ("shell-170-20261005/restarted.png",
      "在 OctoSense 中继续使用。", "原计划已恢复；模型建议待复验。", "1.7.0 Shell 局部联调画面 · 无模型成功建议"),
 ]
+AGENT_SCENES = [
+    ("shell-ui122-minimax-agent-20261004.png",
+     "真实 Agent 建议", "MiniMax-M3 建议候选 3。", "1.2.2 OctoSense Shell · 2026-10-04 实机截图"),
+    ("shell-ui122-minimax-scrolled-20261004.png",
+     "用户手动确认", "候选按钮可见；建议不会自动写入。", "1.2.2 OctoSense Shell · 2026-10-04 实机截图"),
+    ("shell-ui122-minimax-confirmed-20261004.png",
+     "保存并读回核验", "晚餐 ¥13.90，剩余 ¥18.10。", "1.2.2 OctoSense Shell · 2026-10-04 实机截图"),
+]
 DURATION = 5
 FPS = 30
 
@@ -41,10 +49,10 @@ def run(command):
     subprocess.run(command, check=True)
 
 
-def soundtrack(path: Path):
+def soundtrack(path: Path, scene_count: int):
     """A quiet, original seven-bar pad and bell motif; no sampled music."""
     rate = 44100
-    length = len(SCENES) * DURATION
+    length = scene_count * DURATION
     audio = np.zeros(rate * length, dtype=np.float32)
     chords = [
         (220.00, 261.63, 329.63, 392.00),
@@ -52,7 +60,7 @@ def soundtrack(path: Path):
         (196.00, 246.94, 293.66, 392.00),
         (164.81, 220.00, 261.63, 329.63),
     ]
-    for scene in range(len(SCENES)):
+    for scene in range(scene_count):
         start = scene * DURATION * rate
         t = np.arange(DURATION * rate, dtype=np.float32) / rate
         envelope = np.minimum(1, t / .7) * np.minimum(1, (DURATION - t) / .9)
@@ -77,16 +85,20 @@ def soundtrack(path: Path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--output", type=Path, default=ROOT / "docs/demo/octodining-170-evidence-reel.mp4")
+    parser.add_argument("--agent", action="store_true", help="Render the distinct 1.2.2 real-Agent evidence reel")
+    parser.add_argument("--output", type=Path)
     args = parser.parse_args()
+    scenes = AGENT_SCENES if args.agent else SCENES
+    if args.output is None:
+        args.output = ROOT / "docs/demo" / ("octodining-122-agent-evidence-reel.mp4" if args.agent else "octodining-170-evidence-reel.mp4")
     output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
-    work = ROOT / ".local-state/evidence-reel-build"
+    work = ROOT / ".local-state" / ("agent-evidence-reel-build" if args.agent else "evidence-reel-build")
     work.mkdir(parents=True, exist_ok=True)
     if not FONT.is_file():
         parser.error(f"Chinese font not found: {FONT}")
     clips = []
-    for index, (image, title, detail, footer) in enumerate(SCENES):
+    for index, (image, title, detail, footer) in enumerate(scenes):
         source = EVIDENCE / image
         if not source.is_file():
             parser.error(f"Missing real evidence screenshot: {source}")
@@ -98,7 +110,7 @@ def main():
         footer_file.write_text(footer, encoding="utf-8")
         clip = work / f"scene-{index:02d}.mp4"
         clips.append(clip)
-        shell_frame = index == len(SCENES) - 1
+        shell_frame = args.agent or index == len(scenes) - 1
         scale = "960:-1" if shell_frame else "-1:940"
         frame_box = "x=905:y=185:w=1000:h=710" if shell_frame else "x=1190:y=45:w=610:h=990"
         overlay_x = 925 if shell_frame else 1280
@@ -121,11 +133,11 @@ def main():
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
             "-pix_fmt", "yuv420p", str(clip),
         ])
-        print(f"Rendered scene {index + 1}/{len(SCENES)}: {title}", flush=True)
+        print(f"Rendered scene {index + 1}/{len(scenes)}: {title}", flush=True)
     playlist = work / "clips.txt"
     playlist.write_text("".join(f"file '{clip}'\n" for clip in clips), encoding="utf-8")
     wav = work / "original-instrumental.wav"
-    soundtrack(wav)
+    soundtrack(wav, len(scenes))
     run([
         "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
         "-f", "concat", "-safe", "0", "-i", str(playlist), "-i", str(wav),
