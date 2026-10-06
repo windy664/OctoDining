@@ -1,5 +1,8 @@
 name: Agent week native UI
 
+permissions:
+  contents: write
+
 on:
   push:
     branches:
@@ -52,3 +55,15 @@ jobs:
             .local-state/week-*/draft.png
             .local-state/week-*/confirmed.png
           if-no-files-found: ignore
+
+      - name: Publish a key-free run verdict
+        if: always()
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          printf '{"source_commit":"%s","result":"%s","run":"%s"}\n' \
+            '${{ github.sha }}' '${{ job.status }}' '${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}' \
+            > ci-result.json
+          git add ci-result.json
+          git commit -m "Record native UI run ${{ github.run_id }}"
+          git push origin HEAD:refs/heads/ci-results/${{ github.run_id }}
