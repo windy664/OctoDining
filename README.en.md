@@ -25,12 +25,12 @@ Version 1.7.0 passed native card-host feature checks. A [same-version Shell run]
 To run a development preview, follow the [official OctoScript quickstart](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/docs/QUICKSTART.md):
 
 ```sh
-python3 scripts/build-octos-bundle.py
+python3 scripts/dev_bundle.py --output .local-state/preview-bundle
 OCTO_CLI=/path/to/OctoScript-App-Design-Flow/tools/octo
-"$OCTO_CLI" check bundle
-"$OCTO_CLI" run bundle --port 8141 --hidden --detach
+"$OCTO_CLI" check .local-state/preview-bundle
+"$OCTO_CLI" run .local-state/preview-bundle --port 8141 --hidden --detach
 ```
 
-The card-host preview does not prove Shell Agent integration. Run `python3 scripts/test-basic-app.py`, `python3 scripts/test-language.py`, `python3 scripts/test-week-draft.py` and `python3 scripts/test-custom-menu.py` separately for local feature checks. Code uses [Apache 2.0](LICENSE-CODE); the license does not grant rights to third-party menu data or images. See [data provenance](docs/DATA_PROVENANCE.md) and [privacy](docs/PRIVACY.md).
+The preview uses an unsigned copy so card-host can run without changing the signed release. It does not prove Shell Agent integration. Run `python3 scripts/test-basic-app.py`, `python3 scripts/test-language.py`, `python3 scripts/test-week-draft.py` and `python3 scripts/test-custom-menu.py` separately for local feature checks; each uses its own unsigned copy. Code uses [Apache 2.0](LICENSE-CODE); the license does not grant rights to third-party menu data or images. See [data provenance](docs/DATA_PROVENANCE.md) and [privacy](docs/PRIVACY.md).
 
-For the current App Hub process and the status of this bundle, see the [submission checklist](docs/APP_HUB_SUBMISSION.md). Version 1.7.0 passed the updated Hub's unsigned local gate and produced a scan packet. The publisher states that they hold the rights to redistribute the menu data and photos; independent written evidence has not been attached. The final listing and tagged bundle still need review. Maintainers currently accept a `Submit <app id> <version>` issue in the official App Hub repository.
+For the current App Hub process and the status of this bundle, see the [submission checklist](docs/APP_HUB_SUBMISSION.md). Version 1.7.0 is signed as `windy664` and passed the updated Hub's signed gate; the scan packet was made before signing. The publisher states that they hold the rights to redistribute the menu data and photos; independent written evidence has not been attached. Maintainers currently accept a `Submit <app id> <version>` issue in the official App Hub repository.

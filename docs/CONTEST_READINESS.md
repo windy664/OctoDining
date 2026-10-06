@@ -7,7 +7,7 @@
 | 范围 | 已验证 | 尚需完成 |
 | --- | --- | --- |
 | 1.7.0 card-host | 首次预算、内置/自定义菜单、下一餐推荐、候选、七日草案确认、记录实付、取消与恢复；中英文原生画面；本地持久化及故障保护 | card-host 不能证明 Shell 模型调用 |
-| 1.7.0 App Hub | 最新 Hub `78dfda5` 的 unsigned 本地预检通过，`hub scan` 审查包已生成；另以临时测试密钥发布到隔离目录并通过目录签名验证 | 正式签名或首次无签名选择、最终发布资料；预检不代替实际运行 |
+| 1.7.0 App Hub | 最新 Hub `78dfda5` 的签名检查通过；`windy664` 公钥已验证，`hub scan` 审查包在签名前生成；另以临时测试密钥发布到隔离目录并通过目录签名验证 | App Hub 维护者审查与发布；预检不代替实际运行 |
 | 1.7.0 OctoSense Shell | 本地测试目录加载、首次 Agent 授权、请求进入 Octos；供应商 HTTP 429 后手动选餐、保存读回与重启恢复通过，[本版记录](evidence/shell-170-20261005.md) | 限流导致本次无模型建议；仍需同版成功模型闭环及响应异常验收 |
 | 1.2.2 OctoSense Shell | 本地测试目录安装，`octos.turn.start` 经 Octos kernel 得到真实 MiniMax-M3 建议，用户确认后保存并读回；拒绝授权和无模型回退分别实测 | 不能代替 1.7.0 的真实模型成功证据 |
 
@@ -21,7 +21,7 @@
 
 ## 本版本地验收
 
-依次运行 `python3 scripts/test-basic-app.py`、`python3 scripts/test-language.py`、`python3 scripts/test-week-draft.py`、`python3 scripts/test-custom-menu.py`。测试覆盖菜单无效数据拒绝、导入与重启恢复、七日草案无提前写入、逐日预算及确认读回、实际金额与撤销、Agent 服务不可用时人工操作、存储损坏和写入故障保护。中文与英文截图由 `scripts/capture-card-host.py` 的 Makepad framebuffer 获得并人工查看，详见[截图记录](evidence/next-meal-170-20261005.md)。预检使用官方 `tools/octo check bundle`；无正式发布签名。
+依次运行 `python3 scripts/test-basic-app.py`、`python3 scripts/test-language.py`、`python3 scripts/test-week-draft.py`、`python3 scripts/test-custom-menu.py`。测试覆盖菜单无效数据拒绝、导入与重启恢复、七日草案无提前写入、逐日预算及确认读回、实际金额与撤销、Agent 服务不可用时人工操作、存储损坏和写入故障保护。中文与英文截图由 `scripts/capture-card-host.py` 的 Makepad framebuffer 获得并人工查看，详见[截图记录](evidence/next-meal-170-20261005.md)。签名前已用官方 `tools/octo check bundle` 预检；签名后以公钥执行 `hub check`，结果通过。之后的 card-host 测试使用无签名开发副本，不修改发布包。
 
 ## 交付与待办
 

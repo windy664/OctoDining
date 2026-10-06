@@ -1,12 +1,21 @@
 {
+  "agent": null,
   "capabilities": [
     "storage",
     "octos.turn.start",
     "net"
   ],
+  "compute": {
+    "instruction_budget": null,
+    "memory_bytes": null
+  },
   "id": "org.octosense.octodining",
   "integrity": {
-    "bundle_blake3": "8ab383f6130d3c5e637fd35571ad283500780c88171067a46a0822e11bedd4ec"
+    "bundle_blake3": "8ab383f6130d3c5e637fd35571ad283500780c88171067a46a0822e11bedd4ec",
+    "signature": {
+      "key_id": "windy664",
+      "value": "c6d5424575332dd67bd7d333a0b5fbc84e4061aabfe67522d5098dc657deb3b0c4d763f5892437e8d6cae34bd01d97b798bb4f964688d45704c7cfde4d3b2f04"
+    }
   },
   "name": "OctoDining · 好好吃饭",
   "network": {
@@ -15,5 +24,8 @@
     ]
   },
   "schema": 1,
+  "storage": {
+    "max_bytes": null
+  },
   "version": "1.7.0"
 }

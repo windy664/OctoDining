@@ -15,9 +15,12 @@ Follow the harness, and do not invent requirements or APIs:
 The loop, with `OCTO=<path to OctoScript-App-Design-Flow>/tools/octo` (the CLI
 lives in the harness repository, not here), run from this directory: edit
 `scripts/main.splash.in` → `python3 scripts/build-octos-bundle.py`
-→ `$OCTO run bundle --port 8141 --detach` → drive it
+→ `python3 scripts/dev_bundle.py --output .local-state/preview-bundle`
+→ `$OCTO run .local-state/preview-bundle --port 8141 --detach` → drive it
 (`/click`, `/t`, `/snap`) and `$OCTO shot 8141 out.png` → `curl -s 127.0.0.1:8141/quit`
-→ `$OCTO check bundle`.
+→ `$OCTO check .local-state/preview-bundle`. The tracked `bundle/` is a signed
+release; card-host tests use an unsigned local copy. Any source or bundle edit
+requires a new release commit, stamp and publisher signature.
 
 Rules:
 

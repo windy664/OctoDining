@@ -8,6 +8,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import time
+from dev_bundle import prepare_dev_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("octodining_basic", ROOT / "scripts/test-basic-app.py")
@@ -21,6 +22,7 @@ def main():
     work = ROOT / ".local-state" / ("week-" + datetime.now().strftime("%Y%m%d-%H%M%S"))
     jail = work / "org.octosense.octodining"
     jail.mkdir(parents=True)
+    preview_bundle = prepare_dev_bundle(work / 'preview-bundle')
     (jail / "profile.json").write_text(json.dumps({
         "schema": 1, "menu": "gzis-snapshot", "monthly_cents": 150000,
         "fixed_cents": 54000, "reserve_cents": 0, "daily_cents": 3200,
@@ -48,7 +50,7 @@ def main():
     running = False
     try:
         subprocess.run([
-            str(octo), "run", str(ROOT / "bundle"), "--hidden", "--detach",
+            str(octo), "run", str(preview_bundle), "--hidden", "--detach",
             "--port", str(port), "--app-data", str(work), "--timeout", "30",
         ], check=True, env=env, stdout=subprocess.DEVNULL)
         running = True

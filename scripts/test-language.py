@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
+from dev_bundle import prepare_dev_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location('octodining_basic_test', ROOT / 'scripts/test-basic-app.py')
@@ -19,6 +20,7 @@ def main():
     port = 8245
     work = ROOT / '.local-state' / ('language-' + datetime.now().strftime('%Y%m%d-%H%M%S'))
     work.mkdir(parents=True)
+    preview_bundle = prepare_dev_bundle(work / 'preview-bundle')
     app = App(port)
     octo = ROOT.parent / 'octosense-ws/OctoScript-App-Design-Flow/tools/octo'
     env = dict(os.environ)
@@ -26,7 +28,7 @@ def main():
     env['MAKEPAD_WRITE_FRAMEBUFFER_PNG'] = str(work / 'framebuffer.png')
 
     def start():
-        subprocess.run([str(octo), 'run', str(ROOT / 'bundle'), '--hidden', '--detach',
+        subprocess.run([str(octo), 'run', str(preview_bundle), '--hidden', '--detach',
                         '--port', str(port), '--app-data', str(work), '--timeout', '30'],
                        check=True, stdout=subprocess.DEVNULL, env=env)
         time.sleep(.2)

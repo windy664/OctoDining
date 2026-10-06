@@ -16,6 +16,7 @@ import subprocess
 import time
 import urllib.parse
 import urllib.request
+from dev_bundle import prepare_dev_bundle
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,6 +34,7 @@ def main():
     output = args.output or ROOT / ".local-state" / ("screenshots-" + datetime.now().strftime("%Y%m%d-%H%M%S"))
     output = output.resolve()
     output.mkdir(parents=True, exist_ok=True)
+    preview_bundle = prepare_dev_bundle(output / "preview-bundle")
     framebuffer = output / "framebuffer.png"
     env = dict(os.environ)
     env.pop("WAYLAND_DISPLAY", None)  # X11 backend supplies this framebuffer hook.
@@ -100,7 +102,7 @@ def main():
     started = False
     try:
         subprocess.run(
-            [str(args.octo), "run", str(ROOT / "bundle"), "--hidden", "--detach", "--port", str(args.port), "--app-data", str(output), "--timeout", "30"],
+            [str(args.octo), "run", str(preview_bundle), "--hidden", "--detach", "--port", str(args.port), "--app-data", str(output), "--timeout", "30"],
             cwd=ROOT, env=env, check=True,
         )
         started = True

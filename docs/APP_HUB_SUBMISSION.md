@@ -6,15 +6,14 @@
 
 ## 已完成的预检
 
-在上述 App Hub 源码构建的 `hub` 上，执行 `tools/octo check bundle` 和 `hub check bundle --allow-unsigned --catalog <App Hub>/catalog.json`，结果均为：
+在上述 App Hub 源码构建的 `hub` 上，先对未签名包执行 `tools/octo check bundle` 和 `hub scan`，再由发布者授权使用仓库外的密钥以 `windy664` 签名。签名后的 `hub check bundle --publisher-key windy664=<public-key> --catalog <App Hub>/catalog.json` 结果为：
 
 ```text
 org.octosense.octodining 1.7.0 — PASSED
-  [warning] publisher-signature: unsigned: accountability rests on the hub alone
   grants: capabilities {"net", "octos.turn.start", "storage"}, hosts {"img.pospal.cn"}, storage 16777216 bytes, agent none
 ```
 
-`hub scan bundle --packet build/review-170-20261007.json` 已生成七问审查包。`build/` 是本地工作目录，不随应用包提交。六张商店截图均为 824×1784 的原生 PNG；它们证明此前 1.7.0 card-host 运行，不证明同版真实模型建议。1.7.0 Shell 遇到模型服务 429；成功 Agent 建议的记录属于 1.2.2，详见[评审证据](AGENTIC_JUDGING.md)。
+公钥（可公开）为 `1b72b26cb53eef42eeb73d5017b57e0e734c25f26191f7f9c8bbf09520d90ba5`；私钥不在仓库。`hub scan bundle --packet build/review-170-final.json` 已在签名前生成七问审查包；签名不改变 `integrity.bundle_blake3`，仍为 `8ab383f6130d3c5e637fd35571ad283500780c88171067a46a0822e11bedd4ec`。`hub scan` 对签名包直接运行会因未提供公钥而拒绝，因此审查包使用签名前的同一内容摘要。`build/` 是本地工作目录，不随应用包提交。六张商店截图均为 824×1784 的原生 PNG；它们证明此前 1.7.0 card-host 运行，不证明同版真实模型建议。1.7.0 Shell 遇到模型服务 429；成功 Agent 建议的记录属于 1.2.2，详见[评审证据](AGENTIC_JUDGING.md)。
 
 同日用重建后的 card-host 分别运行 `scripts/test-basic-app.py`、`scripts/test-language.py`、`scripts/test-week-draft.py`、`scripts/test-custom-menu.py`，四项均通过。基础测试覆盖服务不可用时的人工选择、保存读回与重启恢复；最新测试日志和隔离数据在本地 `.local-state/*-20261007-*`，未入包。六张已列出的商店截图已人工查看；截图仍是应用 1.7.0 先前运行时捕获，不声称在此次新宿主构建中重拍。
 
@@ -22,19 +21,17 @@ org.octosense.octodining 1.7.0 — PASSED
 
 1. **数据与图片使用权。** 发布者已声明自己是该校食堂管理员，管理菜单数据、持有本人拍摄照片的权利，并允许公开 GitHub / App Hub 分发；见[来源记录](DATA_PROVENANCE.md)。尚未附独立书面凭据，提交 issue 时应把声明原样提供给维护者；若维护者要求材料，再补授权文件或替换相关内容并重新预检。
 2. **发布者资料。** 发布者已确认 `bundle/listing.json` 使用“跃珩科技”。GitHub issues 支持地址、[隐私说明](PRIVACY.md)和只声明 Linux 这一平台仍应由发布者在提交时复核。应用没有在更新后的 OctoSense Shell 上取得 1.7.0 成功模型建议，商品图片也不保证可用。
-3. **最终版本。** 确认上述资料后，以最终 `bundle/` 再运行 `tools/octo check bundle`、`hub scan`；任何改动都必须重新 stamp。首次投稿可以按官方规则选择无签名，但后续发布者连续性会受影响；若签名，私钥应由发布者自行创建和保存于仓库外，签名后再用公钥执行最终 `hub check`。不要把私钥、review packet 放进 `bundle/` 或 Git。
+3. **最终版本。** `bundle/` 已签名，不可再用 `tools/octo run bundle` 或无公钥的 `tools/octo check bundle`；开发预览请用 `scripts/dev_bundle.py` 生成隔离副本。发布者需妥善保管仓库外私钥：后续同一发布者更新必须沿用它。若修改包内容，必须重新 stamp、签名、检查并固定新提交；不要把私钥、review packet 放进 `bundle/` 或 Git。
 
 ## 官方提交顺序
 
-在本仓库根目录，以下命令用于最终复核；若变更了应用内容，先运行 `python3 scripts/build-octos-bundle.py`、原生功能测试，并重新取得与最终版本一致的截图。
+在本仓库根目录，以下命令用于核对这份已签名的发布包；若变更了应用内容，先在开发副本中运行功能测试并重新取得与最终版本一致的截图，再由发布者重新签名。
 
 ```sh
-OCTO_CLI=/home/windy/Project/octosense-ws/OctoScript-App-Design-Flow/tools/octo
-HUB_CLI=/home/windy/Project/octosense-ws/OctoSense-App-Hub/target/release/hub
-"$OCTO_CLI" check bundle
-"$HUB_CLI" check bundle --allow-unsigned --catalog /home/windy/Project/octosense-ws/OctoSense-App-Hub/catalog.json
-mkdir -p build
-"$HUB_CLI" scan bundle --packet build/review.json
+HUB_CLI=/path/to/OctoSense-App-Hub/target/release/hub
+HUB_CATALOG=/path/to/OctoSense-App-Hub/catalog.json
+PUBLISHER_PUBLIC_KEY=1b72b26cb53eef42eeb73d5017b57e0e734c25f26191f7f9c8bbf09520d90ba5
+"$HUB_CLI" check bundle --publisher-key "windy664=$PUBLISHER_PUBLIC_KEY" --catalog "$HUB_CATALOG"
 ```
 
-发布者核定资料、签名方案和最终 `bundle/` 后：将包提交到自己的公开仓库并打 `v1.7.0` 标签；在 App Hub 的[Issues](https://github.com/OctoSense-org/OctoSense-App-Hub/issues) 开 `Submit org.octosense.octodining 1.7.0`，附仓库 URL、标签、完整 commit SHA、包路径 `bundle/`、发布者 ID 与公钥（或标明首次无签名）、最终 `hub check` 原文，以及 `hub scan` 七问答复。**开 issue 是提交申请，不代表已上架；维护者发布到签名目录后才算进入 App Hub。**
+签名版使用 `apphub-v1.7.0` 标签；此前的 `v1.7.0` 指向无签名候选，**不要用于 App Hub 投稿**。在 App Hub 的[Issues](https://github.com/OctoSense-org/OctoSense-App-Hub/issues) 开 `Submit org.octosense.octodining 1.7.0`，附仓库 URL、`apphub-v1.7.0` 标签、完整 commit SHA、包路径 `bundle/`、发布者 ID `windy664` 与上方公钥、最终 `hub check` 原文，以及签名前 `hub scan` 七问答复。**开 issue 是提交申请，不代表已上架；维护者发布到签名目录后才算进入 App Hub。**

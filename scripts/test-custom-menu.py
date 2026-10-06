@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import time
+from dev_bundle import prepare_dev_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("octodining_basic", ROOT / "scripts/test-basic-app.py")
@@ -20,6 +21,7 @@ def main():
     work = ROOT / ".local-state" / ("import-" + datetime.now().strftime("%Y%m%d-%H%M%S"))
     jail = work / "org.octosense.octodining"
     work.mkdir(parents=True)
+    preview_bundle = prepare_dev_bundle(work / 'preview-bundle')
     app = App(port)
     octo = ROOT.parent / "octosense-ws/OctoScript-App-Design-Flow/tools/octo"
     env = dict(os.environ)
@@ -32,7 +34,7 @@ def main():
 
     def start():
         subprocess.run([
-            str(octo), "run", str(ROOT / "bundle"), "--hidden", "--detach",
+            str(octo), "run", str(preview_bundle), "--hidden", "--detach",
             "--port", str(port), "--app-data", str(work), "--timeout", "30",
         ], check=True, env=env, stdout=subprocess.DEVNULL)
         time.sleep(.2)

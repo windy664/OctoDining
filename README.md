@@ -30,18 +30,18 @@
 依照[官方 OctoScript 快速上手](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/docs/QUICKSTART.md)准备 `tools/octo`，然后运行：
 
 ```sh
-python3 scripts/build-octos-bundle.py
+python3 scripts/dev_bundle.py --output .local-state/preview-bundle
 OCTO_CLI=/path/to/OctoScript-App-Design-Flow/tools/octo
-"$OCTO_CLI" check bundle
-"$OCTO_CLI" run bundle --port 8141 --hidden --detach
+"$OCTO_CLI" check .local-state/preview-bundle
+"$OCTO_CLI" run .local-state/preview-bundle --port 8141 --hidden --detach
 curl --fail http://127.0.0.1:8141/snap
 curl --fail http://127.0.0.1:8141/quit
 ```
 
-这启动的是 card-host 开发预览，不能证明 Shell Agent 接通。功能验收可分别运行 `python3 scripts/test-basic-app.py`、`python3 scripts/test-language.py`、`python3 scripts/test-week-draft.py` 和 `python3 scripts/test-custom-menu.py`；预览宿主一次只启动一个测试。
+这从已签名的发布包复制出**无签名开发副本**供 card-host 运行，原包的签名不会被修改；预览不能证明 Shell Agent 接通。功能验收可分别运行 `python3 scripts/test-basic-app.py`、`python3 scripts/test-language.py`、`python3 scripts/test-week-draft.py` 和 `python3 scripts/test-custom-menu.py`；测试同样使用隔离的无签名副本。
 
 应用源码模板为 `scripts/main.splash.in`，`bundle/main.splash` 是嵌入菜单后的生成文件；`bundle/` 是 App Hub 检查对象。OctoSense Shell 是目标宿主，Rinx 聊天分享是可选扩展。架构与边界见[架构说明](docs/ARCHITECTURE.md)，产品流程见[产品定位](docs/PRODUCT_POSITIONING.md)，隐私见[数据说明](docs/PRIVACY.md)。
 
-按最新官方 Flow 准备 App Hub 发布时，请看[提交状态与步骤](docs/APP_HUB_SUBMISSION.md)。当前 1.7.0 包已通过更新后 Hub 的 unsigned 本地准入检查并生成审查包；发布者已说明对菜单和照片拥有公开分发权，书面凭据尚未附仓库。正式发布仍需核定最终资料与提交版本。App Hub 目前通过官方仓库的 `Submit <app id> <version>` issue 接收申请。
+按最新官方 Flow 准备 App Hub 发布时，请看[提交状态与步骤](docs/APP_HUB_SUBMISSION.md)。当前 1.7.0 包以 `windy664` 签名，并通过更新后 Hub 的签名检查；审查包已在签名前生成。发布者已说明对菜单和照片拥有公开分发权，书面凭据尚未附仓库。App Hub 目前通过官方仓库的 `Submit <app id> <version>` issue 接收申请。
 
 代码采用 [Apache 2.0](LICENSE-CODE)。内置菜单及照片的权利范围按发布者说明记录在[数据来源说明](docs/DATA_PROVENANCE.md)，尚未附独立凭据；代码许可不自动涵盖菜单与图片。当前没有订餐、付款、实时库存、营养或过敏原核验。

@@ -15,6 +15,7 @@ import time
 import urllib.parse
 import urllib.request
 from urllib.error import HTTPError, URLError
+from dev_bundle import prepare_dev_bundle
 
 ROOT = Path(__file__).resolve().parents[1]
 APP_ID = 'org.octosense.octodining'
@@ -117,6 +118,7 @@ def main():
     stamp = time.strftime('%Y%m%d-%H%M%S')
     work = ROOT / '.local-state' / ('acceptance-' + stamp)
     work.mkdir(parents=True)
+    preview_bundle = prepare_dev_bundle(work / 'preview-bundle')
     jail = work / APP_ID
     evidence = []
     def record(label):
@@ -129,7 +131,7 @@ def main():
         env = dict(os.environ)
         env.pop('WAYLAND_DISPLAY', None)
         env['MAKEPAD_WRITE_FRAMEBUFFER_PNG'] = str(work / 'framebuffer.png')
-        subprocess.run([str(args.octo),'run',str(ROOT/'bundle'),'--hidden','--detach','--port',str(args.port),'--app-data',str(work),'--timeout','30'],check=True,stdout=subprocess.DEVNULL,env=env)
+        subprocess.run([str(args.octo),'run',str(preview_bundle),'--hidden','--detach','--port',str(args.port),'--app-data',str(work),'--timeout','30'],check=True,stdout=subprocess.DEVNULL,env=env)
         time.sleep(.2)
     def state():
         docs = []
