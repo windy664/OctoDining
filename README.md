@@ -12,6 +12,8 @@
 
 以上为 1.7.0 **card-host 原生运行截图**；不是 OctoSense Shell 的模型联调证据。[更多截图与验证](docs/evidence/next-meal-170-20261005.md)。
 
+[观看 35 秒演示剪辑](docs/demo/octodining-170-evidence-reel.mp4) · [视频素材与复现说明](docs/demo/README.md)。视频由上述真实截图、七日餐表验收截图和 Shell 局部联调截图剪辑，配原创合成音乐；它不是连续屏幕录制，也不证明 1.7.0 已获得模型建议。
+
 ## 当前可做
 
 - **首次设置：** 输入每月可支配生活费、非餐饮固定开销和缓冲金，按 30 天估算每日饭钱。选择内置菜单，或粘贴带来源、更新日期、UTC 时区、价格和营业时段的 JSON；无效或重复数据会被拒绝。`scripts/menu-csv-to-json.py` 可把指定 CSV 转成可粘贴 JSON。当前没有应用内文件选择器或自动抓取。

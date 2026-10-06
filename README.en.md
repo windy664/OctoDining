@@ -12,6 +12,8 @@ This is a native **OctoSense / OctoScript / Makepad** prototype for students. It
 
 These are actual **1.7.0 card-host captures**. They do not demonstrate a live model in OctoSense Shell. [Screenshots and checks](docs/evidence/next-meal-170-20261005.md).
 
+[Watch the 35-second evidence reel](docs/demo/octodining-170-evidence-reel.mp4) · [Sources and reproduction](docs/demo/README.md). This is an edit of genuine screenshots with an original synthesized soundtrack, not a continuous screen recording or proof of a successful 1.7.0 model suggestion.
+
 Onboarding asks for monthly disposable allowance, non-food fixed costs and a reserve. It estimates a daily dining budget over 30 days. You can use the bundled menu or paste a JSON menu with a source, update date, time zone, prices and business hours; invalid records are rejected. `scripts/menu-csv-to-json.py` converts a supported CSV into pasteable JSON. The app does not yet have a file picker or automatic collection.
 
 The home screen uses canteen-local time to select the next uneaten meal. The weekly draft skips elapsed meals, shows any gaps and daily totals, and is written only after confirmation. It is **rule-generated, not Agent-generated**. Menu names and stores remain Chinese because no verified translations are available. Bundled product images load from `img.pospal.cn`; custom menus currently use text-only cards.
