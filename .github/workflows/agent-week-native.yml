@@ -1,0 +1,54 @@
+name: Agent week native UI
+
+on:
+  push:
+    branches:
+      - feature/agent-week-plan
+  workflow_dispatch:
+
+jobs:
+  card-host:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install native display dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libx11-dev libxrandr-dev libxcursor-dev libxi-dev libgl1-mesa-dev libasound2-dev libudev-dev libwayland-dev
+
+      - name: Prepare pinned OctoSense runtime
+        run: |
+          mkdir -p ../octosense-ws
+          git clone --filter=blob:none https://github.com/OctoSense-org/OctoScript-App-Design-Flow.git ../octosense-ws/OctoScript-App-Design-Flow
+          git -C ../octosense-ws/OctoScript-App-Design-Flow checkout 7ddf8a16ab30bf8e095d55e5ceebe0478c1a8386
+          git clone --filter=blob:none https://github.com/OctoSense-org/OctoSense-App-Hub.git ../octosense-ws/OctoSense-App-Hub
+          git -C ../octosense-ws/OctoSense-App-Hub checkout 46d67e51b62827a1224b1aacddc2a7b9e69185fc
+          python3 ../octosense-ws/OctoScript-App-Design-Flow/tools/setup-native.py
+          python3 ../octosense-ws/OctoScript-App-Design-Flow/tools/setup-native.py --check
+
+      - name: Build card-host and Hub CLI
+        run: cargo build --release -p octosense-card-host -p octosense-app-hub
+        working-directory: ../octosense-ws/OctoSense-App-Hub
+
+      - name: Rebuild and check bundle
+        run: |
+          python3 scripts/build-octos-bundle.py
+          ../octosense-ws/OctoScript-App-Design-Flow/tools/octo check bundle
+
+      - name: Exercise native seven-day draft
+        run: xvfb-run -a -s '-screen 0 1600x1200x24' python3 scripts/test-week-draft.py
+
+      - name: Exercise native basic interactions
+        run: xvfb-run -a -s '-screen 0 1600x1200x24' python3 scripts/test-basic-app.py
+
+      - name: Retain genuine test screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: agent-week-native-captures
+          path: |
+            .local-state/week-*/draft.png
+            .local-state/week-*/confirmed.png
+          if-no-files-found: ignore
