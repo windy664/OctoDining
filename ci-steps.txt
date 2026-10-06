@@ -1,0 +1,6 @@
+deps=success
+runtime=success
+build=success
+bundle=success
+week=failure
+basic=skipped

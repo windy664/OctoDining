@@ -1,0 +1,6 @@
+Embedded 1497 menu records, 1209 menu images (534503 bytes) in bundle/main.splash
+octo: hub stamp -> 8d2c3a262a46acb616f6bf659105046582e3efdfe6cc4cedef4954008cf04665
+octo: /home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/hub check /home/runner/work/OctoDining/OctoDining/bundle --allow-unsigned
+org.octosense.octodining 1.8.0 — PASSED
+  [warning] publisher-signature: unsigned: accountability rests on the hub alone
+  grants: capabilities {"net", "octos.turn.start", "storage"}, hosts {"img.pospal.cn"}, storage 16777216 bytes, agent none

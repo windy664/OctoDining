@@ -1,0 +1,75 @@
+Cloning into '../octosense-ws/OctoScript-App-Design-Flow'...
+Updating files:   0% (1/15514)Updating files:   1% (156/15514)Updating files:   2% (311/15514)Updating files:   3% (466/15514)Updating files:   4% (621/15514)Updating files:   5% (776/15514)Updating files:   6% (931/15514)Updating files:   7% (1086/15514)Updating files:   8% (1242/15514)Updating files:   9% (1397/15514)Updating files:  10% (1552/15514)Updating files:  11% (1707/15514)Updating files:  12% (1862/15514)Updating files:  13% (2017/15514)Updating files:  14% (2172/15514)Updating files:  15% (2328/15514)Updating files:  16% (2483/15514)Updating files:  17% (2638/15514)Updating files:  18% (2793/15514)Updating files:  19% (2948/15514)Updating files:  20% (3103/15514)Updating files:  21% (3258/15514)Updating files:  22% (3414/15514)Updating files:  23% (3569/15514)Updating files:  24% (3724/15514)Updating files:  25% (3879/15514)Updating files:  26% (4034/15514)Updating files:  27% (4189/15514)Updating files:  28% (4344/15514)Updating files:  29% (4500/15514)Updating files:  30% (4655/15514)Updating files:  31% (4810/15514)Updating files:  31% (4888/15514)Updating files:  32% (4965/15514)Updating files:  33% (5120/15514)Updating files:  34% (5275/15514)Updating files:  35% (5430/15514)Updating files:  36% (5586/15514)Updating files:  37% (5741/15514)Updating files:  38% (5896/15514)Updating files:  39% (6051/15514)Updating files:  40% (6206/15514)Updating files:  41% (6361/15514)Updating files:  42% (6516/15514)Updating files:  43% (6672/15514)Updating files:  44% (6827/15514)Updating files:  45% (6982/15514)Updating files:  46% (7137/15514)Updating files:  47% (7292/15514)Updating files:  48% (7447/15514)Updating files:  49% (7602/15514)Updating files:  50% (7757/15514)Updating files:  50% (7828/15514)Updating files:  51% (7913/15514)Updating files:  52% (8068/15514)Updating files:  53% (8223/15514)Updating files:  54% (8378/15514)Updating files:  55% (8533/15514)Updating files:  56% (8688/15514)Updating files:  57% (8843/15514)Updating files:  58% (8999/15514)Updating files:  59% (9154/15514)Updating files:  60% (9309/15514)Updating files:  61% (9464/15514)Updating files:  62% (9619/15514)Updating files:  63% (9774/15514)Updating files:  64% (9929/15514)Updating files:  65% (10085/15514)Updating files:  66% (10240/15514)Updating files:  67% (10395/15514)Updating files:  68% (10550/15514)Updating files:  69% (10705/15514)Updating files:  70% (10860/15514)Updating files:  71% (11015/15514)Updating files:  72% (11171/15514)Updating files:  73% (11326/15514)Updating files:  74% (11481/15514)Updating files:  75% (11636/15514)Updating files:  76% (11791/15514)Updating files:  77% (11946/15514)Updating files:  78% (12101/15514)Updating files:  79% (12257/15514)Updating files:  80% (12412/15514)Updating files:  81% (12567/15514)Updating files:  82% (12722/15514)Updating files:  83% (12877/15514)Updating files:  84% (13032/15514)Updating files:  85% (13187/15514)Updating files:  86% (13343/15514)Updating files:  87% (13498/15514)Updating files:  88% (13653/15514)Updating files:  89% (13808/15514)Updating files:  90% (13963/15514)Updating files:  91% (14118/15514)Updating files:  92% (14273/15514)Updating files:  93% (14429/15514)Updating files:  94% (14584/15514)Updating files:  95% (14739/15514)Updating files:  96% (14894/15514)Updating files:  97% (15049/15514)Updating files:  98% (15204/15514)Updating files:  99% (15359/15514)Updating files: 100% (15514/15514)Updating files: 100% (15514/15514), done.
+Note: switching to '7ddf8a16ab30bf8e095d55e5ceebe0478c1a8386'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 7ddf8a1 Merge pull request #124 from OctoSense-org/chore/runtime-99c1e5ee
+Cloning into '../octosense-ws/OctoSense-App-Hub'...
+Note: switching to '46d67e51b62827a1224b1aacddc2a7b9e69185fc'.
+
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by switching back to a branch.
+
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -c with the switch command. Example:
+
+  git switch -c <new-branch-name>
+
+Or undo this operation with:
+
+  git switch -
+
+Turn off this advice by setting config variable advice.detachedHead to false
+
+HEAD is now at 46d67e5 Merge pull request #15 from OctoSense-org/fix/card-host-help
+{
+  "schema_version": 1,
+  "runtime": {
+    "url": "https://github.com/OctoSense-org/Octoscript-Makepad.git",
+    "revision": "99c1e5ee7925060ced59c66d6f8763c22217e4ad"
+  },
+  "repositories": {
+    "makepad": {
+      "url": "https://github.com/OctoSense-org/makepad.git",
+      "revision": "d0a9def5fc554a52955db21a2a5a196daccc8e3d"
+    },
+    "octoscript": {
+      "url": "https://github.com/OctoSense-org/Octoscript.git",
+      "revision": "68f6a9df55692b5d8ef8873a12721e279a3f40d6"
+    }
+  },
+  "manifest_sha256": "f0b206e9b4ff4da3a20b795db0ca81bd2fb03e029a44289bfa7e3341bf588b48"
+}
+{
+  "schema_version": 1,
+  "runtime": {
+    "url": "https://github.com/OctoSense-org/Octoscript-Makepad.git",
+    "revision": "99c1e5ee7925060ced59c66d6f8763c22217e4ad"
+  },
+  "repositories": {
+    "makepad": {
+      "url": "https://github.com/OctoSense-org/makepad.git",
+      "revision": "d0a9def5fc554a52955db21a2a5a196daccc8e3d"
+    },
+    "octoscript": {
+      "url": "https://github.com/OctoSense-org/Octoscript.git",
+      "revision": "68f6a9df55692b5d8ef8873a12721e279a3f40d6"
+    }
+  },
+  "manifest_sha256": "f0b206e9b4ff4da3a20b795db0ca81bd2fb03e029a44289bfa7e3341bf588b48"
+}

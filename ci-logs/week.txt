@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/runner/work/OctoDining/OctoDining/scripts/test-week-draft.py", line 88, in <module>
+    main()
+  File "/home/runner/work/OctoDining/OctoDining/scripts/test-week-draft.py", line 57, in main
+    await_status("已生成七天草案")
+  File "/home/runner/work/OctoDining/OctoDining/scripts/test-week-draft.py", line 46, in await_status
+    raise AssertionError((fragment, value))
+AssertionError: ('已生成七天草案', '本地规划已就绪。先查找候选，再确认保存。')
