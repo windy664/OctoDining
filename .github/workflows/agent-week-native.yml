@@ -23,7 +23,7 @@ jobs:
           mkdir -p .local-state/ci-logs
           {
             sudo apt-get update
-            sudo apt-get install -y xvfb libx11-dev libxrandr-dev libxcursor-dev libxi-dev libgl1-mesa-dev libasound2-dev libudev-dev libwayland-dev
+            sudo apt-get install -y xvfb libx11-dev libxrandr-dev libxcursor-dev libxi-dev libgl1-mesa-dev libasound2-dev libudev-dev libwayland-dev libpulse-dev libdrm-dev libxkbcommon-dev
           } 2>&1 | tee .local-state/ci-logs/deps.log
 
       - name: Prepare pinned OctoSense runtime
