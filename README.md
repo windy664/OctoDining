@@ -42,4 +42,6 @@ curl --fail http://127.0.0.1:8141/quit
 
 应用源码模板为 `scripts/main.splash.in`，`bundle/main.splash` 是嵌入菜单后的生成文件；`bundle/` 是 App Hub 检查对象。OctoSense Shell 是目标宿主，Rinx 聊天分享是可选扩展。架构与边界见[架构说明](docs/ARCHITECTURE.md)，产品流程见[产品定位](docs/PRODUCT_POSITIONING.md)，隐私见[数据说明](docs/PRIVACY.md)。
 
+按最新官方 Flow 准备 App Hub 发布时，请看[提交状态与步骤](docs/APP_HUB_SUBMISSION.md)。当前 1.7.0 包已通过更新后 Hub 的 unsigned 本地准入检查并生成审查包；正式发布仍需核定菜单授权、发布者资料和最终提交版本。App Hub 目前通过官方仓库的 `Submit <app id> <version>` issue 接收申请。
+
 代码采用 [Apache 2.0](LICENSE-CODE)。内置菜单的来源凭据与再分发授权仍待核对，见[数据来源说明](docs/DATA_PROVENANCE.md)；代码许可不涵盖第三方菜单与图片。当前没有订餐、付款、实时库存、营养或过敏原核验。

@@ -1,6 +1,6 @@
 # 参赛准备状态
 
-更新：2026-10-06。当前工作版 **1.7.0**，以 OctoSense Shell / OctoScript 为主线。Rinx 分享是可选扩展，App Hub 是包检查与提交规范；它们不要求一起实现。应用先完成真实餐食任务，再展示 Agent 决策及结果核验。[按最佳 Agentic 评分项核验](AGENTIC_JUDGING.md)：1.2.2 的真实模型闭环与 1.7.0 的失败回退分版呈现。
+更新：2026-10-07。当前工作版 **1.7.0**，以 OctoSense Shell / OctoScript 为主线。Rinx 分享是可选扩展，App Hub 是包检查与提交规范；它们不要求一起实现。应用先完成真实餐食任务，再展示 Agent 决策及结果核验。[按最佳 Agentic 评分项核验](AGENTIC_JUDGING.md)：1.2.2 的真实模型闭环与 1.7.0 的失败回退分版呈现。最新[App Hub 投稿状态与步骤](APP_HUB_SUBMISSION.md)单独记录。
 
 ## 版本与证据边界
 
