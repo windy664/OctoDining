@@ -91,7 +91,7 @@ jobs:
             > ci-steps.txt
           mkdir -p ci-logs
           for file in .local-state/ci-logs/*.log; do
-            if [ -f "$file" ]; then tail -n 80 "$file" > "ci-logs/$(basename "$file")"; fi
+            if [ -f "$file" ]; then tail -n 80 "$file" > "ci-logs/$(basename "$file" .log).txt"; fi
           done
           git add ci-result.json ci-steps.txt ci-logs
           git commit -m "Record native UI run ${{ github.run_id }}"
