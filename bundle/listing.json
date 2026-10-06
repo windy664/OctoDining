@@ -12,7 +12,7 @@
     "support": "https://github.com/windy664/OctoDining/issues",
     "privacy_policy_url": "https://github.com/windy664/OctoDining/blob/master/docs/PRIVACY.md"
   },
-  "release_notes": "1.7.0：首页按食堂时区显示下一顿；可记录已吃与实际支付并回算预算；可粘贴导入经验证的 JSON 菜单；七天草案需用户确认后才写入餐表。",
+  "release_notes": "1.8.0：七日草案新增 OctoSense Agent 换餐提案入口。每个日期最多给出两个经预算和营业时段筛选的替代品；应用核验回复后，用户先将建议应用到待确认草案，再确认整周并读回。该功能仍待宿主实测。",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

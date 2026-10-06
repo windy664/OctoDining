@@ -23,6 +23,8 @@
 
 1.7.0 的卡片宿主功能测试已通过。[同版 Shell 测试](docs/evidence/shell-170-20261005.md)确认应用加载、Agent 首次授权、请求进入 Octos，以及模型限流时的人工选择、保存读回与重启恢复；这次供应商返回 429，**没有得到模型建议**。真实 MiniMax 建议的完整联调证据仍属于 1.2.2。已冻结的 `qualifier-2026-10-04-final` 标签仍指向旧版，不因开发版更新而改写。
 
+**1.8.0 开发中：** 七日草案新增 Agent 换餐提案入口。源码与包预检见[实现及待验收项](docs/evidence/agent-week-180-20261006.md)；当前受执行环境限制，尚无 1.8.0 宿主运行、模型建议或新截图，不能用上面的 1.7.0 证据代替。
+
 ## 运行开发预览
 
 依照[官方 OctoScript 快速上手](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/docs/QUICKSTART.md)准备 `tools/octo`，然后运行：
