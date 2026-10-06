@@ -1,0 +1,80 @@
+   Compiling makepad-draw v2.0.0 (/home/runner/work/OctoDining/octosense-ws/makepad/draw)
+   Compiling makepad-mbtile-reader v1.0.0 (/home/runner/work/OctoDining/octosense-ws/makepad/libs/mbtile_reader)
+   Compiling rustc_version v0.4.1
+   Compiling i_overlay v7.0.3 (/home/runner/work/OctoDining/octosense-ws/makepad/libs/i_overlay)
+   Compiling makepad-derive-widget v2.0.0 (/home/runner/work/OctoDining/octosense-ws/makepad/widgets/derive_widget)
+   Compiling block-buffer v0.12.1
+   Compiling crypto-common v0.2.2
+   Compiling makepad-latex-math v0.1.0 (/home/runner/work/OctoDining/octosense-ws/makepad/libs/latex_math)
+   Compiling rustls-pki-types v1.15.1
+   Compiling getrandom v0.2.17
+   Compiling subtle v2.6.1
+   Compiling crc32fast v1.5.2
+   Compiling arrayvec v0.7.8
+   Compiling untrusted v0.9.0
+   Compiling httparse v1.10.1
+   Compiling constant_time_eq v0.4.2
+   Compiling digest v0.11.3
+   Compiling curve25519-dalek v5.0.0
+   Compiling syn v3.0.6
+   Compiling serde v1.0.229
+   Compiling adler2 v2.0.1
+   Compiling getrandom v0.3.4
+   Compiling rustls v0.23.45
+   Compiling bytes v1.12.1
+   Compiling log v0.4.34
+   Compiling simd-adler32 v0.3.10
+   Compiling miniz_oxide v0.9.1
+   Compiling http v1.5.0
+   Compiling serde_derive v1.0.229
+   Compiling rustls-webpki v0.103.15
+   Compiling signature v3.0.0
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling once_cell v1.21.4
+   Compiling base64 v0.23.1
+   Compiling ureq-proto v0.6.4
+   Compiling ed25519 v3.0.0
+   Compiling flate2 v1.1.10
+   Compiling sha2 v0.11.0
+   Compiling webpki-roots v1.0.9
+   Compiling percent-encoding v2.3.2
+   Compiling utf8-zero v0.8.1
+   Compiling ureq v3.4.2
+   Compiling ed25519-dalek v3.0.0
+   Compiling rand_core v0.9.5
+   Compiling hex v0.4.3
+   Compiling makepad-strict-json v0.1.0 (/home/runner/work/OctoDining/octosense-ws/makepad/libs/strict_json)
+   Compiling octosense-app-policy v0.1.0 (/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/crates/app-policy)
+   Compiling base64 v0.22.1
+   Compiling octosense-app-hub v0.1.0 (/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/crates/app-hub)
+   Compiling makepad-ai-services v0.1.0 (/home/runner/work/OctoDining/octosense-ws/makepad/libs/ai/services)
+   Compiling octoscript-ui-l0 v0.1.0 (/home/runner/work/OctoDining/octosense-ws/octoscript/crates/octoscript-ui-l0)
+   Compiling octoscript-render v0.1.0 (/home/runner/work/OctoDining/octosense-ws/octoscript-makepad/crates/octoscript-render)
+   Compiling makepad-app-module v0.1.0 (/home/runner/work/OctoDining/octosense-ws/makepad/libs/app_module)
+   Compiling octoscript-widgets v0.1.0 (/home/runner/work/OctoDining/octosense-ws/octoscript-makepad/crates/octoscript-widgets)
+   Compiling octoscript-makepad v0.1.0 (/home/runner/work/OctoDining/octosense-ws/octoscript-makepad/crates/octoscript-makepad)
+   Compiling octosense-appstore v0.1.0 (/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/crates/appstore)
+   Compiling octosense-card-host v0.1.0 (/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/crates/card-host)
+error: linking with `cc` failed: exit status: 1
+  |
+  = note:  "cc" "-m64" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/deps/rustcijouTl/symbols.o" "<11 object files omitted>" "-Wl,--as-needed" "-Wl,-Bstatic" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/deps/{liboctosense_app_hub-99bd25ddab7f6766,libhex-1a24ad8e658c37ff,librand_core-f8efeca648b9845f,libgetrandom-88edfd2e01366f71,libureq-0a6683d770932848,libwebpki_roots-9ae1484efef210c8,librustls-d5c32625848daf47,libwebpki-1f119217f06d18fe,libring-ab3e40defda24db0,libgetrandom-00a49d1c71764fd1,liblibc-3465b370f7469c65,libuntrusted-6046503770adb7b5,librustls_pki_types-a9c4cf58fe1775a8,libpercent_encoding-3279a37cc5d62c73,libflate2-938791fa643c11b4,libminiz_oxide-08397e3036f6829c,libsimd_adler32-c6392761742e5c18,libcrc32fast-1e47275e1f48b6be,libutf8_zero-d313bb689423f831,libureq_proto-8e600a9b6bf4d7b6,libhttparse-981fa2725360b290,libbase64-4879bdb93c9a56c4,libhttp-381d433d8b776fb8,libbytes-1704c36cc949e2f0,liblog-db836913df48a5a4,libed25519_dalek-e18dbaac60c5c4c5,libsha2-3d1ac42c3000fb49,libcurve25519_dalek-e39369b5e926b0dd,libzeroize-0ae2e9de1fce3072,libsubtle-2d38b49f9b36aad5,libdigest-941248a95429bcf5,libcrypto_common-a64c0b55f398e740,libblock_buffer-3fcc7e193f88aebb,libhybrid_array-67e3e210cbf706f3,libtypenum-5ff8bda4a095e4d9,libed25519-e8498990c2fcf45e,libsignature-e18aa2953fcf9611,librand_core-3af13fe8574a9eb1,libbase64-9e740c72a4866227,liboctosense_app_policy-f3483e128c549e57,libblake3-3a11435fcb0d24db,libconstant_time_eq-f35217fb16770689,libcpufeatures-e4ba3e80569cefb6,libcfg_if-7b8f778351493918,libarrayvec-75018c429b7a36af,libmakepad_widgets-357367feea641113,liboctoscript_node-76e053bd211fe632,libserde_json-6b646c32609bb236,libmemchr-f65cc7170efc91f7,libitoa-3f1e1c9af425c136,libzmij-fb8a68db9eaf9dcb,libmakepad_latex_math-3a85a328a35617df,libi_overlay-14e079f1de169fec,libi_tree-fd0aa62760010af9,libi_shape-b85d1f61b9c67626,libi_key_sort-3c99121ad16ea49a,libi_float-060d1940fa8c8b9a,libmakepad_mbtile_reader-6cf3b9b210f79b8c,libmakepad_sqlite-292c48387eb0e110,libbrotli-aa61b074d17064b1,libbrotli_decompressor-cae5e31a08e5c44a,liballoc_stdlib-8b07e84a0d707d93,liballoc_no_stdlib-e68fc264ed9c9f3a,libpulldown_cmark-e7efa93cb496121f,libmemchr-eb68da89ba7f20b7,libunicase-1a692782644fe288,libmakepad_draw-331f8eed08000b51,libunicode_bidi-c01b7aa92c022ba6,libsdfer-3ffe7d66b367b4a1,libunicode_segmentation-3aa887a9cce65f4c,libab_glyph_rasterizer-5ad08929a0032d76,libfxhash-983d9164167fd8b0,libbyteorder-a2228731732840bc,libmakepad_svg-d5561f11cdd71171,libmakepad_zune_qoi-a05c43c8d63d5395,libmakepad_zune_bmp-7b1be2f588a969e1,libmakepad_webp-a81228327336eeac,libmakepad_byteorder_lite-6c085a73b3e33a15,libmakepad_gif-bc8939cf2906e0c7,libweezl-a3347309a355a7ed,librustybuzz-49ef2fa5d936deaa,libunicode_bidi_mirroring-5f673d2020c7d9d6,libbytemuck-911eef2a8b838858,libunicode_script-2261d8f7aed06157,libunicode_properties-6a9bf29437b5702f,libunicode_ccc-070febb2adf83909,libttf_parser-483a94051a80b76e,libmakepad_zune_jpeg-23dd3f9ff43355e1,libmakepad_platform-e3e489c49ea15376,libsmallvec-cf5a0d677557534e,libmakepad_tsdf-d16e93bcb7e0958d,libmakepad_live_reload_core-d008ae005093ef78,libmakepad_filesystem_watcher-2f61102ad4134248,libmakepad_git-1cb0cffd3ad9264a,libmakepad_video-cf6fa8a318cade0e,libmakepad_script_std-daed76831fb1c56d,libmakepad_shared_bytes-cf1efd927d812de7,libmakepad_network-bd1f85915561dcca,libmakepad_futures-775a55b70eb840ec,libwayland_egl-123e34f4b0d3e816,libwayland_protocols-1a44a724b592bca8,libwayland_client-2df4edf69e6126b5,libwayland_backend-0ec424cfec909266,libdowncast_rs-0fe5a2af1a55a1a3,libscoped_tls-e937a851664bbf42,libwayland_sys-3a32022a1b1690db,libsmallvec-6c7311688d14935e,libmakepad_zune_png-050d97148a86f9f2,libmakepad_fast_inflate-389b8fd48912f9eb,libmakepad_zune_inflate-1213d27c350c2793,libsimd_adler32-b864168e0f01b180,libmakepad_zune_core-13b3fd42e001cd4c,libmakepad_studio_protocol-c2acc718e2a8de03,libbitflags-4adbd6176371ace5,libmakepad_script-977dc2aa5a32a718,libmakepad_stitch-d082c53225eae754,libmakepad_html-7687a70045fdc516,libmakepad_regex-5c929a7e7c43697e,libmakepad_math-471cdcf8d6f038c8,libmakepad_error_log-1da709773f62d86b,libmakepad_micro_serde-fb720009de978749,libmakepad_live_id-c039b85a72de2feb,libserde-ea4935a9fe7780af,libserde_core-d7d209d4155760f7}.rlib" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib/{libstd-*,libpanic_unwind-*,libobject-*,libmemchr-*,libaddr2line-*,libgimli-*,libcfg_if-*,librustc_demangle-*,libstd_detect-*,libhashbrown-*,librustc_std_workspace_alloc-*,libminiz_oxide-*,libadler2-*,libunwind-*,liblibc-*,librustc_std_workspace_core-*,liballoc-*,libcore-*,libcompiler_builtins-*}.rlib" "-Wl,-Bdynamic" "-lc" "-lm" "-lrt" "-lpthread" "-lc" "-lXcursor" "-lX11" "-lasound" "-lpulse" "-lssl" "-lcrypto" "-ldrm" "-lxkbcommon" "-lssl" "-lcrypto" "-lssl" "-lcrypto" "-lwayland-egl" "-lwayland-client" "-lgcc_s" "-lutil" "-lrt" "-lpthread" "-lm" "-ldl" "-lc" "-L" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/deps/rustcijouTl/raw-dylibs" "-B<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld" "-fuse-ld=lld" "-Wl,--eh-frame-hdr" "-Wl,-z,noexecstack" "-L" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/build/blake3-d2f931bb486bf10e/out" "-L" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/build/ring-dec769aa6d449ea1/out" "-L" "/usr/lib/x86_64-linux-gnu" "-L" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib" "-o" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/deps/hub-4159922e0cbf502a" "-Wl,--gc-sections" "-pie" "-Wl,-z,relro,-z,now" "-Wl,-O1" "-Wl,--strip-debug" "-nodefaultlibs"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: rust-lld: error: unable to find library -lpulse
+          rust-lld: error: unable to find library -ldrm
+          rust-lld: error: unable to find library -lxkbcommon
+          collect2: error: ld returned 1 exit status
+          
+
+error: could not compile `octosense-app-hub` (bin "hub") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: linking with `cc` failed: exit status: 1
+  |
+  = note:  "cc" "-m64" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/deps/rustcgj7hEr/symbols.o" "<13 object files omitted>" "-Wl,--as-needed" "-Wl,-Bstatic" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/deps/{liboctosense_appstore-3e97d8a5c46bda0e,liboctosense_app_hub-99bd25ddab7f6766,libhex-1a24ad8e658c37ff,librand_core-f8efeca648b9845f,libgetrandom-88edfd2e01366f71,libureq-0a6683d770932848,libwebpki_roots-9ae1484efef210c8,librustls-d5c32625848daf47,libwebpki-1f119217f06d18fe,libring-ab3e40defda24db0,libgetrandom-00a49d1c71764fd1,liblibc-3465b370f7469c65,libuntrusted-6046503770adb7b5,librustls_pki_types-a9c4cf58fe1775a8,libpercent_encoding-3279a37cc5d62c73,libflate2-938791fa643c11b4,libminiz_oxide-08397e3036f6829c,libsimd_adler32-c6392761742e5c18,libcrc32fast-1e47275e1f48b6be,libutf8_zero-d313bb689423f831,libureq_proto-8e600a9b6bf4d7b6,libhttparse-981fa2725360b290,libbase64-4879bdb93c9a56c4,libhttp-381d433d8b776fb8,libbytes-1704c36cc949e2f0,liblog-db836913df48a5a4,libed25519_dalek-e18dbaac60c5c4c5,libsha2-3d1ac42c3000fb49,libcurve25519_dalek-e39369b5e926b0dd,libzeroize-0ae2e9de1fce3072,libsubtle-2d38b49f9b36aad5,libdigest-941248a95429bcf5,libcrypto_common-a64c0b55f398e740,libblock_buffer-3fcc7e193f88aebb,libhybrid_array-67e3e210cbf706f3,libtypenum-5ff8bda4a095e4d9,libed25519-e8498990c2fcf45e,libsignature-e18aa2953fcf9611,librand_core-3af13fe8574a9eb1,libbase64-9e740c72a4866227,libmakepad_app_module-a33d4f80e5998b25,libmakepad_ai_services-44135865db345a30,libmakepad_strict_json-ba2848c74c1b6034,liboctoscript_widgets-c4e3a431e86ed1a2,liboctoscript_makepad-ed6c6a5e66bbad2e,liboctoscript_ui_l0-4952a87a970c157b,liboctoscript_render-1085ba62393f1b28,liboctosense_app_policy-f3483e128c549e57,libblake3-3a11435fcb0d24db,libconstant_time_eq-f35217fb16770689,libcpufeatures-e4ba3e80569cefb6,libcfg_if-7b8f778351493918,libarrayvec-75018c429b7a36af,libserde-ea4935a9fe7780af,libmakepad_widgets-357367feea641113,liboctoscript_node-76e053bd211fe632,libserde_json-6b646c32609bb236,libmemchr-f65cc7170efc91f7,libitoa-3f1e1c9af425c136,libzmij-fb8a68db9eaf9dcb,libserde_core-d7d209d4155760f7,libmakepad_latex_math-3a85a328a35617df,libi_overlay-14e079f1de169fec,libi_tree-fd0aa62760010af9,libi_shape-b85d1f61b9c67626,libi_key_sort-3c99121ad16ea49a,libi_float-060d1940fa8c8b9a,libmakepad_mbtile_reader-6cf3b9b210f79b8c,libmakepad_sqlite-292c48387eb0e110,libbrotli-aa61b074d17064b1,libbrotli_decompressor-cae5e31a08e5c44a,liballoc_stdlib-8b07e84a0d707d93,liballoc_no_stdlib-e68fc264ed9c9f3a,libpulldown_cmark-e7efa93cb496121f,libmemchr-eb68da89ba7f20b7,libunicase-1a692782644fe288,libmakepad_draw-331f8eed08000b51,libunicode_bidi-c01b7aa92c022ba6,libsdfer-3ffe7d66b367b4a1,libunicode_segmentation-3aa887a9cce65f4c,libab_glyph_rasterizer-5ad08929a0032d76,libfxhash-983d9164167fd8b0,libbyteorder-a2228731732840bc,libmakepad_svg-d5561f11cdd71171,libmakepad_zune_qoi-a05c43c8d63d5395,libmakepad_zune_bmp-7b1be2f588a969e1,libmakepad_webp-a81228327336eeac,libmakepad_byteorder_lite-6c085a73b3e33a15,libmakepad_gif-bc8939cf2906e0c7,libweezl-a3347309a355a7ed,librustybuzz-49ef2fa5d936deaa,libunicode_bidi_mirroring-5f673d2020c7d9d6,libbytemuck-911eef2a8b838858,libunicode_script-2261d8f7aed06157,libunicode_properties-6a9bf29437b5702f,libunicode_ccc-070febb2adf83909,libttf_parser-483a94051a80b76e,libmakepad_zune_jpeg-23dd3f9ff43355e1,libmakepad_platform-e3e489c49ea15376,libsmallvec-cf5a0d677557534e,libmakepad_tsdf-d16e93bcb7e0958d,libmakepad_live_reload_core-d008ae005093ef78,libmakepad_filesystem_watcher-2f61102ad4134248,libmakepad_git-1cb0cffd3ad9264a,libmakepad_video-cf6fa8a318cade0e,libmakepad_script_std-daed76831fb1c56d,libmakepad_shared_bytes-cf1efd927d812de7,libmakepad_network-bd1f85915561dcca,libmakepad_futures-775a55b70eb840ec,libwayland_egl-123e34f4b0d3e816,libwayland_protocols-1a44a724b592bca8,libwayland_client-2df4edf69e6126b5,libwayland_backend-0ec424cfec909266,libdowncast_rs-0fe5a2af1a55a1a3,libscoped_tls-e937a851664bbf42,libwayland_sys-3a32022a1b1690db,libsmallvec-6c7311688d14935e,libmakepad_zune_png-050d97148a86f9f2,libmakepad_fast_inflate-389b8fd48912f9eb,libmakepad_zune_inflate-1213d27c350c2793,libsimd_adler32-b864168e0f01b180,libmakepad_zune_core-13b3fd42e001cd4c,libmakepad_studio_protocol-c2acc718e2a8de03,libbitflags-4adbd6176371ace5,libmakepad_script-977dc2aa5a32a718,libmakepad_stitch-d082c53225eae754,libmakepad_html-7687a70045fdc516,libmakepad_regex-5c929a7e7c43697e,libmakepad_math-471cdcf8d6f038c8,libmakepad_error_log-1da709773f62d86b,libmakepad_micro_serde-fb720009de978749,libmakepad_live_id-c039b85a72de2feb}.rlib" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib/{libstd-*,libpanic_unwind-*,libobject-*,libmemchr-*,libaddr2line-*,libgimli-*,libcfg_if-*,librustc_demangle-*,libstd_detect-*,libhashbrown-*,librustc_std_workspace_alloc-*,libminiz_oxide-*,libadler2-*,libunwind-*,liblibc-*,librustc_std_workspace_core-*,liballoc-*,libcore-*,libcompiler_builtins-*}.rlib" "-Wl,-Bdynamic" "-lc" "-lm" "-lrt" "-lpthread" "-lc" "-lXcursor" "-lX11" "-lasound" "-lpulse" "-lssl" "-lcrypto" "-ldrm" "-lxkbcommon" "-lssl" "-lcrypto" "-lssl" "-lcrypto" "-lwayland-egl" "-lwayland-client" "-lgcc_s" "-lutil" "-lrt" "-lpthread" "-lm" "-ldl" "-lc" "-L" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/deps/rustcgj7hEr/raw-dylibs" "-B<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/bin/gcc-ld" "-fuse-ld=lld" "-Wl,--eh-frame-hdr" "-Wl,-z,noexecstack" "-L" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/build/blake3-d2f931bb486bf10e/out" "-L" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/build/ring-dec769aa6d449ea1/out" "-L" "/usr/lib/x86_64-linux-gnu" "-L" "<sysroot>/lib/rustlib/x86_64-unknown-linux-gnu/lib" "-o" "/home/runner/work/OctoDining/octosense-ws/OctoSense-App-Hub/target/release/deps/card_host-888f49ed95859387" "-Wl,--gc-sections" "-pie" "-Wl,-z,relro,-z,now" "-Wl,-O1" "-Wl,--strip-debug" "-nodefaultlibs"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: rust-lld: error: unable to find library -lpulse
+          rust-lld: error: unable to find library -ldrm
+          rust-lld: error: unable to find library -lxkbcommon
+          collect2: error: ld returned 1 exit status
+          
+
+error: could not compile `octosense-card-host` (bin "card-host") due to 1 previous error
