@@ -42,6 +42,6 @@ curl --fail http://127.0.0.1:8141/quit
 
 应用源码模板为 `scripts/main.splash.in`，`bundle/main.splash` 是嵌入菜单后的生成文件；`bundle/` 是 App Hub 检查对象。OctoSense Shell 是目标宿主，Rinx 聊天分享是可选扩展。架构与边界见[架构说明](docs/ARCHITECTURE.md)，产品流程见[产品定位](docs/PRODUCT_POSITIONING.md)，隐私见[数据说明](docs/PRIVACY.md)。
 
-按最新官方 Flow 准备 App Hub 发布时，请看[提交状态与步骤](docs/APP_HUB_SUBMISSION.md)。当前 1.7.0 包以 `windy664` 签名，并通过更新后 Hub 的签名检查；审查包已在签名前生成。发布者已说明对菜单和照片拥有公开分发权，书面凭据尚未附仓库。App Hub 目前通过官方仓库的 `Submit <app id> <version>` issue 接收申请。
+按最新官方 Flow 准备 App Hub 发布时，请看[提交状态与步骤](docs/APP_HUB_SUBMISSION.md)。当前 1.7.0 包以 `windy664` 签名，并通过更新后 Hub 的签名检查；审查包已在签名前生成。[App Hub 投稿 #117](https://github.com/OctoSense-org/OctoSense-App-Hub/issues/117) 已提交，使用固定标签 `apphub-v1.7.0`，等待维护者审查。发布者已说明对菜单和照片拥有公开分发权，书面凭据尚未附仓库。
 
 代码采用 [Apache 2.0](LICENSE-CODE)。内置菜单及照片的权利范围按发布者说明记录在[数据来源说明](docs/DATA_PROVENANCE.md)，尚未附独立凭据；代码许可不自动涵盖菜单与图片。当前没有订餐、付款、实时库存、营养或过敏原核验。

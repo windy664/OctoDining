@@ -1,8 +1,8 @@
 # App Hub 提交状态与操作
 
-核对日期：2026-10-07。官方版本：OctoSense `4081c30`、OctoSense-App-Hub `78dfda5`、OctoScript-App-Design-Flow `a5a87d3`。提交规则以官方 [Design Flow 发布流程](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/docs/PUBLISHING.md)和 [App Hub 发布契约](https://github.com/OctoSense-org/OctoSense-App-Hub/blob/main/docs/PUBLISHING.md)为准；本页记录 OctoDining 在这些版本下的核对结果。
+核对日期：2026-10-07。签名版已提交至[官方 Issue #117](https://github.com/OctoSense-org/OctoSense-App-Hub/issues/117)，等待维护者审查。官方版本：OctoSense `4081c30`、OctoSense-App-Hub `78dfda5`、OctoScript-App-Design-Flow `a5a87d3`。提交规则以官方 [Design Flow 发布流程](https://github.com/OctoSense-org/OctoScript-App-Design-Flow/blob/main/docs/PUBLISHING.md)和 [App Hub 发布契约](https://github.com/OctoSense-org/OctoSense-App-Hub/blob/main/docs/PUBLISHING.md)为准；本页记录 OctoDining 在这些版本下的核对结果。
 
-我们的作品是 `bundle/` 中的 **script app**，应用 ID `org.octosense.octodining`，当前包版本 `1.7.0`。OctoSense 仓库提供 Shell，不是 App Hub 的投稿地址；赛事作品仓库登记也不等于 App Hub 发布。App Hub 当前接受的入口是在其仓库开标题为 `Submit org.octosense.octodining 1.7.0` 的 issue，由维护者检查并发布；不要向 `catalog.json`、`index/` 或 `artifacts/` 提 PR。
+我们的作品是 `bundle/` 中的 **script app**，应用 ID `org.octosense.octodining`，当前包版本 `1.7.0`。OctoSense 仓库提供 Shell，不是 App Hub 的投稿地址；赛事作品仓库登记也不等于 App Hub 发布。App Hub 投稿 issue 已创建，固定版本为 `apphub-v1.7.0`（commit `8cf21bb41870da9f15752c21badd582027286062`）；是否收录由维护者审查决定。不要向 `catalog.json`、`index/` 或 `artifacts/` 提 PR。
 
 ## 已完成的预检
 
@@ -34,4 +34,4 @@ PUBLISHER_PUBLIC_KEY=1b72b26cb53eef42eeb73d5017b57e0e734c25f26191f7f9c8bbf09520d
 "$HUB_CLI" check bundle --publisher-key "windy664=$PUBLISHER_PUBLIC_KEY" --catalog "$HUB_CATALOG"
 ```
 
-签名版使用 `apphub-v1.7.0` 标签；此前的 `v1.7.0` 指向无签名候选，**不要用于 App Hub 投稿**。在 App Hub 的[Issues](https://github.com/OctoSense-org/OctoSense-App-Hub/issues) 开 `Submit org.octosense.octodining 1.7.0`，附仓库 URL、`apphub-v1.7.0` 标签、完整 commit SHA、包路径 `bundle/`、发布者 ID `windy664` 与上方公钥、最终 `hub check` 原文，以及签名前 `hub scan` 七问答复。**开 issue 是提交申请，不代表已上架；维护者发布到签名目录后才算进入 App Hub。**
+签名版使用 `apphub-v1.7.0` 标签；此前的 `v1.7.0` 指向无签名候选，**不要用于 App Hub 投稿**。[投稿 Issue #117](https://github.com/OctoSense-org/OctoSense-App-Hub/issues/117) 已包含仓库 URL、固定标签、完整 commit SHA、包路径 `bundle/`、发布者 ID `windy664` 与上方公钥、最终 `hub check` 原文，以及签名前 `hub scan` 七问答复。**开 issue 是提交申请，不代表已上架；维护者发布到签名目录后才算进入 App Hub。**

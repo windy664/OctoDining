@@ -7,7 +7,7 @@
 | 范围 | 已验证 | 尚需完成 |
 | --- | --- | --- |
 | 1.7.0 card-host | 首次预算、内置/自定义菜单、下一餐推荐、候选、七日草案确认、记录实付、取消与恢复；中英文原生画面；本地持久化及故障保护 | card-host 不能证明 Shell 模型调用 |
-| 1.7.0 App Hub | 最新 Hub `78dfda5` 的签名检查通过；`windy664` 公钥已验证，`hub scan` 审查包在签名前生成；另以临时测试密钥发布到隔离目录并通过目录签名验证 | App Hub 维护者审查与发布；预检不代替实际运行 |
+| 1.7.0 App Hub | 最新 Hub `78dfda5` 的签名检查通过；`windy664` 公钥已验证，`hub scan` 审查包在签名前生成；[投稿 #117](https://github.com/OctoSense-org/OctoSense-App-Hub/issues/117) 已提交 | App Hub 维护者审查与发布；预检不代替实际运行 |
 | 1.7.0 OctoSense Shell | 本地测试目录加载、首次 Agent 授权、请求进入 Octos；供应商 HTTP 429 后手动选餐、保存读回与重启恢复通过，[本版记录](evidence/shell-170-20261005.md) | 限流导致本次无模型建议；仍需同版成功模型闭环及响应异常验收 |
 | 1.2.2 OctoSense Shell | 本地测试目录安装，`octos.turn.start` 经 Octos kernel 得到真实 MiniMax-M3 建议，用户确认后保存并读回；拒绝授权和无模型回退分别实测 | 不能代替 1.7.0 的真实模型成功证据 |
 
@@ -28,6 +28,6 @@
 - 源码采用 Apache 2.0；发布者已声明有权公开分发内置菜单数据与其拍摄的照片，但尚未附独立书面凭据；见[数据来源](DATA_PROVENANCE.md)。代码许可不自动涵盖菜单与图片。
 - 赛事队伍主题已在[官方 Issue #5](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/5#issuecomment-5854778542)登记，初赛仓库已在[官方 Issue #13](https://github.com/gosimfoundation/hackathon-agenticapp26/issues/13#issuecomment-5924251291)登记。**个人报名表是否完成无可核验记录**。
 - 若把 1.7.0 作为评审版本，需在 OctoSense Shell 用同一 bundle 补齐**成功的真实模型建议**；授权、手动确认、读回、重启和限流回退已有同版证据。记录完整复现步骤后再冻结提交号；当前不能移动旧标签代表这一结果。
-- App Hub 正式发布仍需发布者核对资料、权利声明和最终包；官方目前以公开源码及可运行作品为主，不需要等待商店自动上架。
+- App Hub 签名版已通过[官方 Issue #117](https://github.com/OctoSense-org/OctoSense-App-Hub/issues/117) 提交，固定标签为 `apphub-v1.7.0`；等待维护者审查，尚未上架。赛事评审仍以公开源码、冻结版本与可运行证据为准。
 
 复现 1.7.0 开发预览见[README](../README.md)；宿主与版本关系见[架构](ARCHITECTURE.md)。
