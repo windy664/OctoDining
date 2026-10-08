@@ -58,5 +58,5 @@ Rules:
 - Historical notes in `docs/CONTINUATION.md` and `docs/HANDOFF-2026-10-03.md`
   are context only. Current task instructions take precedence.
 - Do not run the historical `start-demo.sh` as the default launcher. It controls
-  Rinx processes. `scripts/preview.sh` also has machine-specific paths and stops
-  the preview at port 8141; prefer explicit commands for the intended host.
+  Rinx processes. `scripts/preview.sh` runs a local unsigned copy and stops a
+  previous preview on port 8141; set `OCTO_CLI` if the harness is elsewhere.
