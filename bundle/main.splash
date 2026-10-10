@@ -385,6 +385,30 @@ fn taste_profile(){
     }
     text + L("。只能引用这些真实记录，不要编造偏好。", ". Cite only these records; do not invent preferences.")
 }
+fn week_summary_text(){
+    let planned = 0
+    let plannedCents = 0
+    let eaten = 0
+    let eatenCents = 0
+    for offset in 7 {
+        let index = day_index(journal, week_date(currentDate, offset))
+        if index >= 0 {
+            for m in journal.days[index].meals {
+                planned += 1
+                plannedCents += m.cents
+                if meal_eaten_at(m) != nil { eaten += 1 eatenCents += meal_actual_cents(m) }
+            }
+        }
+    }
+    let likes = 0
+    let dislikes = 0
+    for item in taste.items { likes += item.likes dislikes += item.dislikes }
+    if planned == 0 && likes == 0 && dislikes == 0 { return "" }
+    let text = L("本周已计划 ", "This week planned ") + planned + L(" 餐 · ¥", " meals · ¥") + cash(plannedCents)
+    if eaten > 0 { text += L("；已吃 ", "; eaten ") + eaten + L(" 餐 · 实付 ¥", " meals · paid ¥") + cash(eatenCents) }
+    if likes + dislikes > 0 { text += L("；口味记录 好评 ", "; taste: liked ") + likes + L(" · 差评 ", " · disliked ") + dislikes }
+    text
+}
 fn open_taste(id){
     tastePick = id
     ui.taste_title.set_text(L("这顿怎么样？", "How was it?"))
@@ -1959,6 +1983,8 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
             }
         }
         plans := View{width: Fill height: Fit flow: Down spacing: 10 on_render: || {
+            let summary = week_summary_text()
+            if summary != "" { Label{width: Fill text: summary draw_text.color: blue draw_text.text_style.font_size: 11} }
             for offset in 7 {
                 let date = week_date(currentDate, offset)
                 let index = day_index(journal, date)
