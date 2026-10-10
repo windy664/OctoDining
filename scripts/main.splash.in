@@ -14,6 +14,8 @@ let selectedSlot = 2
 let currentDate = ""
 let journal = {schema: 1 revision: 0 last_date: "" days: []}
 let activeFile = ""
+let taste = {schema: 1 items: []}
+let tastePick = -1
 let storageReady = true
 let candidates = []
 let candidateStamp = ""
@@ -301,6 +303,143 @@ fn meal_actual_cents(meal){
     try { value = meal.actual_cents } { value = nil }
     value
 }
+fn taste_key(p){ p.name + "@" + p.store + "@" + p.cents }
+fn load_taste(){
+    let raw = nil
+    try { raw = fs.read("taste.json") } { raw = nil }
+    if raw != nil && raw != "" {
+        let parsed = raw.parse_json()
+        let valid = false
+        try { valid = parsed.schema == 1 && parsed.items.is_array() } { valid = false }
+        if valid { taste = parsed }
+    }
+}
+fn save_taste(){
+    if !storageReady { return }
+    try { fs.write("taste.json", taste.to_json()) } { }
+}
+fn record_taste(id, verdict){
+    if id < 0 || id >= allProducts.len() { return }
+    let key = taste_key(allProducts[id])
+    let found = false
+    for item in taste.items {
+        if item.key == key {
+            if verdict == "like" { item.likes = item.likes + 1 }
+            if verdict == "dislike" { item.dislikes = item.dislikes + 1 }
+            if verdict == "skip" { item.skips = item.skips + 1 }
+            item.last = today()
+            found = true
+        }
+    }
+    if !found {
+        let likes = 0
+        let dislikes = 0
+        let skips = 0
+        if verdict == "like" { likes = 1 }
+        if verdict == "dislike" { dislikes = 1 }
+        if verdict == "skip" { skips = 1 }
+        taste.items.push({key: key name: allProducts[id].name store: allProducts[id].store cents: allProducts[id].cents likes: likes dislikes: dislikes skips: skips last: today()})
+    }
+    save_taste()
+}
+fn taste_score(id){
+    let key = taste_key(allProducts[id])
+    for item in taste.items {
+        if item.key == key {
+            let s = 0
+            if item.likes > item.dislikes { s = -500 * item.likes }
+            if item.dislikes > item.likes { s = s + 4000 }
+            s = s + item.skips * 300
+            return s
+        }
+    }
+    0
+}
+fn taste_badge(id){
+    let key = taste_key(allProducts[id])
+    for item in taste.items {
+        if item.key == key {
+            if item.likes > item.dislikes && item.likes > 0 { return L(" · ♥ 你的好评 ×", " · ♥ You liked ×") + item.likes }
+            if item.dislikes > item.likes { return L(" · ✗ 你给过差评 ×", " · ✗ You disliked ×") + item.dislikes }
+        }
+    }
+    ""
+}
+fn taste_profile(){
+    let liked = []
+    let disliked = []
+    for item in taste.items {
+        if item.likes > item.dislikes && item.likes > 0 { liked.push(item.name) }
+        if item.dislikes > item.likes { disliked.push(item.name) }
+    }
+    if liked.len() == 0 && disliked.len() == 0 { return "" }
+    let text = L("用户口味记录：", "User taste history: ")
+    if liked.len() > 0 {
+        text += L("好评 ", "liked ")
+        for i in min(3, liked.len()) { if i > 0 { text += "、" } text += liked[i] }
+    }
+    if disliked.len() > 0 {
+        if liked.len() > 0 { text += L("；", "; ") }
+        text += L("差评 ", "disliked ")
+        for i in min(3, disliked.len()) { if i > 0 { text += "、" } text += disliked[i] }
+    }
+    text + L("。只能引用这些真实记录，不要编造偏好。", ". Cite only these records; do not invent preferences.")
+}
+fn open_taste(id){
+    tastePick = id
+    ui.taste_title.set_text(L("这顿怎么样？", "How was it?"))
+    ui.taste_hint.set_text(L("你的评价只留在本机，用来让下次推荐更合口味。", "Your verdict stays on this device and tunes future picks."))
+    ui.taste_card.set_visible(true)
+}
+fn close_taste(){
+    tastePick = -1
+    ui.taste_card.set_visible(false)
+    ui.plans.render()
+}
+let GLANCE_CARD = "# octodining next-meal\n# level: L0\n# profile: ui/l0\n\nsource meal sys.dataset(fields: [title, metric1_label, metric1_value, metric2_label, metric2_value, summary])\n\ncopy app { class: vocabulary, en: \"OctoDining\" }\n\nview root Surface(pad: .tight) {\n  Col(gap: 10) {\n    TextCaption(text: copy.app, width: .fill)\n    TextTitle(text: meal.title, width: .fill)\n    Row(gap: 8) {\n      Tile(label: meal.metric1_label, value: meal.metric1_value)\n      Tile(label: meal.metric2_label, value: meal.metric2_value)\n    }\n    TextBody(text: meal.summary, width: .fill)\n  }\n}\n"
+fn slot_end_minute(slot){
+    if slot == 0 { return 600 }
+    if slot == 1 { return 840 }
+    1200
+}
+fn sync_glance(notify){
+    let target = next_meal_target()
+    let idx = day_index(journal, target.date)
+    let next = nil
+    if idx >= 0 {
+        for m in journal.days[idx].meals {
+            if m.slot == target.slot && meal_eaten_at(m) == nil { next = m }
+        }
+    }
+    if next == nil {
+        host.request("glance.withdraw", {card_id: "next-meal"}, fn(r){})
+        return
+    }
+    let now = canteen_time()
+    let nowMin = now.hour * 60 + now.minute
+    let left = slot_end_minute(target.slot) - nowMin + 30
+    if target.date != today() { left = 1440 - nowMin + slot_end_minute(target.slot) + 30 }
+    let expires = left * 60
+    if expires < 900 { expires = 900 }
+    if expires > 172800 { expires = 172800 }
+    host.request("glance.publish", {
+        card_id: "next-meal"
+        title: slot_label(target.slot) + " · " + next.name
+        source: GLANCE_CARD
+        data: {meal: {
+            title: slot_label(target.slot) + " · " + next.name
+            metric1_label: L("预算", "Budget")
+            metric1_value: "¥" + cash(next.cents)
+            metric2_label: L("到店", "Arrive")
+            metric2_value: next.arrival
+            summary: next.store + L(" · 计划餐，未下单", " · planned, not ordered")
+        }}
+        priority: 60
+        expires: expires
+        open: {app: "org.octosense.octodining"}
+        notify: notify
+    }, fn(r){})
+}
 fn sum_meals(meals, omit){
     let amount = 0
     for m in meals {
@@ -380,6 +519,7 @@ fn store_record(next){
     }
     journal = next
     activeFile = target
+    sync_glance(false)
     return true
 }
 fn hide_candidates(){
@@ -569,6 +709,9 @@ fn refresh_language(){
     ui.confirm_draft.set_text(L("确认整周草案", "Confirm week draft"))
     ui.discard_draft.set_text(L("舍弃草案", "Discard draft"))
     ui.checkin_title.set_text(L("记录实际用餐", "Record a meal eaten"))
+    ui.taste_like.set_text(L("好吃", "Good"))
+    ui.taste_mid.set_text(L("一般", "OK"))
+    ui.taste_dislike.set_text(L("不行", "Bad"))
     ui.actual_price_label.set_text(L("实际支付 · 元", "Amount paid · CNY"))
     ui.checkin_confirm.set_text(L("确认已吃并保存", "Save meal eaten"))
     ui.checkin_cancel.set_text(L("暂不记录", "Not now"))
@@ -683,6 +826,7 @@ fn refresh_home(){
         ui.home_price.set_text("")
         ui.home_meta.set_text(L("日期变化后会重新计算推荐", "Suggestions update when the date changes"))
         ui.home_reason.set_text("")
+        ui.home_taste.set_text("")
         return
     }
     for meal in current_meals() {
@@ -697,6 +841,7 @@ fn refresh_home(){
             ui.home_meta.set_text(meal.store + " · " + meal.arrival + L(" 到店", " arrival"))
             if eaten_at != nil { ui.home_reason.set_text(L("这餐已记录为吃过，实际支付 ¥", "Recorded as eaten; amount paid ¥") + cash(meal_actual_cents(meal)) + L("。", ".")) }
             else { ui.home_reason.set_text(L("已经写入餐表。想换口味，可以点“换一道”。", "Saved to your plan. Try another dish if you want a change.")) }
+            ui.home_taste.set_text(taste_badge(meal.product_id))
             ui.home_cta.set_text(L("查看今日餐表", "View today's plan"))
             return
         }
@@ -749,6 +894,7 @@ fn refresh_home(){
                 if regex("饭", "").test(p.name) { score -= 950 }
                 else if regex("面|粉|米线|饺子|馄饨|云吞", "").test(p.name) { score -= 300 }
                 score += p.name.len() * 18
+                score += taste_score(i)
                 if regex("\\+|[0-9]素|[0-9]荤|特价|【|】", "").test(p.name) { score += 1500 }
                 for id in recentIds { if id == i { score += 900 } }
                 for store in recentStores { if store == p.store { score += 80 } }
@@ -762,6 +908,7 @@ fn refresh_home(){
         ui.home_price.set_text("")
         ui.home_meta.set_text(L("请调整预算、到店时间或口味", "Change budget, arrival time or taste"))
         ui.home_reason.set_text(L("推荐只使用当前已核验的菜单记录。", "Suggestions use only the current verified menu records."))
+        ui.home_taste.set_text("")
         return
     }
     let pick = allProducts[homePick]
@@ -774,9 +921,13 @@ fn refresh_home(){
     } else {
         ui.home_reason.set_text(L("预算内、到店时段匹配；参考近七条已存日期的选择，尽量减少重复。", "Within budget and open at arrival; recent saved choices help reduce repeats."))
     }
+    ui.home_taste.set_text(taste_badge(homePick))
 }
 fn next_home_pick(){
-    if homePick >= 0 { homeSeen.push(homePick) }
+    if homePick >= 0 {
+        record_taste(homePick, "skip")
+        homeSeen.push(homePick)
+    }
     homeSkip = homePick
     refresh_home()
     if homePick < 0 && homeSeen.len() > 0 {
@@ -795,6 +946,7 @@ fn confirm_home_pick(){
     candidateStamp = selection_stamp()
     choose_meal(0)
     if journal.revision == before { show_page(false) }
+    else { sync_glance(true) }
 }
 fn apply_slot(slot){
     selectedSlot = slot
@@ -1014,6 +1166,7 @@ fn ask_week_agent(){
     }
     let stamp = week_draft_stamp()
     let prompt = L("你是七日食堂餐表调整助手。只可从下列已验证的日期和餐品选项中提议调整，每个日期最多选择一个替代品。不能编造菜单、价格、营业时段、营养或过敏安全事实。", "You help adjust a seven-day canteen draft. Select only from the verified dates and meal alternatives, at most one per date. Do not invent menu, price, hours, nutrition or allergy facts. Reply in English. ")
+        + taste_profile() + "\n"
         + L("用户希望：", "User request: ") + request + L("。已确认餐次不在本次可改范围。\n", ". Confirmed meals are outside this draft.\n")
         + ui.week_agent_options.text()
         + L("仅返回 JSON：{\"changes\":[{\"meal\":\"选项列表中列出的日期文本\",\"option\":替代品编号}],\"reason\":\"简短取舍理由\"}；meal 必须逐字复制列表中的日期，不能满足需求则返回空数组并解释。", "Return JSON only: {\"changes\":[{\"meal\":\"the date text listed in the options\",\"option\":alternative_number}],\"reason\":\"brief rationale\"}; meal must copy the listed date verbatim. Return an empty array if the options cannot address the request.")
@@ -1232,6 +1385,7 @@ fn generate_week_draft(){
                             if p.cents <= cap && matches_meal_for(p, slot) && open_at(p.business_hours, arrival) {
                                 let score = abs(p.cents - round(cap * 0.75))
                                 if regex("饭", "").test(p.name) { score -= 800 }
+                                score += taste_score(id)
                                 for old in chosen { if old == id { score += 3000 } }
                                 for store in chosenStores { if store == p.store { score += 120 } }
                                 if score < bestScore { bestScore = score best = id }
@@ -1298,6 +1452,7 @@ fn confirm_week_draft(){
         refresh_summary()
         ui.plans.render()
         ui.status.set_text(L("已确认并读回核验 ", "Confirmed and verified ") + count + L(" 餐；仅为计划，未下单。", " planned meals; no orders placed."))
+        sync_glance(true)
     }
 }
 fn ask_agent(){
@@ -1327,6 +1482,7 @@ fn ask_agent(){
     let prompt = L("你是餐饮候选比较助手。只能比较给出的候选，不能编造价格、菜品、营业信息或营养过敏事实。\n", "You compare meal options. Only use the supplied options. Do not invent prices, dishes, hours, nutrition or allergen facts. Reply in English. Menu names remain in their original Chinese.\n")
         + L("用户餐次：", "Meal: ") + slot_label(selectedSlot) + L("；日预算 ¥", "; daily budget ¥") + cash(money_value(ui.daily.text()))
         + L("；本餐可用上限 ¥", "; meal limit ¥") + cash(condition.cap) + L("；到店时间 ", "; arrival ") + ui.arrival.text()
+        + taste_profile()
         + L("；用户需求：", "; request: ") + ui.request.text() + L("；当天已计划：", "; existing plans: ") + prior + ".\n"
         + L("候选如下：\n", "Options:\n") + options
         + L("仅返回 JSON：{\"choice\":候选序号(从1开始，无法推荐则0),\"reason\":\"简短取舍理由\"}。不要提供其他文本。", "Return JSON only: {\"choice\":option number starting at 1, or 0 if none,\"reason\":\"brief rationale\"}. No other text.")
@@ -1442,10 +1598,12 @@ fn confirm_checkin(){
     let d = day_index(next, checkinDate)
     if d < 0 { return }
     let found = false
+    let eatenPick = -1
     for m in next.days[d].meals {
         if m.slot == checkinSlot && meal_eaten_at(m) == nil {
             m.eaten_at = time_now()
             m.actual_cents = actual
+            eatenPick = m.product_id
             found = true
         }
     }
@@ -1464,6 +1622,7 @@ fn confirm_checkin(){
             status += L(" 当日已超支，请检查待吃计划。", " The day is over budget; review upcoming meals.")
         }
         ui.status.set_text(status)
+        open_taste(eatenPick)
     }
 }
 fn undo_checkin(slot){
@@ -1522,6 +1681,7 @@ fn boot(){
     }
     let a = nil
     let b = nil
+    load_taste()
     let existsA = fs.exists("plans-a.json")
     let existsB = fs.exists("plans-b.json")
     if existsA { a = read_record("plans-a.json") }
@@ -1559,6 +1719,7 @@ fn boot(){
         else { ui.status.set_text(L("本地规划已就绪。先查找候选，再确认保存。", "Local planning is ready. Find options, then confirm a meal.")) }
     }
     refresh_language()
+    sync_glance(false)
 }
 
 start_timeout(0.05, || boot())
@@ -1648,6 +1809,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                 }
             }
             home_reason := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 10}
+            home_taste := Label{width: Fill text: "" draw_text.color: #x7c5a1e draw_text.text_style.font_size: 10}
             View{width: Fill height: Fit flow: Right spacing: 8
                 home_cta := Primary{width: Fill text: "就吃这道 · 加入餐表" on_click: || confirm_home_pick()}
                 next_pick := Action{text: "换一道" on_click: || next_home_pick()}
@@ -1787,6 +1949,15 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                 checkin_cancel := Action{text: "暂不记录" on_click: || {checkinSlot = -1 checkinDate = "" ui.checkin.set_visible(false)}}
             }
         }
+        taste_card := RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0 visible: false
+            taste_title := Label{text: "这顿怎么样？" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 14}}
+            taste_hint := Label{width: Fill text: "你的评价只留在本机，用来让下次推荐更合口味。" draw_text.color: muted draw_text.text_style.font_size: 11}
+            View{width: Fill height: Fit flow: Right spacing: 8
+                taste_like := Accent{text: "好吃" on_click: || { record_taste(tastePick, "like") close_taste() }}
+                taste_mid := Action{text: "一般" on_click: || close_taste()}
+                taste_dislike := Action{text: "不行" on_click: || { record_taste(tastePick, "dislike") close_taste() }}
+            }
+        }
         plans := View{width: Fill height: Fit flow: Down spacing: 10 on_render: || {
             for offset in 7 {
                 let date = week_date(currentDate, offset)
@@ -1804,7 +1975,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                         View{width: Fill height: Fit flow: Down spacing: 5
                             View{width: Fill height: Fit flow: Right spacing: 8
                                 View{width: Fill height: Fit flow: Down spacing: 5
-                                    Label{width: Fill text: slot_label(m.slot) + " · " + m.name + " · ¥" + cash(m.cents) + (if meal_eaten_at(m) != nil { L(" · 已吃", " · eaten") } else { L(" · 待吃", " · planned") }) draw_text.color: ink draw_text.text_style.font_size: 13}
+                                    Label{width: Fill text: slot_label(m.slot) + " · " + m.name + " · ¥" + cash(m.cents) + (if meal_eaten_at(m) != nil { L(" · 已吃", " · eaten") } else { L(" · 待吃", " · planned") }) + taste_badge(m.product_id) draw_text.color: ink draw_text.text_style.font_size: 13}
                                     Label{width: Fill text: m.store + L(" · 到店 ", " · arrival ") + m.arrival draw_text.color: muted draw_text.text_style.font_size: 11}
                                     if meal_eaten_at(m) != nil { Label{width: Fill text: L("实际支付 ¥", "Paid ¥") + cash(meal_actual_cents(m)) draw_text.color: blue draw_text.text_style.font_size: 11} }
                                 }

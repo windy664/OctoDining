@@ -1,6 +1,6 @@
 # 参赛准备状态
 
-更新：2026-10-10。**初赛入围（80/100）**，评审意见与决赛前改进清单见[初赛结果](PRELIMINARY-RESULT.md)。当前工作版 **1.8.0**：1.7.0 功能之上并入 Agent 跨日换餐提案，card-host 验收与签名检查已通过，Shell 内真实模型回复待验收；最后有人工核验实机画面的版本是 1.7.0。以 OctoSense Shell / OctoScript 为主线。Rinx 分享是可选扩展，App Hub 是包检查与提交规范；它们不要求一起实现。应用先完成真实餐食任务，再展示 Agent 决策及结果核验。[按最佳 Agentic 评分项核验](AGENTIC_JUDGING.md)：1.2.2 的真实模型闭环与 1.7.0 的失败回退分版呈现。最新[App Hub 投稿状态与步骤](APP_HUB_SUBMISSION.md)单独记录。
+更新：2026-10-10。**初赛入围（80/100）**，评审意见与决赛前改进清单见[初赛结果](PRELIMINARY-RESULT.md)。当前工作版 **1.9.0**：在 1.8.13（已验证 Shell 真实模型闭环）之上新增口味记忆（好评/差评/换一道记录影响推荐，差评会降低优先级）、打卡后评价卡片、一览屏下一餐提醒卡片（glance）、Agent 提示词带入口味记录。以 OctoSense Shell / OctoScript 为主线。Rinx 分享是可选扩展，App Hub 是包检查与提交规范；它们不要求一起实现。应用先完成真实餐食任务，再展示 Agent 决策及结果核验。[按最佳 Agentic 评分项核验](AGENTIC_JUDGING.md)：1.2.2 的真实模型闭环与 1.7.0 的失败回退分版呈现。最新[App Hub 投稿状态与步骤](APP_HUB_SUBMISSION.md)单独记录。
 
 ## 版本与证据边界
 
