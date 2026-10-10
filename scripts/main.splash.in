@@ -1054,6 +1054,22 @@ fn find_candidates(){
             stores.push(first.store)
         }
     }
+    let searchText = ui.dish_search.text().trim()
+    if searchText != "" && searchText.len() <= 30 {
+        for i in allProducts.len() {
+            if candidates.len() >= 3 { break }
+            let p = allProducts[i]
+            if p.name.search(searchText) >= 0 && p.cents <= condition.cap {
+                let dup = false
+                for s in stores { if s == p.store { dup = true } }
+                let spicy = regex("辣|麻|椒", "").test(p.name + " " + p.category)
+                if !dup && (!condition.avoid || !spicy) && matches_meal(p) && open_at(p.business_hours, condition.arrival) {
+                    candidates.push(i)
+                    stores.push(p.store)
+                }
+            }
+        }
+    }
     let examined = 0
     while examined < allProducts.len() && candidates.len() < 3 {
         let idx = searchCursor % allProducts.len()
@@ -1933,6 +1949,10 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
             adjust_conditions := Action{text: "调整条件" on_click: || show_page(false)}
             next_batch := Action{text: "换一批候选" on_click: || find_candidates()}
         }
+        dish_search := TextInput{width: Fill height: 40 text: "" empty_text: "搜菜名，如 蒸饺、牛肉 / Search a dish name"
+            draw_bg +: {color: #xffffff color_hover: #xffffff color_focus: #xffffff color_empty: #xffffff border_radius: 12.0 border_size: 0.0}
+            draw_text +: {color: ink color_hover: ink color_focus: ink color_empty: muted color_empty_hover: muted}}
+        Action{text: L("按菜名找", "Search by name") on_click: || { searchCursor = 0 find_candidates() }}
         RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 14 right: 14 top: 13 bottom: 13} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 16.0
             agent_heading := Label{text: "Agent 的建议" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 14}}
             agent_result := Label{width: Fill text: "先生成候选，再请系统 Agent 比较。" draw_text.color: ink draw_text.text_style.font_size: 12}
