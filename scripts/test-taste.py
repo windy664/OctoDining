@@ -54,14 +54,42 @@ def main():
         ], check=True, env=env, stdout=subprocess.DEVNULL)
         running = True
 
-        dish = get("home_name")
+        dish = None
+        for _ in range(20):
+            dish = get("home_name")
+            if dish and "挑选" not in dish and "暂无" not in dish:
+                break
+            time.sleep(.3)
         assert dish, "no home recommendation"
+
+        # Skip path (works at any hour): 换一道 records a skip and changes the pick.
+        app.click("next_pick")
+        time.sleep(1)
+        data = json.loads((jail / "taste.json").read_text())
+        assert data["items"][0]["skips"] == 1 and data["items"][0]["name"] == dish, data
+        print(f"PASS skip recorded in taste.json for {dish}", flush=True)
+
+        # Eaten-verdict path needs a check-in-able meal planned for today.
+        for _ in range(20):
+            caption = get("home_caption") or ""
+            if caption:
+                break
+            time.sleep(.3)
+        if "明天" in caption:
+            print("NOTE late evening: next meal is tomorrow; eaten flow is same-day only — skipping it", flush=True)
+            print("Evidence:", work, flush=True)
+            return
+
+        slot = next((s for s in ("早餐", "午餐", "晚餐") if s in caption), None)
+        assert slot, caption
         app.click("home_cta")
         time.sleep(1)
         assert "已保存并读回核验" in (get("status") or ""), get("status")
+        confirmed = get("home_name")
+        assert confirmed and "暂无" not in confirmed, confirmed
         scroll(-2400)
-        wait_button("记录已吃晚餐")
-        app.click("记录已吃晚餐")
+        wait_button("记录已吃" + slot)
+        app.click("记录已吃" + slot)
         time.sleep(.6)
         app.click("checkin_confirm")
         time.sleep(1)
@@ -69,24 +97,25 @@ def main():
         app.click("taste_dislike")
         time.sleep(.6)
         data = json.loads((jail / "taste.json").read_text())
-        assert data["items"][0]["dislikes"] == 1 and data["items"][0]["name"] == dish
+        entry = next((i for i in data["items"] if i["name"] == confirmed), None)
+        assert entry and entry["dislikes"] == 1, data
         scroll(-2400)
-        wait_button("撤销已吃晚餐")
+        wait_button("撤销已吃" + slot)
         texts = [n.get("t", "") for n in app.snap() if n.get("t")]
-        assert any("差评" in t and dish in t for t in texts), [t for t in texts if dish in t]
+        assert any("差评" in t and confirmed in t for t in texts), [t for t in texts if confirmed in t]
         print("PASS verdict recorded to taste.json and dislike badge shows on the week row", flush=True)
 
-        app.click("撤销已吃晚餐")
+        app.click("撤销已吃" + slot)
         time.sleep(.6)
         scroll(-2400)
-        wait_button("取消晚餐")
-        app.click("取消晚餐")
+        wait_button("取消" + slot)
+        app.click("取消" + slot)
         time.sleep(.8)
         app.click("home_nav")
         time.sleep(1)
         changed = get("home_name")
-        assert changed and changed != dish, (dish, changed)
-        print(f"PASS disliked dish {dish} no longer recommended (now {changed})", flush=True)
+        assert changed and changed != confirmed, (confirmed, changed)
+        print(f"PASS disliked dish {confirmed} no longer recommended (now {changed})", flush=True)
         print("Evidence:", work, flush=True)
     finally:
         if running:

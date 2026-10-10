@@ -906,8 +906,12 @@ fn refresh_home(){
     let bestScore = 999999
     // Bound home scoring well below the script handler's instruction limit.
     // A coprime stride samples throughout the menu rather than its first shops.
-    for sample in min(220, allProducts.len()) {
+    // Breakfast uses the prebuilt pool: sampling the full menu misses nearly all of it.
+    let sampleCount = min(220, allProducts.len())
+    if selectedSlot == 0 { sampleCount = breakfastPool.len() }
+    for sample in sampleCount {
         let i = (sample * 7) % allProducts.len()
+        if selectedSlot == 0 { i = breakfastPool[sample] }
         let p = allProducts[i]
         let seen = i == homeSkip
         for previous in homeSeen { if previous == i { seen = true } }
@@ -1141,6 +1145,7 @@ fn prepare_week_agent_offers(){
     weekAgentOffers = []
     let seenDates = []
     let summary = ""
+    let ledger = ""
     for i in weekDraft.len() {
         if weekAgentOffers.len() >= 5 { break }
         let choice = weekDraft[i]
@@ -1164,6 +1169,7 @@ fn prepare_week_agent_offers(){
         if alternatives.len() > 0 {
             seenDates.push(choice.date)
             weekAgentOffers.push({draft_index: i alternatives: alternatives})
+            ledger += choice.date + L(" 已计划 ¥", " planned ¥") + cash(day_planned_cents(choice.date)) + L(" / 日预算 ¥", " / daily ¥") + cash(choice.daily_cents) + "\n"
             summary += "" + weekAgentOffers.len() + ". " + choice.date + " " + slot_label(choice.slot) + ": " + original.name + " ¥" + cash(original.cents) + "\n"
             for j in alternatives.len() {
                 let replacement = allProducts[alternatives[j]]
@@ -1173,8 +1179,18 @@ fn prepare_week_agent_offers(){
         }
     }
     if summary == "" { summary = L("当前草案没有可核验的换餐选项，仍可手动逐餐调整。", "No valid swaps found; you can still edit meals manually.") }
+    else if ledger != "" { summary = L("预算账目：\n", "Budget ledger:\n") + ledger + summary }
     ui.week_agent_options.set_text(summary)
     clear_week_agent_proposal()
+}
+fn day_planned_cents(date){
+    let total = 0
+    for choice in weekDraft {
+        if choice.date == date { total += allProducts[choice.product_id].cents }
+    }
+    let index = day_index(journal, date)
+    if index >= 0 { total += sum_meals(journal.days[index].meals, -1) }
+    total
 }
 fn ask_week_agent(){
     if weekAgentBusy { return }
@@ -1189,7 +1205,7 @@ fn ask_week_agent(){
         return
     }
     let stamp = week_draft_stamp()
-    let prompt = L("你是七日食堂餐表调整助手。只可从下列已验证的日期和餐品选项中提议调整，每个日期最多选择一个替代品。不能编造菜单、价格、营业时段、营养或过敏安全事实。", "You help adjust a seven-day canteen draft. Select only from the verified dates and meal alternatives, at most one per date. Do not invent menu, price, hours, nutrition or allergy facts. Reply in English. ")
+    let prompt = L("你是七日食堂餐表调整助手。只可从下列已验证的日期和餐品选项中提议调整，每个日期最多选择一个替代品。不能编造菜单、价格、营业时段、营养或过敏安全事实。若需求涉及金额，请先读预算账目再选餐，说明每笔节省。", "You help adjust a seven-day canteen draft. Select only from the verified dates and meal alternatives, at most one per date. Do not invent menu, price, hours, nutrition or allergy facts. When the request involves money, read the budget ledger first and state the savings of each swap. Reply in English. ")
         + taste_profile() + "\n"
         + L("用户希望：", "User request: ") + request + L("。已确认餐次不在本次可改范围。\n", ". Confirmed meals are outside this draft.\n")
         + ui.week_agent_options.text()
@@ -1322,13 +1338,19 @@ fn ask_week_agent(){
             ui.week_agent_result.set_text(L("Agent 建议不换餐：", "Agent suggests no swap: ") + reason + L("。草案未改变。", ". Draft unchanged."))
         } else {
             let changes = ""
+            let saved = 0
             for change in selected {
                 let offer = weekAgentOffers[change.meal - 1]
                 let choice = weekDraft[offer.draft_index]
+                let originalCents = allProducts[choice.product_id].cents
+                let newCents = allProducts[offer.alternatives[change.option - 1]].cents
+                saved += originalCents - newCents
                 changes += choice.date + " " + slot_label(choice.slot) + ": " + allProducts[choice.product_id].name
                     + " → " + allProducts[offer.alternatives[change.option - 1]].name + "\n"
             }
-            ui.week_agent_result.set_text(L("Agent 提议：\n", "Agent proposes:\n") + changes + L("理由：", "Reason: ") + reason
+            let impact = ""
+            if saved > 0 { impact = L("预计节省 ¥", "Estimated savings ¥") + cash(saved) + L("；", "; ") }
+            ui.week_agent_result.set_text(L("Agent 提议：\n", "Agent proposes:\n") + changes + impact + L("理由：", "Reason: ") + reason
                 + L("\n先应用到草案并核对，再确认整周保存。", "\nApply to the draft, review, then confirm the week."))
         }
     })

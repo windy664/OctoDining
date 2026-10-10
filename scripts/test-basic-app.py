@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise the real OctoScript app through Makepad's local UI bridge.
+"""Runs the full flow; some checks assume today has a plannable dinner (run roughly 06:00–20:00 canteen time).Exercise the real OctoScript app through Makepad's local UI bridge.
 
 Uses an isolated storage directory. No model calls or desktop input injection.
 """
