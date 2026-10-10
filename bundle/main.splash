@@ -966,15 +966,16 @@ fn prepare_week_agent_offers(){
     let seenDates = []
     let summary = ""
     for i in weekDraft.len() {
-        if weekAgentOffers.len() >= 7 { break }
+        if weekAgentOffers.len() >= 5 { break }
         let choice = weekDraft[i]
         let seen = false
         for date in seenDates { if date == choice.date { seen = true } }
         if seen { continue }
         let original = allProducts[choice.product_id]
         let alternatives = []
-        for step in allProducts.len() {
-            let id = (choice.product_id + step + 1) % allProducts.len()
+        let sampleCount = min(90, allProducts.len())
+        for sample in sampleCount {
+            let id = (choice.product_id + sample * 37 + i * 31) % allProducts.len()
             let p = allProducts[id]
             if p.cents <= original.cents && p.name != original.name && matches_meal_for(p, choice.slot)
                 && open_at(p.business_hours, clock_value(defaultTimes[choice.slot])) {
@@ -1015,7 +1016,7 @@ fn ask_week_agent(){
     let prompt = L("你是七日食堂餐表调整助手。只可从下列已验证的日期和餐品选项中提议调整，每个日期最多选择一个替代品。不能编造菜单、价格、营业时段、营养或过敏安全事实。", "You help adjust a seven-day canteen draft. Select only from the verified dates and meal alternatives, at most one per date. Do not invent menu, price, hours, nutrition or allergy facts. Reply in English. ")
         + L("用户希望：", "User request: ") + request + L("。已确认餐次不在本次可改范围。\n", ". Confirmed meals are outside this draft.\n")
         + ui.week_agent_options.text()
-        + L("仅返回 JSON：{\"changes\":[{\"meal\":日期编号,\"option\":替代品编号}],\"reason\":\"简短取舍理由\"}；不能满足需求则返回空数组并解释。", "Return JSON only: {\"changes\":[{\"meal\":date_number,\"option\":alternative_number}],\"reason\":\"brief rationale\"}. Return an empty array if the options cannot address the request.")
+        + L("仅返回 JSON：{\"changes\":[{\"meal\":\"选项列表中列出的日期文本\",\"option\":替代品编号}],\"reason\":\"简短取舍理由\"}；meal 必须逐字复制列表中的日期，不能满足需求则返回空数组并解释。", "Return JSON only: {\"changes\":[{\"meal\":\"the date text listed in the options\",\"option\":alternative_number}],\"reason\":\"brief rationale\"}; meal must copy the listed date verbatim. Return an empty array if the options cannot address the request.")
     weekAgentRequest += 1
     let requestId = weekAgentRequest
     weekAgentBusy = true
@@ -1036,6 +1037,19 @@ fn ask_week_agent(){
         let answer = nil
         try { answer = r.data.text.parse_json() } { answer = nil }
         if answer == nil || !answer.is_object() {
+            let parts = r.data.text.split("```")
+            for seg in parts {
+                if answer == nil || !answer.is_object() {
+                    let piece = seg.trim()
+                    if piece != "" {
+                        let cand = nil
+                        try { cand = piece.parse_json() } { cand = nil }
+                        if cand != nil && cand.is_object() { answer = cand }
+                    }
+                }
+            }
+        }
+        if answer == nil || !answer.is_object() {
             ui.week_agent_result.set_text(L("Agent 回复格式无法核验，草案未改变。", "Invalid Agent response; draft unchanged."))
             return
         }
@@ -1051,6 +1065,17 @@ fn ask_week_agent(){
             let meal = nil
             let option = nil
             if item != nil && item.is_object() { try { meal = item.meal option = item.option } {} }
+            if meal != nil && meal.is_string() {
+                let matched = 0
+                for k in weekAgentOffers.len() {
+                    if weekDraft[weekAgentOffers[k].draft_index].date == meal { matched = k + 1 }
+                }
+                if matched > 0 { meal = matched }
+            }
+            if option != nil && option.is_string() {
+                let asNumber = option.to_f64()
+                if asNumber != nil && asNumber > 0 { option = asNumber }
+            }
             if meal == nil || option == nil || !meal.is_number() || !option.is_number()
                 || meal != floor(meal) || option != floor(option) || meal < 1 || meal > weekAgentOffers.len() {
                 ui.week_agent_result.set_text(L("Agent 餐次或选项编号无效，草案未改变。", "Invalid meal or option number; draft unchanged."))
@@ -1192,7 +1217,7 @@ fn generate_week_draft(){
     ui.draft_summary.set_text(L("待确认 ", "Review ") + weekDraft.len() + L(" 餐，缺口 ", " meals; gaps ") + gaps + L(" 餐，重复 ", "; repeats ") + repeats + L(" 次。草案不会自动覆盖已确认计划。", ". The draft will not replace confirmed meals."))
     ui.draft_items.render()
     ui.status.set_text(L("已生成七天草案，请逐项核对；确认前不会写入餐表。", "Seven-day draft ready. Review it; nothing is saved until confirmation."))
-    prepare_week_agent_offers()
+    start_timeout(0.05, || prepare_week_agent_offers())
 }
 fn confirm_week_draft(){
     if weekDraft.len() == 0 || weekDraftRevision != journal.revision || weekDraftStart != currentDate || weekDraftProfileDaily != profileDaily {
