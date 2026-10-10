@@ -5,11 +5,8 @@ let menuKind = "gzis-snapshot"
 let menuSource = "广州软件学院食堂快照"
 let menuUpdated = ""
 let menuTimezone = 480
-let tiers = [1500 2200 3200 4500 6500 10000]
-let limits = "[[400,700,700],[600,1000,1000],[800,1400,1400],[1200,2000,2200],[1500,2800,3200],[2200,2200,2200]]".parse_json()
 let slotNames = ["早餐" "午餐" "晚餐"]
 let defaultTimes = ["08:00" "12:00" "18:30"]
-let selectedTier = 2
 let selectedSlot = 2
 let currentDate = ""
 let journal = {schema: 1 revision: 0 last_date: "" days: []}
@@ -484,7 +481,10 @@ fn record_valid(doc){
     let dates = []
     for day in doc.days {
         if !valid_date(day.date) || !(day.daily_cents >= 100 && day.daily_cents <= 50000) || day.daily_cents != floor(day.daily_cents) { return false }
-        if !(day.tier >= 0 && day.tier < 6) || day.tier != floor(day.tier) || day.meals.len() > 3 { return false }
+        let tier = nil
+        try { tier = day.tier } { tier = nil }
+        if tier != nil && (!(tier >= 0) || tier != floor(tier)) { return false }
+        if day.meals.len() > 3 { return false }
         for date in dates { if date == day.date { return false } }
         dates.push(day.date)
         let slots = []
@@ -709,7 +709,6 @@ fn refresh_language(){
     ui.tab_choose.set_text(L("调整这餐", "Edit this meal"))
     ui.tab_history.set_text(L("一周餐表", "Week plan"))
     ui.conditions_title.set_text(L("用餐条件", "Meal settings"))
-    ui.tier_heading.set_text(L("预算档位", "Budget tiers"))
     ui.breakfast.set_text(L("早餐", "Breakfast"))
     ui.lunch.set_text(L("午餐", "Lunch"))
     ui.dinner.set_text(L("晚餐", "Dinner"))
@@ -759,11 +758,11 @@ fn switch_language(){
     ui.status.set_text(L("语言已切换。", "Language changed."))
 }
 fn profile_limit(slot){
-    if profileReady && money_value(ui.daily.text()) == profileDaily {
-        if slot == 0 { return floor(profileDaily * 0.30) }
-        return floor(profileDaily * 0.40)
-    }
-    limits[selectedTier][slot]
+    let daily = money_value(ui.daily.text())
+    if daily < 0 { daily = profileDaily }
+    if daily < 100 { return 0 }
+    if slot == 0 { return floor(daily * 0.30) }
+    floor(daily * 0.40)
 }
 fn setup_calculation(){
     let monthly = monthly_value(ui.setup_monthly.text())
@@ -826,7 +825,6 @@ fn refresh_summary(){
         else { summary += L(" · 超支 ¥", " · Over budget ¥") + cash(total - daily) }
     }
     ui.summary.set_text(summary)
-    ui.tier_label.set_text(L("当前 A", "Tier A") + (selectedTier + 1) + L(" · 原档日预算 ¥", " · default daily ¥") + cash(tiers[selectedTier]) + L("（可改）", " (editable)"))
     ui.slot_label.set_text(L("正在安排：", "Planning: ") + slot_label(selectedSlot) + L(" · 确认会替换同日同餐次", " · confirming replaces this meal on this date"))
     ui.home_caption.set_text(home_day_label() + " · " + slot_label(selectedSlot))
     refresh_home()
@@ -982,12 +980,7 @@ fn apply_slot(slot){
     ui.arrival.set_text(defaultTimes[slot])
     invalidate()
 }
-fn apply_tier(tier){
-    selectedTier = tier
-    ui.daily.set_text(cash(tiers[tier]))
-    ui.budget.set_text(cash(limits[tier][selectedSlot]))
-    invalidate()
-}
+
 fn open_date(){
     let date = ui.date.text().trim()
     if !valid_date(date) { ui.status.set_text(L("请填写有效日期，例如 2026-10-03。", "Enter a valid date, for example 2026-10-03.")) return }
@@ -998,11 +991,10 @@ fn open_date(){
     ui.checkin.set_visible(false)
     let i = day_index(journal, date)
     if i >= 0 {
-        selectedTier = journal.days[i].tier
         ui.daily.set_text(cash(journal.days[i].daily_cents))
     } else {
         if profileReady { ui.daily.set_text(cash(profileDaily)) }
-        else { ui.daily.set_text(cash(tiers[selectedTier])) }
+        else if profileReady { ui.daily.set_text(cash(profileDaily)) }
     }
     ui.budget.set_text(cash(profile_limit(selectedSlot)))
     hide_candidates()
@@ -1113,12 +1105,11 @@ fn prepare_day(daily){
     let idx = day_index(next, currentDate)
     if idx < 0 {
         if next.days.len() >= 90 { ui.status.set_text(L("已保存 90 个日期，请先导出整理历史记录。", "90 dates are saved. Organize earlier records before adding more.")) return nil }
-        next.days.push({date: currentDate daily_cents: daily tier: selectedTier meals: []})
+        next.days.push({date: currentDate daily_cents: daily meals: []})
         idx = next.days.len() - 1
     }
     next.last_date = currentDate
     next.days[idx].daily_cents = daily
-    next.days[idx].tier = selectedTier
     next
 }
 fn choose_meal(index){
@@ -1413,13 +1404,11 @@ fn generate_week_draft(){
         let date = week_date(currentDate, offset)
         let index = day_index(journal, date)
         let daily = profileDaily
-        let tier = selectedTier
         let confirmed = []
         if index >= 0 {
             daily = journal.days[index].daily_cents
-            tier = journal.days[index].tier
             confirmed = journal.days[index].meals
-        } else if !profileReady { daily = tiers[selectedTier] }
+        }
         let remaining = daily - sum_meals(confirmed, -1)
         for slot in 3 {
             let already = false
@@ -1457,7 +1446,7 @@ fn generate_week_draft(){
                     if best >= 0 {
                         let p = allProducts[best]
                         for old in chosen { if old == best { repeats += 1 break } }
-                        weekDraft.push({date: date slot: slot product_id: best daily_cents: daily tier: tier})
+                        weekDraft.push({date: date slot: slot product_id: best daily_cents: daily})
                         chosen.push(best)
                         chosenStores.push(p.store)
                         remaining -= p.cents
@@ -1490,7 +1479,7 @@ fn confirm_week_draft(){
         let d = day_index(next, choice.date)
         if d < 0 {
             if next.days.len() >= 90 { ui.status.set_text(L("已达到 90 天记录上限，草案未保存。", "90-day record limit reached; draft not saved.")) return }
-            next.days.push({date: choice.date daily_cents: choice.daily_cents tier: choice.tier meals: []})
+            next.days.push({date: choice.date daily_cents: choice.daily_cents meals: []})
             d = next.days.len() - 1
         }
         let taken = false
@@ -1904,16 +1893,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
     selection := ScrollYView{width: Fill height: Fill flow: Down spacing: 10
         conditions_title := Label{text: "用餐条件" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 17}}
         RoundedView{width: Fill height: Fit flow: Down spacing: 10 padding: Inset{left: 14 right: 14 top: 14 bottom: 14} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 16.0
-            tier_heading := Label{text: "预算档位" draw_text.color: muted draw_text.text_style.font_size: 12}
-            View{width: Fill height: Fit flow: Right spacing: 4
-                a1 := Action{width: Fill text: "A1" on_click: || apply_tier(0)}
-                a2 := Action{width: Fill text: "A2" on_click: || apply_tier(1)}
-                a3 := Action{width: Fill text: "A3" on_click: || apply_tier(2)}
-                a4 := Action{width: Fill text: "A4" on_click: || apply_tier(3)}
-                a5 := Action{width: Fill text: "A5" on_click: || apply_tier(4)}
-                a6 := Action{width: Fill text: "A6" on_click: || apply_tier(5)}
-            }
-            tier_label := Label{text: "A3" draw_text.color: muted draw_text.text_style.font_size: 12}
+            slot_heading := Label{text: "选哪一餐" draw_text.color: muted draw_text.text_style.font_size: 12}
             View{width: Fill height: Fit flow: Right spacing: 6
                 breakfast := Action{width: Fill text: "早餐" on_click: || apply_slot(0)}
                 lunch := Action{width: Fill text: "午餐" on_click: || apply_slot(1)}
