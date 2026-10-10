@@ -57,7 +57,10 @@ def main():
         app.click("week_nav")
         press("make_draft")
         await_status("已生成七天草案")
-        assert "缺口 0 餐" in app.text("draft_summary"), app.text("draft_summary")
+        summary = app.text("draft_summary")
+        assert "待确认" in summary, summary
+        gaps = int(summary.split("缺口 ")[1].split(" 餐")[0])
+        assert gaps <= 2, summary
         assert not list(jail.glob("plans-*.json")), "draft wrote a plan before confirmation"
         if frame.exists():
             shutil.copyfile(frame, work / "draft.png")

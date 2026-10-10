@@ -1,12 +1,15 @@
 let menuJson = __MENU_JSON__
 let allProducts = menuJson.parse_json()
 let breakfastPool = __BREAKFAST_POOL__.parse_json()
+let lunchPool = __LUNCH_POOL__.parse_json()
+let dinnerPool = __DINNER_POOL__.parse_json()
+let snackPool = __SNACK_POOL__.parse_json()
 let menuKind = "gzis-snapshot"
 let menuSource = "广州软件学院食堂快照"
 let menuUpdated = ""
 let menuTimezone = 480
-let slotNames = ["早餐" "午餐" "晚餐"]
-let defaultTimes = ["08:00" "12:00" "18:30"]
+let slotNames = ["早餐" "午餐" "晚餐" "加餐"]
+let defaultTimes = ["08:00" "12:00" "18:30" "15:30"]
 let selectedSlot = 2
 let currentDate = ""
 let journal = {schema: 1 revision: 0 last_date: "" days: []}
@@ -31,6 +34,15 @@ let checkinSlot = -1
 let checkinDate = ""
 let importCustomOpen = false
 let weekDraft = []
+let draftTarget = ""
+let draftChosen = []
+let draftChosenStores = []
+let draftGaps = 0
+let draftRepeats = 0
+let draftSkippedBreakfast = 0
+let draftSnacks = 0
+let draftMainsMissing = 0
+let draftGen = 0
 let weekDraftRevision = -1
 let weekDraftStart = ""
 let weekDraftProfileDaily = -1
@@ -165,7 +177,13 @@ fn open_at(hours, current){
     }
     false
 }
+fn matches_snack(p){
+    let text = p.name + " " + p.category
+    if regex("勿点|专用|补差|打包费|餐具|加料", "").test(text) { return false }
+    regex("面包|蛋糕|奶茶|果切|鲜果|饮料|柠檬|咖啡|小吃|甜品|糕点", "").test(text) && p.cents <= 2000
+}
 fn matches_meal_for(p, slot){
+    if slot == 3 { return matches_snack(p) }
     let text = p.name + " " + p.category
     if regex("勿点|专用|补差|打包费|餐具|加料|加粉|加饭|加面|配菜|小料|升级", "").test(text) { return false }
     if slot == 0 {
@@ -220,6 +238,14 @@ fn valid_custom_menu(doc){
     for id in doc.breakfast_pool {
         if !(id >= 0 && id < doc.products.len()) || id != floor(id) { return false }
     }
+    let mains = nil
+    let snacks = nil
+    try { mains = doc.main_pool snacks = doc.snack_pool } { mains = nil }
+    if mains != nil {
+        if !mains.is_array() || !snacks.is_array() { return false }
+        for id in mains { if !(id >= 0 && id < doc.products.len()) { return false } }
+        for id in snacks { if !(id >= 0 && id < doc.products.len()) { return false } }
+    }
     true
 }
 fn import_custom_menu(){
@@ -257,7 +283,13 @@ fn import_custom_menu(){
         if regex("包子|馒头|粥|肠粉|油条|饺|馄饨|云吞|三明治|鸡蛋|煎蛋", "").test(product.name + " " + product.category)
             && open_at(product.business_hours, clock_value("08:00")) { pool.push(products.len() - 1) }
     }
-    let doc = {schema: 1 source: source updated: updated timezone_minutes: timezone * 60 products: products breakfast_pool: pool}
+    let mains = []
+    let snacks = []
+    for idx in products.len() {
+        if matches_meal_for(products[idx], 1) { mains.push(idx) }
+        if matches_snack(products[idx]) { snacks.push(idx) }
+    }
+    let doc = {schema: 1 source: source updated: updated timezone_minutes: timezone * 60 products: products breakfast_pool: pool main_pool: mains snack_pool: snacks}
     if !valid_custom_menu(doc) {
         ui.setup_import_result.set_text(L("导入失败：请检查价格（整数分）、营业时段、重复商品及图片字段。原菜单保留。", "Import failed: check prices in cents, hours, duplicates and fields. Existing menu kept."))
         return
@@ -274,6 +306,9 @@ fn import_custom_menu(){
     }
     allProducts = products
     breakfastPool = pool
+    lunchPool = mains
+    dinnerPool = mains
+    snackPool = snacks
     menuKind = "custom-v1"
     menuSource = source
     menuUpdated = updated
@@ -484,13 +519,13 @@ fn record_valid(doc){
         let tier = nil
         try { tier = day.tier } { tier = nil }
         if tier != nil && (!(tier >= 0) || tier != floor(tier)) { return false }
-        if day.meals.len() > 3 { return false }
+        if day.meals.len() > 4 { return false }
         for date in dates { if date == day.date { return false } }
         dates.push(day.date)
         let slots = []
         let pending_total = 0
         for m in day.meals {
-            if !(m.slot >= 0 && m.slot < 3) || m.slot != floor(m.slot) { return false }
+            if !(m.slot >= 0 && m.slot < 4) || m.slot != floor(m.slot) { return false }
             for s in slots { if s == m.slot { return false } }
             slots.push(m.slot)
             if !(m.product_id >= 0 && m.product_id < allProducts.len()) || m.product_id != floor(m.product_id) { return false }
@@ -762,6 +797,7 @@ fn profile_limit(slot){
     if daily < 0 { daily = profileDaily }
     if daily < 100 { return 0 }
     if slot == 0 { return floor(daily * 0.30) }
+    if slot == 3 { return floor(daily * 0.15) }
     floor(daily * 0.40)
 }
 fn setup_calculation(){
@@ -905,11 +941,12 @@ fn refresh_home(){
     // Bound home scoring well below the script handler's instruction limit.
     // A coprime stride samples throughout the menu rather than its first shops.
     // Breakfast uses the prebuilt pool: sampling the full menu misses nearly all of it.
-    let sampleCount = min(220, allProducts.len())
-    if selectedSlot == 0 { sampleCount = breakfastPool.len() }
+    let pool = lunchPool
+    if selectedSlot == 2 { pool = dinnerPool }
+    if selectedSlot == 0 { pool = breakfastPool }
+    let sampleCount = min(220, pool.len())
     for sample in sampleCount {
-        let i = (sample * 7) % allProducts.len()
-        if selectedSlot == 0 { i = breakfastPool[sample] }
+        let i = pool[(sample * 7) % pool.len()]
         let p = allProducts[i]
         let seen = i == homeSkip
         for previous in homeSeen { if previous == i { seen = true } }
@@ -917,8 +954,8 @@ fn refresh_home(){
             let spicy = regex("辣|麻|椒", "").test(p.name + " " + p.category)
             if !avoid || !spicy {
                 let score = abs(p.cents - round(cap * 0.75))
-                if regex("饭", "").test(p.name) { score -= 950 }
-                else if regex("面|粉|米线|饺子|馄饨|云吞", "").test(p.name) { score -= 300 }
+                if p.name.search("饭") >= 0 { score -= 950 }
+                else if p.name.search("面") >= 0 || p.name.search("粉") >= 0 || p.name.search("米线") >= 0 || p.name.search("饺") >= 0 || p.name.search("馄饨") >= 0 || p.name.search("云吞") >= 0 { score -= 300 }
                 score += p.name.len() * 18
                 score += taste_score(i)
                 if regex("\\+|[0-9]素|[0-9]荤|特价|【|】", "").test(p.name) { score += 1500 }
@@ -1146,6 +1183,7 @@ fn choose_meal(index){
 }
 fn week_meal_limit(daily, slot){
     if slot == 0 { return floor(daily * 0.30) }
+    if slot == 3 { return floor(daily * 0.15) }
     floor(daily * 0.40)
 }
 fn prepare_week_agent_offers(){
@@ -1395,75 +1433,110 @@ fn apply_week_agent(){
 fn generate_week_draft(){
     clear_week_draft()
     if !storageReady { ui.status.set_text(L("记录无法读取，暂不能生成草案。", "Records unavailable; cannot make a draft.")) return }
-    let target = next_meal_target()
-    let chosen = []
-    let chosenStores = []
-    let gaps = 0
-    let repeats = 0
-    for offset in 7 {
-        let date = week_date(currentDate, offset)
-        let index = day_index(journal, date)
-        let daily = profileDaily
-        let confirmed = []
-        if index >= 0 {
-            daily = journal.days[index].daily_cents
-            confirmed = journal.days[index].meals
-        }
-        let remaining = daily - sum_meals(confirmed, -1)
-        for slot in 3 {
-            let already = false
-            for meal in confirmed {
-                if meal.slot == slot {
-                    already = true
-                    chosen.push(meal.product_id)
-                    chosenStores.push(meal.store)
-                }
+    draftTarget = next_meal_target()
+    draftChosen = []
+    draftChosenStores = []
+    draftGaps = 0
+    draftRepeats = 0
+    draftSkippedBreakfast = 0
+    draftSnacks = 0
+    draftMainsMissing = 0
+    draftGen += 1
+    ui.draft_panel.set_visible(true)
+    ui.draft_summary.set_text(L("正在逐日规划…", "Planning day by day…"))
+    ui.status.set_text(L("正在生成七天草案…", "Building the seven-day draft…"))
+    start_timeout(0.02, || draft_day_tick(draftGen, 0))
+}
+fn draft_day_tick(gen, offset){
+    if gen != draftGen { return }
+    if offset >= 7 { finalize_week_draft() return }
+    let target = draftTarget
+    let date = week_date(currentDate, offset)
+    let index = day_index(journal, date)
+    let daily = profileDaily
+    let confirmed = []
+    if index >= 0 {
+        daily = journal.days[index].daily_cents
+        confirmed = journal.days[index].meals
+    }
+    let remaining = daily - sum_meals(confirmed, -1)
+    let mainsOk = true
+    // 正餐优先：午、晚先排，早餐用剩余预算，宽裕才加餐。
+    let order = [1 2 0 3]
+    for oi in 4 {
+        let slot = order[oi]
+        let already = false
+        for meal in confirmed {
+            if meal.slot == slot {
+                already = true
+                draftChosen.push(meal.product_id)
+                draftChosenStores.push(meal.store)
             }
-            if !already {
-                let past = date < target.date || (date == target.date && slot < target.slot)
-                if !past {
-                    let cap = min(week_meal_limit(daily, slot), remaining)
-                    let arrival = clock_value(defaultTimes[slot])
-                    let best = -1
-                    let bestScore = 999999
-                    if cap >= 100 {
-                        let sampleCount = min(60, allProducts.len())
-                        if slot == 0 { sampleCount = breakfastPool.len() }
-                        for sample in sampleCount {
-                            let id = (sample * 37 + offset * 31 + slot * 17) % allProducts.len()
-                            if slot == 0 { id = breakfastPool[sample] }
-                            let p = allProducts[id]
-                            if p.cents <= cap && matches_meal_for(p, slot) && open_at(p.business_hours, arrival) {
-                                let score = abs(p.cents - round(cap * 0.75))
-                                if regex("饭", "").test(p.name) { score -= 800 }
-                                score += taste_score(id)
-                                for old in chosen { if old == id { score += 3000 } }
-                                for store in chosenStores { if store == p.store { score += 120 } }
-                                if score < bestScore { bestScore = score best = id }
-                            }
+        }
+        if !already {
+            let past = date < target.date || (date == target.date && slot < target.slot)
+            if !past {
+                let cap = min(week_meal_limit(daily, slot), remaining)
+                if slot == 3 {
+                    // 加餐只在午晚正餐都已排好、且当日还剩 ¥6 以上时出现；一周最多 3 次。
+                    if remaining < 600 || draftSnacks >= 3 || cap < 400 || !mainsOk { cap = 0 }
+                }
+                if slot == 0 && cap < 300 {
+                    // 预算紧：早餐从简或不吃，午晚餐不动。
+                    cap = 0
+                    draftSkippedBreakfast += 1
+                }
+                let best = -1
+                let bestScore = 999999
+                if cap >= 100 {
+                    let pool = lunchPool
+                    if slot == 2 { pool = dinnerPool }
+                    if slot == 0 { pool = breakfastPool }
+                    if slot == 3 { pool = snackPool }
+                    let sampleCount = min(40, pool.len())
+                    for sample in sampleCount {
+                        let id = pool[(sample * 37 + offset * 31 + slot * 17) % pool.len()]
+                        let p = allProducts[id]
+                        if p.cents <= cap {
+                            let score = abs(p.cents - round(cap * 0.75))
+                            if p.name.search("饭") >= 0 { score -= 800 }
+                            score += taste_score(id)
+                            let recentPick = 0
+                            if draftChosen.len() > 8 { recentPick = draftChosen.len() - 8 }
+                            for ci in recentPick..draftChosen.len() { if draftChosen[ci] == id { score += 3000 } if draftChosenStores[ci] == p.store { score += 120 } }
+                            if score < bestScore { bestScore = score best = id }
                         }
                     }
-                    if best >= 0 {
-                        let p = allProducts[best]
-                        for old in chosen { if old == best { repeats += 1 break } }
-                        weekDraft.push({date: date slot: slot product_id: best daily_cents: daily})
-                        chosen.push(best)
-                        chosenStores.push(p.store)
-                        remaining -= p.cents
-                    } else { gaps += 1 }
                 }
+                if best >= 0 {
+                    let p = allProducts[best]
+                    for old in draftChosen { if old == best { draftRepeats += 1 break } }
+                    weekDraft.push({date: date slot: slot product_id: best daily_cents: daily})
+                    draftChosen.push(best)
+                    if slot == 3 { draftSnacks += 1 }
+                    draftChosenStores.push(p.store)
+                    remaining -= p.cents
+                } else { if slot != 3 { draftGaps += 1 if slot == 1 || slot == 2 { mainsOk = false draftMainsMissing += 1 } } }
             }
         }
     }
+    ui.draft_items.render()
+    start_timeout(0.02, || draft_day_tick(gen, offset + 1))
+}
+fn finalize_week_draft(){
     if weekDraft.len() == 0 {
+        ui.draft_panel.set_visible(false)
         ui.status.set_text(L("本周没有可新增的餐次；请检查已确认计划或预算。", "No new meals fit this week; check existing plans or budget."))
         return
     }
     weekDraftRevision = journal.revision
     weekDraftStart = currentDate
     weekDraftProfileDaily = profileDaily
-    ui.draft_panel.set_visible(true)
-    ui.draft_summary.set_text(L("待确认 ", "Review ") + weekDraft.len() + L(" 餐，缺口 ", " meals; gaps ") + gaps + L(" 餐，重复 ", "; repeats ") + repeats + L(" 次。草案不会自动覆盖已确认计划。", ". The draft will not replace confirmed meals."))
+    let note = ""
+    if draftMainsMissing > 0 { note += L("；", "; ") + draftMainsMissing + L(" 个正餐排不上：本菜单正餐约 ¥8 起，请检查日预算", " main meals do not fit: full meals start near ¥8 on this menu; review the daily budget") }
+    if draftSkippedBreakfast > 0 { note += L("。预算紧，", ". Tight budget: ") + draftSkippedBreakfast + L(" 天早餐从简或不吃，午晚餐不受影响", " days skip breakfast so lunch and dinner stay intact") }
+    if draftSnacks > 0 { note += L("；含 ", "; includes ") + draftSnacks + L(" 份副餐", " extra snacks") }
+    ui.draft_summary.set_text(L("待确认 ", "Review ") + weekDraft.len() + L(" 餐，缺口 ", " meals; gaps ") + draftGaps + L(" 餐，重复 ", "; repeats ") + draftRepeats + L(" 次", "") + note + L("。草案不会自动覆盖已确认计划。", ". The draft will not replace confirmed meals."))
     ui.draft_items.render()
     ui.status.set_text(L("已生成七天草案，请逐项核对；确认前不会写入餐表。", "Seven-day draft ready. Review it; nothing is saved until confirmation."))
     start_timeout(0.05, || prepare_week_agent_offers())
@@ -1489,6 +1562,7 @@ fn confirm_week_draft(){
         let cap = min(week_meal_limit(next.days[d].daily_cents, choice.slot), next.days[d].daily_cents - sum_meals(next.days[d].meals, -1))
         let arrival = defaultTimes[choice.slot]
         if p.cents > cap || !matches_meal_for(p, choice.slot) || !open_at(p.business_hours, clock_value(arrival)) {
+            try { fs.write("confirm-fail.txt", choice.date + " " + slot_label(choice.slot) + " " + p.name + " ¥" + cash(p.cents) + " cap=" + cash(cap) + " day-sum=" + cash(sum_meals(next.days[d].meals, -1)) + " daily=" + cash(next.days[d].daily_cents) + " meal-ok=" + matches_meal_for(p, choice.slot) + " open=" + open_at(p.business_hours, clock_value(arrival))) } { }
             clear_week_draft()
             ui.status.set_text(L("有草案餐次已不符合预算或时段，未保存。", "A draft meal no longer fits budget or hours; nothing was saved."))
             return
@@ -1722,6 +1796,7 @@ fn boot(){
                 if valid_custom_menu(imported) {
                     allProducts = imported.products
                     breakfastPool = imported.breakfast_pool
+                    try { lunchPool = imported.main_pool dinnerPool = imported.main_pool snackPool = imported.snack_pool } { }
                     menuKind = "custom-v1"
                     menuSource = imported.source
                     menuUpdated = imported.updated

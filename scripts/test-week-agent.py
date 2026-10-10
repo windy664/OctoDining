@@ -41,8 +41,14 @@ def main():
         running = True
         app.click("week_nav")
         app.click("make_draft")
-        summary = app.text("draft_summary")
-        assert "已生成七天草案" in summary or "待确认" in summary, summary
+        summary = ""
+        deadline = time.monotonic() + 15
+        while time.monotonic() < deadline:
+            summary = app.text("draft_summary")
+            if "待确认" in summary:
+                break
+            time.sleep(.4)
+        assert "待确认" in summary, summary
         options = app.text("week_agent_options")
         assert "¥" in options and ". " in options, f"swap options not populated: {options[:80]!r}"
         assert not list(jail.glob("plans-*.json")), "draft wrote a plan before confirmation"
