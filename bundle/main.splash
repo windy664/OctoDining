@@ -987,7 +987,7 @@ fn prepare_week_agent_offers(){
         if alternatives.len() > 0 {
             seenDates.push(choice.date)
             weekAgentOffers.push({draft_index: i alternatives: alternatives})
-            summary += weekAgentOffers.len() + ". " + choice.date + " " + slot_label(choice.slot) + ": " + original.name + " ¥" + cash(original.cents) + "\n"
+            summary += "" + weekAgentOffers.len() + ". " + choice.date + " " + slot_label(choice.slot) + ": " + original.name + " ¥" + cash(original.cents) + "\n"
             for j in alternatives.len() {
                 let replacement = allProducts[alternatives[j]]
                 summary += "   " + (j + 1) + ") " + replacement.name + " ¥" + cash(replacement.cents)
@@ -1189,10 +1189,10 @@ fn generate_week_draft(){
     weekDraftStart = currentDate
     weekDraftProfileDaily = profileDaily
     ui.draft_panel.set_visible(true)
-    prepare_week_agent_offers()
     ui.draft_summary.set_text(L("待确认 ", "Review ") + weekDraft.len() + L(" 餐，缺口 ", " meals; gaps ") + gaps + L(" 餐，重复 ", "; repeats ") + repeats + L(" 次。草案不会自动覆盖已确认计划。", ". The draft will not replace confirmed meals."))
     ui.draft_items.render()
     ui.status.set_text(L("已生成七天草案，请逐项核对；确认前不会写入餐表。", "Seven-day draft ready. Review it; nothing is saved until confirmation."))
+    prepare_week_agent_offers()
 }
 fn confirm_week_draft(){
     if weekDraft.len() == 0 || weekDraftRevision != journal.revision || weekDraftStart != currentDate || weekDraftProfileDaily != profileDaily {
