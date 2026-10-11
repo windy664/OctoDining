@@ -82,11 +82,11 @@ def main():
 
         slot = next((s for s in ("早餐", "午餐", "晚餐") if s in caption), None)
         assert slot, caption
+        confirmed = get("home_name")
+        assert confirmed and "暂无" not in confirmed, confirmed
         app.click("home_cta")
         time.sleep(1)
         assert "已保存并读回核验" in (get("status") or ""), get("status")
-        confirmed = get("home_name")
-        assert confirmed and "暂无" not in confirmed, confirmed
         scroll(-2400)
         wait_button("记录已吃" + slot)
         app.click("记录已吃" + slot)

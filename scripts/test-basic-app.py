@@ -166,11 +166,15 @@ def main():
         assert app.text('date') == date.today().isoformat()
         app.status('已打开 ')
         app.click('dinner')
-        for i,amount in enumerate([15,22,32,45,65,100],1):
-            app.click(f'a{i}')
-            assert app.text('daily') == f'{amount}.00'
-        record('A1–A6 daily budgets')
-        app.click('a3')
+        app.fill('daily','40.00')
+        app.click('lunch')
+        assert app.text('budget') == '16.00'
+        app.click('breakfast')
+        assert app.text('budget') == '12.00'
+        app.fill('daily','32.00')
+        app.click('dinner')
+        assert app.text('budget') == '12.80'
+        record('Direct daily amounts drive per-meal caps')
         current_date=app.text('date')
         app.click('open_day')
         app.fill('arrival','99:00');assert app.text('arrival')=='99:00';app.click('find');app.status('时间需为有效')

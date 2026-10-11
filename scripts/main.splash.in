@@ -946,7 +946,7 @@ fn refresh_home(){
     if selectedSlot == 0 { pool = breakfastPool }
     let sampleCount = min(220, pool.len())
     for sample in sampleCount {
-        let i = pool[(sample * 7) % pool.len()]
+        let i = pool[(sample * 479) % pool.len()]
         let p = allProducts[i]
         let seen = i == homeSkip
         for previous in homeSeen { if previous == i { seen = true } }
@@ -1201,7 +1201,7 @@ fn prepare_week_agent_offers(){
         let alternatives = []
         let sampleCount = min(90, allProducts.len())
         for sample in sampleCount {
-            let id = (choice.product_id + sample * 37 + i * 31) % allProducts.len()
+            let id = (choice.product_id + sample * 479 + i * 31) % allProducts.len()
             let p = allProducts[id]
             if p.cents <= original.cents && p.name != original.name && matches_meal_for(p, choice.slot)
                 && open_at(p.business_hours, clock_value(defaultTimes[choice.slot])) {
@@ -1494,8 +1494,9 @@ fn draft_day_tick(gen, offset){
                     if slot == 0 { pool = breakfastPool }
                     if slot == 3 { pool = snackPool }
                     let sampleCount = min(40, pool.len())
+                    if pool.len() <= 120 { sampleCount = pool.len() }
                     for sample in sampleCount {
-                        let id = pool[(sample * 37 + offset * 31 + slot * 17) % pool.len()]
+                        let id = pool[(sample * 479 + offset * 31 + slot * 17) % pool.len()]
                         let p = allProducts[id]
                         if p.cents <= cap {
                             let score = abs(p.cents - round(cap * 0.75))
