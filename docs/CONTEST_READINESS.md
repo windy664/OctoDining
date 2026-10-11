@@ -2,7 +2,7 @@
 
 更新：2026-10-11。**初赛入围（80/100）**，评审意见与决赛前改进清单见[初赛结果](PRELIMINARY-RESULT.md)。当前工作版 **1.9.0**：在 1.8.13（已验证 Shell 真实模型闭环）之上新增口味记忆（好评/差评/换一道记录影响推荐，差评会降低优先级）、打卡后评价卡片、一览屏下一餐提醒卡片（glance）、Agent 提示词带入口味记录、周视图顶部本周预算结算卡。以 OctoSense Shell / OctoScript 为主线。Rinx 分享是可选扩展，App Hub 是包检查与提交规范；它们不要求一起实现。应用先完成真实餐食任务，再展示 Agent 决策及结果核验。[按最佳 Agentic 评分项核验](AGENTIC_JUDGING.md)：1.2.2 的真实模型闭环与 1.7.0 的失败回退分版呈现。最新[App Hub 投稿状态与步骤](APP_HUB_SUBMISSION.md)单独记录。
 
-已知问题与平台限制（1.9.0）：确认过一个脚本 VM 限制：`if …{ for … } else { … }` 结构会在运行时栈失衡并丢弃所在 `on_render` 的全部输出（表现为周餐表餐次按钮消失），已改为两个独立 `if` 规避（`e732264`）。另确认当前 Makepad 脚本接口中 CheckBox 没有 `set_checked` 方法，误调会中断所在事件处理器（曾导致切换语言后周餐表按钮不刷新、footer 等文案不更新），设置页提醒开关已改为文字按钮规避。两者均已实测验证，可作为上游 issue 素材。
+已知问题与平台限制（1.9.0）：确认过一个脚本 VM 限制：`if …{ for … } else { … }` 结构会在运行时栈失衡并丢弃所在 `on_render` 的全部输出（表现为周餐表餐次按钮消失），已改为两个独立 `if` 规避（`e732264`），最小复现已上报上游 [OctoSense#492](https://github.com/OctoSense-org/OctoSense/issues/492)。另确认当前 Makepad 脚本接口中 CheckBox 没有 `set_checked` 方法，误调会中断所在事件处理器（曾导致切换语言后周餐表按钮不刷新、footer 等文案不更新），设置页提醒开关已改为文字按钮规避，已上报 [OctoSense#493](https://github.com/OctoSense-org/OctoSense/issues/493)。两者均带可运行复现，可作为"项目反哺"证据。
 
 ## 版本与证据边界
 
