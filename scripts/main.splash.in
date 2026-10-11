@@ -4,6 +4,7 @@ let breakfastPool = __BREAKFAST_POOL__.parse_json()
 let lunchPool = __LUNCH_POOL__.parse_json()
 let dinnerPool = __DINNER_POOL__.parse_json()
 let snackPool = __SNACK_POOL__.parse_json()
+let localMenuImages = __LOCAL_MENU_IMAGES__.parse_json()
 let menuKind = "gzis-snapshot"
 let menuSource = "广州软件学院食堂快照"
 let menuUpdated = "2026-09-28"
@@ -791,6 +792,7 @@ fn refresh_language(){
     ui.setup_back.set_text(L("返回今天", "Back to today"))
     ui.intro_title.set_text(L("下一顿，吃点好的。", "Your next good meal."))
     ui.intro_subtitle.set_text(L("按食堂所在地时间找下一餐，可手动调整。", "Canteen time · change meal or date anytime."))
+    ui.alerts_title.set_text(L("需要留意", "Heads up"))
     ui.summary_title.set_text(L("当日预算", "Daily budget"))
     ui.image_note.set_text(L("菜单配图 · 仅供参考", "Menu image"))
     ui.next_pick.set_text(L("换一道", "Try another"))
@@ -942,16 +944,75 @@ fn refresh_summary(){
     ui.summary.set_text(summary)
     ui.slot_label.set_text(L("正在安排：", "Planning: ") + slot_label(selectedSlot) + L(" · 确认会替换同日同餐次", " · confirming replaces this meal on this date"))
     ui.home_caption.set_text(home_day_label() + " · " + slot_label(selectedSlot))
+    refresh_alerts()
     refresh_home()
 }
 fn set_home_image(productId){
     if productId >= 0 && allProducts[productId].image_url != "" {
-        ui.dish_image.set_src(http_resource(allProducts[productId].image_url))
+        ui.dish_image.set_src(img_src_id(productId))
         ui.home_image_wrap.set_visible(true)
         ui.image_note.set_text(L("菜单配图 · 仅供参考", "Menu image"))
     } else {
         ui.home_image_wrap.set_visible(false)
     }
+}
+// Local 96px copies ship in the bundle (offline-safe); fall back to the
+// snapshot's CDN url only for images that failed to bundle.
+fn img_src_id(id){
+    if allProducts[id].image_url == "" { return nil }
+    for k in localMenuImages.len() {
+        if localMenuImages[k] == id { return http_resource("{{assets}}/menu/" + id + ".jpg") }
+    }
+    http_resource(allProducts[id].image_url)
+}
+// Proactive, local-rule alerts: no model needed. They surface state changes
+// (overspend today, a dish repeated across the week) without being asked.
+fn compute_alerts(){
+    let alerts = []
+    let daily = money_value(ui.daily.text())
+    if daily < 0 { daily = profileDaily }
+    let total = sum_meals(current_meals(), -1)
+    if total > daily {
+        let dayName = currentDate
+        if currentDate == today() { dayName = L("今天", "Today") }
+        alerts.push(dayName + L(" 已超支 ¥", " is over budget by ¥") + cash(total - daily) + L("，可在餐表取消或改餐。", "; cancel or change a meal in the week plan."))
+    }
+    let ids = []
+    let counts = []
+    for offset in 7 {
+        let idx = day_index(journal, week_date(currentDate, offset))
+        if idx >= 0 {
+            for m in journal.days[idx].meals {
+                let found = false
+                for k in ids.len() {
+                    if ids[k] == m.product_id { counts[k] += 1 found = true }
+                }
+                if !found { ids.push(m.product_id) counts.push(1) }
+            }
+        }
+    }
+    let worst = -1
+    for k in ids.len() {
+        if counts[k] >= 3 && (worst < 0 || counts[k] > counts[worst]) { worst = k }
+    }
+    if worst >= 0 {
+        alerts.push(L("本周「", "“") + allProducts[ids[worst]].name + L("」已排 ", "” is planned ") + counts[worst] + L(" 次，可以在周页换一餐换换口味。", " times this week; consider a swap in the week plan."))
+    }
+    alerts
+}
+fn refresh_alerts(){
+    let alerts = compute_alerts()
+    if alerts.len() == 0 {
+        ui.alerts.set_visible(false)
+        return
+    }
+    let text = ""
+    for i in alerts.len() {
+        if i > 0 { text += "\n" }
+        text += alerts[i]
+    }
+    ui.alerts_text.set_text(text)
+    ui.alerts.set_visible(true)
 }
 fn set_home_metrics(cents){
     ui.home_m1_value.set_text("¥" + cash(cents))
@@ -2040,7 +2101,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
             settings_recalc := Action{text: "重新核算生活费与菜单" on_click: || show_setup()}
         }
     }
-    home := View{width: Fill height: Fit flow: Down
+    home := View{width: Fill height: Fit flow: Down spacing: 10
         RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 16 bottom: 16} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 18.0
             View{width: Fill height: Fit flow: Right spacing: 12
                 View{width: Fill height: Fit flow: Down spacing: 6
@@ -2070,6 +2131,10 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                 home_cta := Primary{width: Fill text: "就吃这道 · 加入餐表" on_click: || confirm_home_pick()}
                 next_pick := Action{text: "换一道" on_click: || next_home_pick()}
             }
+        }
+        alerts := RoundedView{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 15 right: 15 top: 12 bottom: 12} show_bg: true draw_bg.color: #xfbf1e4 draw_bg.border_radius: 18.0 visible: false
+            alerts_title := Label{text: "需要留意" draw_text.color: #x8a4b1e draw_text.text_style: theme.font_bold{font_size: 12}}
+            alerts_text := Label{width: Fill text: "" draw_text.color: #x8a4b1e draw_text.text_style.font_size: 12}
         }
     }
     hero := View{width: Fill height: Fit flow: Down spacing: 7 padding: Inset{left: 3 right: 3 top: 8 bottom: 3}
@@ -2176,7 +2241,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                             Label{width: Fill text: p.store + " · " + p.business_hours draw_text.color: muted draw_text.text_style.font_size: 12}
                             Label{width: Fill text: evidence draw_text.color: muted draw_text.text_style.font_size: 10}
                         }
-                        if p.image_url != "" { Image{width: 72 height: 72 src: http_resource(p.image_url) fit: ImageFit.CropToFill} }
+                        if p.image_url != "" { Image{width: 72 height: 72 src: img_src_id(candidates[i]) fit: ImageFit.CropToFill} }
                     }
                     if agentChoice == i && agentStamp == candidateStamp { Label{width: Fill text: L("OctoSense Agent 建议", "OctoSense Agent pick") draw_text.color: blue draw_text.text_style.font_size: 12} }
                     Accent{text: L("确认候选 ", "Confirm option ") + (i + 1) on_click: || choose_meal(i)}
@@ -2265,7 +2330,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                                     Label{width: Fill text: m.store + L(" · 到店 ", " · arrival ") + m.arrival draw_text.color: muted draw_text.text_style.font_size: 11}
                                     if meal_eaten_at(m) != nil { Label{width: Fill text: L("实际支付 ¥", "Paid ¥") + cash(meal_actual_cents(m)) draw_text.color: blue draw_text.text_style.font_size: 11} }
                                 }
-                                if allProducts[m.product_id].image_url != "" { Image{width: 60 height: 60 src: http_resource(allProducts[m.product_id].image_url) fit: ImageFit.CropToFill} }
+                                if allProducts[m.product_id].image_url != "" { Image{width: 60 height: 60 src: img_src_id(m.product_id) fit: ImageFit.CropToFill} }
                             }
                             if date == currentDate {
                                 View{width: Fill height: Fit flow: Right spacing: 8

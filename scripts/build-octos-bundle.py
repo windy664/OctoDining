@@ -95,7 +95,56 @@ dinner_pool = _pool_for(2)
 snack_pool = _pool_for(3)
 breakfast_pool = _pool_for(0)
 print(f"Pools: breakfast {len(breakfast_pool)}, lunch {len(lunch_pool)}, dinner {len(dinner_pool)}, snack {len(snack_pool)}")
+
+# Bundle every menu image as a small local JPEG so cards render offline.
+# Originals are cached under .local-state (not committed); bundle/menu/
+# holds the 96px copies that ship in the signed bundle.
+import io
+import urllib.request
+from concurrent.futures import ThreadPoolExecutor
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+menu_img_dir = ROOT / "bundle" / "menu"
+cache_dir = ROOT / ".local-state" / "menu-img-cache"
+local_images = []
+if Image is not None:
+    menu_img_dir.mkdir(parents=True, exist_ok=True)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    for old in menu_img_dir.glob("*.jpg"):
+        old.unlink()
+    import hashlib
+    def fetch(pair):
+        index, url = pair
+        final = cache_dir / (hashlib.md5(url.encode()).hexdigest() + ".jpg")
+        if final.exists():
+            return index, final
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "OctoDining-build"})
+            with urllib.request.urlopen(req, timeout=15) as r:
+                raw = r.read()
+            im = Image.open(io.BytesIO(raw)).convert("RGB")
+            im = im.resize((96, 96), Image.LANCZOS)
+            im.save(final, "JPEG", quality=60, optimize=True)
+            return index, final
+        except Exception as e:
+            print(f"  image {index} skipped: {e}")
+            return None
+    pairs = [(i, p["image_url"]) for i, p in enumerate(products) if p["image_url"]]
+    with ThreadPoolExecutor(max_workers=16) as pool:
+        for result in pool.map(fetch, pairs):
+            if result is not None:
+                index, cached = result
+                (menu_img_dir / f"{index}.jpg").write_bytes(cached.read_bytes())
+                local_images.append(index)
+    local_images.sort()
+    print(f"Bundled {len(local_images)} local menu images at 96px in bundle/menu/")
+else:
+    print("PIL unavailable; skipping local menu images")
+
 source = template.replace("__MENU_JSON__", json.dumps(compact, ensure_ascii=False))
+source = source.replace("__LOCAL_MENU_IMAGES__", json.dumps(json.dumps(local_images)))
 source = source.replace("__BREAKFAST_POOL__", json.dumps(json.dumps(breakfast_pool)))
 source = source.replace("__LUNCH_POOL__", json.dumps(json.dumps(lunch_pool)))
 source = source.replace("__DINNER_POOL__", json.dumps(json.dumps(dinner_pool)))
