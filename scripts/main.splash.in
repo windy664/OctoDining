@@ -2236,7 +2236,17 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                         View{width: Fill height: Fit flow: Down spacing: 5
                             View{width: Fill height: Fit flow: Right spacing: 8
                                 View{width: Fill height: Fit flow: Down spacing: 5
-                                    Label{width: Fill text: slot_label(m.slot) + " · " + m.name + " · ¥" + cash(m.cents) + (if meal_eaten_at(m) != nil { L(" · 已吃", " · eaten") } else { L(" · 待吃", " · planned") }) + taste_badge(m.product_id) draw_text.color: ink draw_text.text_style.font_size: 13}
+                                    View{width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5}
+                                        Label{width: Fill text: slot_label(m.slot) + " · " + m.name + " · ¥" + cash(m.cents) + taste_badge(m.product_id) draw_text.color: ink draw_text.text_style.font_size: 13}
+                                        if meal_eaten_at(m) != nil {
+                                            RoundedView{width: Fit height: Fit padding: Inset{left: 8 right: 8 top: 2 bottom: 2} show_bg: true draw_bg.color: #x2e7d43 draw_bg.border_radius: 8.0
+                                                Label{text: L("已吃", "Eaten") draw_text.color: #xffffff draw_text.text_style.font_size: 10}}
+                                        }
+                                        if meal_eaten_at(m) == nil {
+                                            RoundedView{width: Fit height: Fit padding: Inset{left: 8 right: 8 top: 2 bottom: 2} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 8.0
+                                                Label{text: L("待吃", "Planned") draw_text.color: ink draw_text.text_style.font_size: 10}}
+                                        }
+                                    }
                                     Label{width: Fill text: m.store + L(" · 到店 ", " · arrival ") + m.arrival draw_text.color: muted draw_text.text_style.font_size: 11}
                                     if meal_eaten_at(m) != nil { Label{width: Fill text: L("实际支付 ¥", "Paid ¥") + cash(meal_actual_cents(m)) draw_text.color: blue draw_text.text_style.font_size: 11} }
                                 }
