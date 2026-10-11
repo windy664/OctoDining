@@ -1,18 +1,36 @@
 {
   "schema": 1,
   "subtitle": "好好吃饭 · Eat well on a budget",
-  "description": "OctoDining（好好吃饭）支持中文和 English。首次使用根据月生活费与必要开销估算日餐饮预算，可使用内置广州软件学院食堂快照，或粘贴 3–200 条带来源、更新日期和时区的 JSON 菜单。首页按食堂时间显示下一顿已安排或可确认的推荐；一周页可先生成草案，再由用户确认后一次保存并读回。用户还能记录已吃和实际支付金额，预算随之更新。OctoSense Agent 可比较当前至多三个候选，最终选择由用户确认。内置菜单的关联配图来自 img.pospal.cn，可能不是餐品实拍；自定义菜单暂不导入图片。菜单价格、库存、营养和过敏原不保证实时准确；应用不下单或付款。 English: Plan the next meal from a daily allowance, review a seven-day draft, confirm it, and record what you actually paid. You may paste a validated JSON menu. The optional Agent compares up to three current candidates; you confirm changes. Bundled menu images are reference artwork, not verified photos or live availability.",
+  "description": "OctoDining（好好吃饭）支持中文和 English。首次使用根据月生活费与必要开销估算日餐饮预算，可使用内置广州软件学院食堂快照，或粘贴 3–200 条带来源、更新日期和时区的 JSON 菜单。首页按食堂时间显示下一顿已安排或可确认的推荐；一周页可先生成草案，再由用户确认后一次保存并读回。用户还能记录已吃和实际支付金额，预算随之更新。OctoSense Agent 可比较当前至多三个候选，最终选择由用户确认。内置菜单配图已随包离线内置（源自 img.pospal.cn 快照），仅供参考且可能不是餐品实拍；自定义菜单暂不导入图片。菜单价格、库存、营养和过敏原不保证实时准确；应用不下单或付款。 English: Plan the next meal from a daily allowance, review a seven-day draft, confirm it, and record what you actually paid. You may paste a validated JSON menu. The optional Agent compares up to three current candidates; you confirm changes. Bundled menu images are reference artwork, not verified photos or live availability.",
   "category": "lifestyle",
-  "keywords": ["餐饮", "预算", "选餐", "计划", "meal planning", "canteen"],
-  "screenshots": ["screenshots/00-first-run-setup.png", "screenshots/01-home-recommendation.png", "screenshots/02-candidates.png", "screenshots/03-week-plan-confirmed.png", "screenshots/04-en-onboarding.png", "screenshots/05-en-home.png"],
+  "keywords": [
+    "餐饮",
+    "预算",
+    "选餐",
+    "计划",
+    "meal planning",
+    "canteen"
+  ],
+  "screenshots": [
+    "screenshots/00-first-run-setup.png",
+    "screenshots/01-home-recommendation.png",
+    "screenshots/02-candidates.png",
+    "screenshots/02b-candidate-detail.png",
+    "screenshots/03-week-plan-confirmed.png",
+    "screenshots/04-en-onboarding.png",
+    "screenshots/05-en-home.png",
+    "screenshots/06-en-week-budget.png"
+  ],
   "icon": "assets/icon.svg",
-  "platforms": ["linux"],
+  "platforms": [
+    "linux"
+  ],
   "publisher": {
     "name": "跃珩科技",
     "support": "https://github.com/windy664/OctoDining/issues",
     "privacy_policy_url": "https://github.com/windy664/OctoDining/blob/master/docs/PRIVACY.md"
   },
-  "release_notes": "1.8.0：七日草案新增 OctoSense Agent 换餐提案入口。每个日期最多给出两个经预算和营业时段筛选的替代品；应用核验回复后，用户先将建议应用到待确认草案，再确认整周并读回。该功能仍待宿主实测。",
+  "release_notes": "1.10.0：首页推荐卡标注来源（本地规则引擎 / 系统 Agent 联调状态）；候选可展开详情面板（分类、本餐上限、到店时段、近七天重复、口味记录、快照日期）；周餐表新增本周预算进度条，超支主动提示；首页内容超窗时可滚动，底部操作不再被裁掉。 English: the home pick now shows its source (local rules / system Agent state), candidates expand into a detail panel, the week view adds a budget bar with overspend hints, and the home page scrolls so actions stay reachable.",
   "age_rating": "all",
   "license": "Apache-2.0"
 }

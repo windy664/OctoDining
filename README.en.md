@@ -8,11 +8,15 @@ This is a native **OctoSense / OctoScript / Makepad** prototype for students. It
 
 **For judges — the real Agent loop:** [15-second 1.2.2 evidence reel](docs/demo/octodining-122-agent-evidence-reel.mp4) · [original Shell record and three screenshots](docs/evidence/shell-ui122-minimax-20261004.json) · [judging checklist](docs/AGENTIC_JUDGING.md). MiniMax-M3 compared candidates for an existing dinner plan and suggested candidate 3. The user confirmed it; the app persisted and read back the plan. The reel edits actual screenshots; it is not a continuous recording. The separate 1.7.0 Shell run received HTTP 429 and **did not obtain a model suggestion**. **Current signed 1.9.0 week-plan Agent loop** (real MiniMax-M3 proposals, apply-to-draft, confirm and read back): [framebuffer recording and key frames](docs/evidence/shell-week-agent-190-20261011.md).
 
-**Current 1.9.0 UI** (card-host native captures, not model evidence; [bilingual captures and notes](docs/evidence/next-meal-190-20261011.md)):
+**Current 1.10.0 UI** (card-host native captures, not model evidence; [bilingual captures and notes](docs/evidence/next-meal-1100-20261012.md)):
 
-| Onboarding | Next meal · budget tiles | Candidates · constraint evidence |
+| Onboarding | Next meal · provenance line and budget tiles | Candidates · constraint evidence |
 | :---: | :---: | :---: |
-| <img src="docs/evidence/next-meal-190-20261011/en/00-first-run-setup.png" alt="English onboarding" width="250"> | <img src="docs/evidence/next-meal-190-20261011/en/01-home-recommendation.png" alt="Next meal with budget tiles" width="250"> | <img src="docs/evidence/next-meal-190-20261011/en/02-candidates.png" alt="Candidates with constraint evidence" width="250"> |
+| <img src="docs/evidence/next-meal-1100-20261012/en/00-first-run-setup.png" alt="English onboarding" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/01-home-recommendation.png" alt="Next meal with provenance line and budget tiles" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/02-candidates.png" alt="Candidates with constraint evidence" width="250"> |
+
+| Candidate · expanded detail | Week plan · weekly budget bar |
+| :---: | :---: |
+| <img src="docs/evidence/next-meal-1100-20261012/en/02b-candidate-detail.png" alt="Expanded candidate detail" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/03-week-plan-confirmed.png" alt="Week plan with weekly budget bar" width="250"> |
 
 These are actual **1.7.0 card-host captures**. They do not demonstrate a live model in OctoSense Shell. [Screenshots and checks](docs/evidence/next-meal-170-20261005.md).
 
@@ -20,7 +24,7 @@ These are actual **1.7.0 card-host captures**. They do not demonstrate a live mo
 
 Onboarding asks for monthly disposable allowance, non-food fixed costs and a reserve. It estimates a daily dining budget over 30 days. You can use the bundled menu or paste a JSON menu with a source, update date, time zone, prices and business hours; invalid records are rejected. `scripts/menu-csv-to-json.py` converts a supported CSV into pasteable JSON. The app does not yet have a file picker or automatic collection.
 
-The home screen uses canteen-local time to select the next uneaten meal. The weekly draft skips elapsed meals, shows any gaps and daily totals, and is written only after confirmation. It is **rule-generated, not Agent-generated**. Menu names and stores remain Chinese because no verified translations are available. Bundled product images load from `img.pospal.cn`; custom menus currently use text-only cards.
+The home screen uses canteen-local time to select the next uneaten meal. A provenance line marks whether advice comes from the local rule engine or a linked system Agent. Candidates expand into a detail panel (category, meal cap, arrival-hours check, recent repeats, on-device taste history, menu snapshot date). The weekly draft skips elapsed meals, shows any gaps and daily totals, and is written only after confirmation; a weekly budget bar tracks the planned share and flags overspend. It is **rule-generated, not Agent-generated**. Menu names and stores remain Chinese because no verified translations are available. Bundled product images ship offline in the bundle; custom menus currently use text-only cards.
 
 Version 1.7.0 passed native card-host feature checks. A [same-version Shell run](docs/evidence/shell-170-20261005.md) verified loading, first-use Agent consent, a request entering Octos, and manual save/read-back/restart after the provider returned HTTP 429. **It did not obtain a model suggestion.** A successful real MiniMax loop remains proven for **1.2.2** only. See [contest readiness](docs/CONTEST_READINESS.md). The frozen `qualifier-2026-10-04-final` tag still points to that earlier version.
 

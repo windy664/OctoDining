@@ -129,6 +129,17 @@ def main():
             raise RuntimeError("Candidate lookup did not complete: " + repr([node.get("t") for node in snap() if node.get("i") == "status"]))
         capture("02-candidates.png", before)
         before = framebuffer.stat().st_mtime_ns
+        click(label="详情 ›" if args.language == "zh" else "Details ›")
+        for _ in range(10):
+            if any(node.get("i") == "cd1" and node.get("r", [0,0,0,0])[3] > 0 for node in snap()):
+                break
+            get("m?k=scroll&x=200&y=610&dy=-280&wait=1")
+            time.sleep(.25)
+        time.sleep(.6)
+        before = framebuffer.stat().st_mtime_ns
+        capture("02b-candidate-detail.png", before)
+        click(label="收起 ↑" if args.language == "zh" else "Hide ↑")
+        before = framebuffer.stat().st_mtime_ns
         click(label="确认候选 1" if args.language == "zh" else "Confirm option 1")
         verified = "已保存并读回核验" if args.language == "zh" else "Saved and read back"
         if not any(verified in node.get("t", "") for node in snap() if node.get("i") == "status"):

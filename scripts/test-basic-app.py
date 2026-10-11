@@ -52,7 +52,7 @@ class App:
                 if matches:
                     return matches[-1]
             self.get('m', k='scroll', x=scroll_x, y=610, dy=-2000, wait=1)
-            for _ in range(8):
+            for _ in range(14):
                 nodes, matches = visible()
                 if matches:
                     break
