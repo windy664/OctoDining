@@ -32,6 +32,16 @@ def main():
                         '--port', str(port), '--app-data', str(work), '--timeout', '30'],
                        check=True, stdout=subprocess.DEVNULL, env=env)
         time.sleep(.2)
+        # Wait for the app's first interactive widget, not a fixed sleep.
+        deadline = time.monotonic() + 20
+        while time.monotonic() < deadline:
+            try:
+                if app.text('lang_toggle') in ('EN', '中文'):
+                    return
+            except Exception:
+                pass
+            time.sleep(.3)
+        raise AssertionError('app did not become ready')
 
     running = False
     try:
@@ -62,6 +72,9 @@ def main():
         app.status('Saved and read back')
         app.click('tab_history')
         assert 'My week' in app.text('week_title')
+        app.get('m', k='scroll', x=300, y=380, dy=-2400, wait=1)
+        time.sleep(.4)
+        app.get('m', k='scroll', x=300, y=380, dy=-2400, wait=1)
         assert app.node('Cancel Dinner')
         print('PASS English onboarding, meal choice, Agent fallback and week plan', flush=True)
 
@@ -69,6 +82,8 @@ def main():
         start(); running = True
         assert app.text('lang_toggle') == '中文'
         app.click('week_nav')
+        app.get('m', k='scroll', x=300, y=380, dy=-2400, wait=1)
+        time.sleep(.4)
         assert app.node('Cancel Dinner')
         app.click('lang_toggle')
         assert app.text('lang_toggle') == 'EN'

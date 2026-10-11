@@ -6,7 +6,7 @@ let dinnerPool = __DINNER_POOL__.parse_json()
 let snackPool = __SNACK_POOL__.parse_json()
 let menuKind = "gzis-snapshot"
 let menuSource = "广州软件学院食堂快照"
-let menuUpdated = ""
+let menuUpdated = "2026-09-28"
 let menuTimezone = 480
 let slotNames = ["早餐" "午餐" "晚餐" "加餐"]
 let defaultTimes = ["08:00" "12:00" "18:30" "15:30"]
@@ -16,6 +16,7 @@ let journal = {schema: 1 revision: 0 last_date: "" days: []}
 let activeFile = ""
 let taste = {schema: 1 items: []}
 let tastePick = -1
+let glanceOn = true
 let storageReady = true
 let candidates = []
 let candidateStamp = ""
@@ -441,6 +442,33 @@ fn week_summary_text(){
     if likes + dislikes > 0 { text += L("；口味记录 好评 ", "; taste: liked ") + likes + L(" · 差评 ", " · disliked ") + dislikes }
     text
 }
+fn load_settings(){
+    let raw = nil
+    try { raw = fs.read("settings.json") } { raw = nil }
+    if raw != nil && raw != "" {
+        let doc = raw.parse_json()
+        let valid = false
+        try { valid = doc.glance == true || doc.glance == false } { valid = false }
+        if valid { glanceOn = doc.glance }
+    }
+}
+fn save_settings(){
+    if !storageReady { return }
+    try { fs.write("settings.json", {schema: 1 glance: glanceOn}.to_json()) } { }
+}
+fn toggle_glance(active){
+    glanceOn = active
+    save_settings()
+    sync_glance(false)
+    ui.status.set_text(if active { L("一览屏提醒已开启。", "Glance reminders on.") } else { L("一览屏提醒已关闭，已撤回现有卡片。", "Glance reminders off; existing card withdrawn.") })
+}
+fn clear_taste_records(){
+    taste = {schema: 1 items: []}
+    save_taste()
+    ui.settings_taste_list.render()
+    refresh_home()
+    ui.status.set_text(L("口味记录已清空。", "Taste history cleared."))
+}
 fn open_taste(id){
     tastePick = id
     ui.taste_title.set_text(L("这顿怎么样？", "How was it?"))
@@ -459,6 +487,10 @@ fn slot_end_minute(slot){
     1200
 }
 fn sync_glance(notify){
+    if !glanceOn {
+        host.request("glance.withdraw", {card_id: "next-meal"}, fn(r){})
+        return
+    }
     let target = next_meal_target()
     let idx = day_index(journal, target.date)
     let next = nil
@@ -605,9 +637,30 @@ fn invalidate(){
 fn selection_stamp(){
     ui.date.text().trim() + "|" + currentDate + "|" + selectedSlot + "|" + ui.daily.text().trim() + "|" + ui.budget.text().trim() + "|" + ui.arrival.text().trim() + "|" + ui.request.text().trim() + "|" + ui.avoid_spicy.checked()
 }
+fn show_settings(){
+    onHome = false
+    ui.setup.set_visible(false)
+    ui.week_nav.set_visible(false)
+    ui.home_nav.set_visible(true)
+    ui.intro.set_visible(false)
+    ui.summary_card.set_visible(false)
+    ui.status_card.set_visible(true)
+    ui.footer_note.set_visible(true)
+    ui.home.set_visible(false)
+    ui.home_actions.set_visible(false)
+    ui.hero.set_visible(false)
+    ui.date_bar.set_visible(false)
+    ui.tabs.set_visible(false)
+    ui.selection.set_visible(false)
+    ui.history.set_visible(false)
+    ui.results.set_visible(false)
+    ui.settings.set_visible(true)
+    ui.settings_taste_list.render()
+}
 fn show_home(){
     onHome = true
     ui.setup.set_visible(false)
+    ui.settings.set_visible(false)
     ui.week_nav.set_visible(true)
     ui.home_nav.set_visible(false)
     ui.intro.set_visible(true)
@@ -629,6 +682,7 @@ fn show_home(){
 fn show_page(history){
     onHome = false
     ui.setup.set_visible(false)
+    ui.settings.set_visible(false)
     ui.week_nav.set_visible(false)
     ui.home_nav.set_visible(true)
     ui.intro.set_visible(false)
@@ -684,6 +738,7 @@ fn go_next_meal(){
 }
 fn show_setup(){
     onHome = false
+    ui.settings.set_visible(false)
     ui.setup.set_visible(true)
     ui.setup_back.set_visible(profileReady)
     ui.week_nav.set_visible(false)
@@ -767,6 +822,20 @@ fn refresh_language(){
     ui.confirm_draft.set_text(L("确认整周草案", "Confirm week draft"))
     ui.discard_draft.set_text(L("舍弃草案", "Discard draft"))
     ui.checkin_title.set_text(L("记录实际用餐", "Record a meal eaten"))
+    ui.settings_title.set_text(L("设置", "Settings"))
+    ui.settings_menu_title.set_text(L("菜单数据", "Menu data"))
+    let menuInfo = menuSource + " · " + allProducts.len() + L(" 道餐品", " items")
+    if menuUpdated != "" { menuInfo += L(" · 更新 ", " · updated ") + menuUpdated }
+    menuInfo += L("；价格为快照，可能已变化。", "; prices are a snapshot and may be stale.")
+    ui.settings_menu_info.set_text(menuInfo)
+    ui.settings_glance_title.set_text(L("提醒", "Reminders"))
+    ui.settings_glance.set_text(L("在一览屏显示下一餐卡片", "Show the next-meal card on the glance screen"))
+    ui.settings_glance_note.set_text(L("卡片只在本机一览屏显示，点开回到本应用。", "The card stays on this device's glance screen and opens this app."))
+    ui.settings_taste_title.set_text(L("口味记录", "Taste history"))
+    ui.settings_taste_note.set_text(L("只保存在本机，用于让推荐更合口味。", "Stored on this device only, to tune recommendations."))
+    ui.settings_taste_clear.set_text(L("清空口味记录", "Clear taste history"))
+    ui.settings_recalc.set_text(L("重新核算生活费与菜单", "Recalculate allowance and menu"))
+    ui.settings_glance.set_checked(glanceOn)
     ui.taste_like.set_text(L("好吃", "Good"))
     ui.taste_mid.set_text(L("一般", "OK"))
     ui.taste_dislike.set_text(L("不行", "Bad"))
@@ -787,8 +856,10 @@ fn switch_language(){
     try { fs.write("language.json", {lang: L("zh", "en")}.to_json()) } { }
     refresh_language()
     refresh_summary()
-    ui.plans.render()
-    ui.choices.render()
+    ui.plans.set_visible(false)
+    ui.plans.set_visible(true)
+    ui.choices.set_visible(false)
+    ui.choices.set_visible(true)
     ui.agent_result.set_text(L("语言已切换；如需 Agent 建议，请重新比较候选。", "Language changed. Ask the Agent again for an explanation."))
     ui.status.set_text(L("语言已切换。", "Language changed."))
 }
@@ -1809,6 +1880,7 @@ fn boot(){
     let a = nil
     let b = nil
     load_taste()
+    load_settings()
     let existsA = fs.exists("plans-a.json")
     let existsB = fs.exists("plans-b.json")
     if existsA { a = read_record("plans-a.json") }
@@ -1921,6 +1993,35 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
         summary_title := Label{text: "当前计划" draw_text.color: muted draw_text.text_style.font_size: 11}
         summary := Label{width: Fill text: "正在读取计划…" draw_text.color: ink draw_text.text_style.font_size: 13}
     }
+    settings := View{width: Fill height: Fill flow: Down spacing: 10 visible: false
+        settings_title := Label{text: "设置" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 17}}
+        RoundedView{width: Fill height: Fit flow: Down spacing: 6 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
+            settings_menu_title := Label{text: "菜单数据" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 13}}
+            settings_menu_info := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style.font_size: 12}
+        }
+        RoundedView{width: Fill height: Fit flow: Down spacing: 6 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
+            settings_glance_title := Label{text: "提醒" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 13}}
+            settings_glance := CheckBox{text: "在一览屏显示下一餐卡片" on_click: |active| toggle_glance(active)}
+            settings_glance_note := Label{width: Fill text: "卡片只在本机一览屏显示，点开回到本应用。" draw_text.color: muted draw_text.text_style.font_size: 11}
+        }
+        RoundedView{width: Fill height: Fit flow: Down spacing: 6 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
+            settings_taste_title := Label{text: "口味记录" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 13}}
+            settings_taste_note := Label{width: Fill text: "只保存在本机，用于让推荐更合口味。" draw_text.color: muted draw_text.text_style.font_size: 11}
+            settings_taste_list := View{width: Fill height: Fit flow: Down spacing: 4 on_render: || {
+                if taste.items.len() == 0 { Label{width: Fill text: L("暂无记录。", "Nothing recorded yet.") draw_text.color: muted draw_text.text_style.font_size: 12} }
+                for item in taste.items {
+                    let mark = L(" · 好评 ×", " · liked ×") + item.likes
+                    if item.dislikes > 0 { mark += L(" · 差评 ×", " · disliked ×") + item.dislikes }
+                    if item.skips > 0 { mark += L(" · 跳过 ×", " · skipped ×") + item.skips }
+                    Label{width: Fill text: item.name + " · " + item.store + mark draw_text.color: ink draw_text.text_style.font_size: 12}
+                }
+            }}
+            settings_taste_clear := Action{text: "清空口味记录" on_click: || clear_taste_records()}
+        }
+        RoundedView{width: Fill height: Fit flow: Down spacing: 6 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
+            settings_recalc := Action{text: "重新核算生活费与菜单" on_click: || show_setup()}
+        }
+    }
     home := View{width: Fill height: Fit flow: Down
         RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 16 bottom: 16} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 18.0
             View{width: Fill height: Fit flow: Right spacing: 12
@@ -1957,6 +2058,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
     home_actions := View{width: Fill height: Fit flow: Right spacing: 8
         manual := Action{text: "调整预算与时间 →" on_click: || show_page(false)}
         recalc := Action{text: "重新核算生活费" on_click: || show_setup()}
+        settings_nav := Action{text: "设置" on_click: || show_settings()}
     }
     date_bar := RoundedView{width: Fill height: Fit flow: Right spacing: 8 padding: Inset{left: 10 right: 10 top: 8 bottom: 8} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 14.0
         date := Field{text: "" empty_text: "YYYY-MM-DD" on_change: |text| invalidate()}
@@ -2080,7 +2182,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                 taste_dislike := Action{text: "不行" on_click: || { record_taste(tastePick, "dislike") close_taste() }}
             }
         }
-        plans := View{width: Fill height: Fit flow: Down spacing: 10 on_render: || {
+        plans := ScrollYView{width: Fill height: Fit flow: Down spacing: 10 on_render: || {
             let summary = week_summary_text()
             if summary != "" { Label{width: Fill text: summary draw_text.color: blue draw_text.text_style.font_size: 11} }
             for offset in 7 {
