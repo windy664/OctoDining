@@ -8,9 +8,11 @@ This is a native **OctoSense / OctoScript / Makepad** prototype for students. It
 
 **For judges — the real Agent loop:** [15-second 1.2.2 evidence reel](docs/demo/octodining-122-agent-evidence-reel.mp4) · [original Shell record and three screenshots](docs/evidence/shell-ui122-minimax-20261004.json) · [judging checklist](docs/AGENTIC_JUDGING.md). MiniMax-M3 compared candidates for an existing dinner plan and suggested candidate 3. The user confirmed it; the app persisted and read back the plan. The reel edits actual screenshots; it is not a continuous recording. The separate 1.7.0 Shell run received HTTP 429 and **did not obtain a model suggestion**.
 
-| Onboarding | Next meal | Seven-day plan |
+**Current 1.9.0 UI** (card-host native captures, not model evidence; [bilingual captures and notes](docs/evidence/next-meal-190-20261011.md)):
+
+| Onboarding | Next meal · budget tiles | Candidates · constraint evidence |
 | :---: | :---: | :---: |
-| <img src="docs/evidence/next-meal-170-20261005/en/00-first-run-setup.png" alt="English onboarding" width="250"> | <img src="docs/evidence/next-meal-170-20261005/en/01-home-recommendation.png" alt="Next meal recommendation" width="250"> | <img src="docs/evidence/next-meal-170-20261005/en/03-week-plan-confirmed.png" alt="Seven-day plan" width="250"> |
+| <img src="docs/evidence/next-meal-190-20261011/en/00-first-run-setup.png" alt="English onboarding" width="250"> | <img src="docs/evidence/next-meal-190-20261011/en/01-home-recommendation.png" alt="Next meal with budget tiles" width="250"> | <img src="docs/evidence/next-meal-190-20261011/en/02-candidates.png" alt="Candidates with constraint evidence" width="250"> |
 
 These are actual **1.7.0 card-host captures**. They do not demonstrate a live model in OctoSense Shell. [Screenshots and checks](docs/evidence/next-meal-170-20261005.md).
 

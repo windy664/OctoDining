@@ -2153,13 +2153,29 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
         }
         choices := View{width: Fill height: Fit flow: Down spacing: 10 on_render: || {
             if candidates.len() == 0 { Label{width: Fill text: L("填写条件后查找候选。价格和时段来自菜单快照。", "Set your preferences to find options. Prices and hours are from a menu snapshot.") draw_text.color: muted draw_text.text_style.font_size: 13} }
+            let recentProductIds = []
+            let firstRecentDay = max(0, journal.days.len() - 7)
+            for dayIndex in firstRecentDay..journal.days.len() {
+                for m in journal.days[dayIndex].meals { recentProductIds.push(m.product_id) }
+            }
             for i in candidates.len() {
                 let p = allProducts[candidates[i]]
+                let cap = money_value(ui.budget.text())
+                if cap < 0 { cap = 0 }
+                let evidence = L("证据：¥", "Evidence: ¥") + cash(p.cents) + L(" ≤ 本餐上限 ¥", " ≤ meal limit ¥") + cash(cap)
+                if open_at(p.business_hours, clock_value(ui.arrival.text().trim())) { evidence += L(" · 到店时段营业中", " · open at arrival") }
+                if regex("辣|麻|椒", "").test(p.name + " " + p.category) { evidence += L(" · 菜名含辣味词", " · spicy keyword in name") }
+                if !regex("辣|麻|椒", "").test(p.name + " " + p.category) { evidence += L(" · 菜名无辣味词", " · no spicy keyword") }
+                let repeated = false
+                for id in recentProductIds { if id == candidates[i] { repeated = true } }
+                if repeated { evidence += L(" · 近七天吃过", " · eaten in the last 7 days") }
+                if !repeated { evidence += L(" · 近七天未吃", " · not eaten recently") }
                 RoundedView{width: Fill height: Fit flow: Down spacing: 7 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
                     View{width: Fill height: Fit flow: Right spacing: 9
                         View{width: Fill height: Fit flow: Down spacing: 5
                             Label{width: Fill text: p.name + " · ¥" + cash(p.cents) draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 15}}
                             Label{width: Fill text: p.store + " · " + p.business_hours draw_text.color: muted draw_text.text_style.font_size: 12}
+                            Label{width: Fill text: evidence draw_text.color: muted draw_text.text_style.font_size: 10}
                         }
                         if p.image_url != "" { Image{width: 72 height: 72 src: http_resource(p.image_url) fit: ImageFit.CropToFill} }
                     }

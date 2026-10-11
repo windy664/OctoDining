@@ -8,11 +8,13 @@
 
 **评委先看 Agent 闭环：** [15 秒 1.2.2 真实 Agent 证据剪辑](docs/demo/octodining-122-agent-evidence-reel.mp4) · [同一次 Shell 联调原始记录和三张截图](docs/evidence/shell-ui122-minimax-20261004.json) · [按评分项核验](docs/AGENTIC_JUDGING.md)。MiniMax-M3 在已有晚餐计划上比较候选并建议候选 3；用户亲自确认，应用保存计划并读回核验。剪辑由真实截图制成，并非连续录屏。**1.7.0 的 Shell 测试遭遇 429，没有取得同版模型建议**；下方 1.7.0 画面用于展示后续产品功能，不能与 1.2.2 Agent 证据视作同一次运行。
 
-| 首次使用 | 下一餐 | 七日餐表 |
-| :---: | :---: | :---: |
-| <img src="docs/evidence/next-meal-170-20261005/zh/00-first-run-setup.png" alt="首次引导" width="250"> | <img src="docs/evidence/next-meal-170-20261005/zh/01-home-recommendation.png" alt="下一餐推荐" width="250"> | <img src="docs/evidence/next-meal-170-20261005/zh/03-week-plan-confirmed.png" alt="七日餐表" width="250"> |
+**当前 1.9.0 界面**（card-host 原生截图，非模型证据；[中英画面与说明](docs/evidence/next-meal-190-20261011.md)）：
 
-以上为 1.7.0 **card-host 原生运行截图**；不是 OctoSense Shell 的模型联调证据。[更多截图与验证](docs/evidence/next-meal-170-20261005.md)。
+| 首次使用 | 下一餐 · 预算指标 | 候选 · 约束证据 |
+| :---: | :---: | :---: |
+| <img src="docs/evidence/next-meal-190-20261011/zh/00-first-run-setup.png" alt="首次引导" width="250"> | <img src="docs/evidence/next-meal-190-20261011/zh/01-home-recommendation.png" alt="下一餐推荐与预算指标" width="250"> | <img src="docs/evidence/next-meal-190-20261011/zh/02-candidates.png" alt="候选与约束证据" width="250"> |
+
+以下为 1.7.0 **card-host 原生运行截图**；不是 OctoSense Shell 的模型联调证据。[更多截图与验证](docs/evidence/next-meal-170-20261005.md)。
 
 [观看 35 秒演示剪辑](docs/demo/octodining-170-evidence-reel.mp4) · [视频素材与复现说明](docs/demo/README.md)。视频由上述真实截图、七日餐表验收截图和 Shell 局部联调截图剪辑，配原创合成音乐；它不是连续屏幕录制，也不证明 1.7.0 已获得模型建议。
 
