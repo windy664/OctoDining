@@ -838,13 +838,12 @@ fn refresh_language(){
     menuInfo += L("；价格为快照，可能已变化。", "; prices are a snapshot and may be stale.")
     ui.settings_menu_info.set_text(menuInfo)
     ui.settings_glance_title.set_text(L("提醒", "Reminders"))
-    ui.settings_glance.set_text(L("在一览屏显示下一餐卡片", "Show the next-meal card on the glance screen"))
+    ui.settings_glance.set_text(if glanceOn { L("一览屏提醒：开（点按关闭）", "Glance reminder: on (tap to turn off)") } else { L("一览屏提醒：关（点按开启）", "Glance reminder: off (tap to turn on)") })
     ui.settings_glance_note.set_text(L("卡片只在本机一览屏显示，点开回到本应用。", "The card stays on this device's glance screen and opens this app."))
     ui.settings_taste_title.set_text(L("口味记录", "Taste history"))
     ui.settings_taste_note.set_text(L("只保存在本机，用于让推荐更合口味。", "Stored on this device only, to tune recommendations."))
     ui.settings_taste_clear.set_text(L("清空口味记录", "Clear taste history"))
     ui.settings_recalc.set_text(L("重新核算生活费与菜单", "Recalculate allowance and menu"))
-    ui.settings_glance.set_checked(glanceOn)
     ui.taste_like.set_text(L("好吃", "Good"))
     ui.taste_mid.set_text(L("一般", "OK"))
     ui.taste_dislike.set_text(L("不行", "Bad"))
@@ -865,10 +864,10 @@ fn switch_language(){
     try { fs.write("language.json", {lang: L("zh", "en")}.to_json()) } { }
     refresh_language()
     refresh_summary()
-    ui.plans.set_visible(false)
-    ui.plans.set_visible(true)
-    ui.choices.set_visible(false)
-    ui.choices.set_visible(true)
+    ui.plans.render()
+    ui.choices.render()
+    ui.draft_items.render()
+    ui.settings_taste_list.render()
     ui.agent_result.set_text(L("语言已切换；如需 Agent 建议，请重新比较候选。", "Language changed. Ask the Agent again for an explanation."))
     ui.status.set_text(L("语言已切换。", "Language changed."))
 }
@@ -2020,7 +2019,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
         }
         RoundedView{width: Fill height: Fit flow: Down spacing: 6 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
             settings_glance_title := Label{text: "提醒" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 13}}
-            settings_glance := CheckBox{text: "在一览屏显示下一餐卡片" on_click: |active| toggle_glance(active)}
+            settings_glance := Action{text: "一览屏提醒：开（点按关闭）" on_click: || toggle_glance(!glanceOn)}
             settings_glance_note := Label{width: Fill text: "卡片只在本机一览屏显示，点开回到本应用。" draw_text.color: muted draw_text.text_style.font_size: 11}
         }
         RoundedView{width: Fill height: Fit flow: Down spacing: 6 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
