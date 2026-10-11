@@ -423,22 +423,25 @@ fn week_summary_text(){
     let plannedCents = 0
     let eaten = 0
     let eatenCents = 0
+    let weeklyBudget = 0
     for offset in 7 {
         let index = day_index(journal, week_date(currentDate, offset))
         if index >= 0 {
+            weeklyBudget += journal.days[index].daily_cents
             for m in journal.days[index].meals {
                 planned += 1
                 plannedCents += m.cents
                 if meal_eaten_at(m) != nil { eaten += 1 eatenCents += meal_actual_cents(m) }
             }
         }
+        if index < 0 { weeklyBudget += profileDaily }
     }
     let likes = 0
     let dislikes = 0
     for item in taste.items { likes += item.likes dislikes += item.dislikes }
     if planned == 0 && likes == 0 && dislikes == 0 { return "" }
-    let text = L("本周已计划 ", "This week planned ") + planned + L(" 餐 · ¥", " meals · ¥") + cash(plannedCents)
-    if eaten > 0 { text += L("；已吃 ", "; eaten ") + eaten + L(" 餐 · 实付 ¥", " meals · paid ¥") + cash(eatenCents) }
+    let text = L("本周可用 ¥", "This week available ¥") + cash(weeklyBudget) + L(" · 已计划 ", " · planned ") + planned + L(" 餐 · ¥", " meals · ¥") + cash(plannedCents)
+    if eaten > 0 { text += L("；已吃 ", "; eaten ") + eaten + L(" 餐 · 实付 ¥", " meals · paid ¥") + cash(eatenCents) + L(" · 按已吃还剩 ¥", " · left after eaten ¥") + cash(weeklyBudget - eatenCents) }
     if likes + dislikes > 0 { text += L("；口味记录 好评 ", "; taste: liked ") + likes + L(" · 差评 ", " · disliked ") + dislikes }
     text
 }
