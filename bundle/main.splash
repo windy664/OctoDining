@@ -794,6 +794,12 @@ fn refresh_language(){
     ui.summary_title.set_text(L("当日预算", "Daily budget"))
     ui.image_note.set_text(L("菜单配图 · 仅供参考", "Menu image"))
     ui.next_pick.set_text(L("换一道", "Try another"))
+    ui.home_m1_label.set_text(L("本餐", "This meal"))
+    ui.home_m2_label.set_text(L("今日可用", "Left today"))
+    ui.chip_spicy.set_text(L("少辣", "Less spicy"))
+    ui.chip_quick.set_text(L("快一点", "Quick"))
+    ui.chip_treat.set_text(L("吃好点", "Treat myself"))
+    ui.chip_norepeat.set_text(L("别重复", "No repeats"))
     ui.hero_title.set_text(L("想换一个？", "Want a change?"))
     ui.hero_note.set_text(L("Agent 先给建议，确认后才更新餐表。", "The Agent suggests; you confirm any plan change."))
     ui.manual.set_text(L("调整预算与时间 →", "Budget & time →"))
@@ -948,10 +954,18 @@ fn set_home_image(productId){
         ui.home_image_wrap.set_visible(false)
     }
 }
+fn set_home_metrics(cents){
+    ui.home_m1_value.set_text("¥" + cash(cents))
+    let daily = money_value(ui.daily.text())
+    if daily < 0 { daily = profileDaily }
+    ui.home_m2_value.set_text("¥" + cash(daily - sum_meals(current_meals(), selectedSlot)))
+}
 fn refresh_home(){
     homePick = -1
     homeShowingSaved = false
     set_home_image(-1)
+    ui.home_m1_value.set_text("")
+    ui.home_m2_value.set_text("")
     if ui.date.text().trim() != currentDate || !valid_date(currentDate) {
         ui.home_name.set_text(L("先打开一个有效日期", "Open a valid date first"))
         ui.home_cta.set_text(L("调整条件", "Edit settings"))
@@ -971,6 +985,7 @@ fn refresh_home(){
             set_home_image(meal.product_id)
             ui.home_price.set_text("¥" + cash(meal.cents))
             ui.home_meta.set_text(meal.store + " · " + meal.arrival + L(" 到店", " arrival"))
+            set_home_metrics(meal.cents)
             if eaten_at != nil { ui.home_reason.set_text(L("这餐已记录为吃过，实际支付 ¥", "Recorded as eaten; amount paid ¥") + cash(meal_actual_cents(meal)) + L("。", ".")) }
             else { ui.home_reason.set_text(L("已经写入餐表。想换口味，可以点“换一道”。", "Saved to your plan. Try another dish if you want a change.")) }
             ui.home_taste.set_text(taste_badge(meal.product_id))
@@ -979,7 +994,7 @@ fn refresh_home(){
         }
     }
     ui.home_caption.set_text(home_day_label() + " · " + slot_label(selectedSlot))
-    ui.home_cta.set_text(L("就吃这道 · 加入餐表", "Add this to my plan"))
+    ui.home_cta.set_text(L("就吃这道 · 加入餐表 →", "Add this to my plan →"))
     let daily = money_value(ui.daily.text())
     let budget = money_value(ui.budget.text())
     let arrival = clock_value(ui.arrival.text().trim())
@@ -1053,6 +1068,7 @@ fn refresh_home(){
     set_home_image(homePick)
     ui.home_price.set_text("¥" + cash(pick.cents))
     ui.home_meta.set_text(pick.store + " · " + ui.arrival.text().trim() + L(" 可到店", " arrival"))
+    set_home_metrics(pick.cents)
     if recentIds.len() == 0 {
         ui.home_reason.set_text(L("根据菜单价格、餐次和到店时段推荐；暂无已存历史计划。", "Based on menu price, meal type and hours; no saved history yet."))
     } else {
@@ -2033,6 +2049,16 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                     home_name := Label{width: Fill text: "正在挑选…" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 23}}
                     home_price := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 20}}
                     home_meta := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 11}
+                    View{width: Fill height: Fit flow: Right spacing: 14 padding: Inset{top: 4}
+                        View{width: Fill height: Fit flow: Down spacing: 1
+                            home_m1_label := Label{text: "本餐" draw_text.color: muted draw_text.text_style.font_size: 10}
+                            home_m1_value := Label{text: "" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 16}}
+                        }
+                        View{width: Fill height: Fit flow: Down spacing: 1
+                            home_m2_label := Label{text: "今日可用" draw_text.color: muted draw_text.text_style.font_size: 10}
+                            home_m2_value := Label{text: "" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 16}}
+                        }
+                    }
                 }
                 home_image_wrap := View{width: 120 height: Fit flow: Down spacing: 3 visible: false
                     dish_image := Image{width: 120 height: 120 fit: ImageFit.CropToFill}
@@ -2055,6 +2081,12 @@ SolidView{width: Fill height: Fill flow: Down padding: 18 spacing: 10 draw_bg.co
                 draw_bg +: {color: #xffffff color_hover: #xffffff color_focus: #xffffff color_empty: #xffffff border_radius: 12.0 border_size: 0.0}
                 draw_text +: {color: ink color_hover: ink color_focus: ink color_empty: muted color_empty_hover: muted}}
             agent_start := Primary{width: 46 height: 43 text: "→" on_click: || plan_with_agent()}
+        }
+        View{width: Fill height: Fit flow: Right spacing: 6
+            chip_spicy := Action{height: 30 text: "少辣" on_click: || { ui.request.set_text(L("少辣", "Less spicy")) plan_with_agent() }}
+            chip_quick := Action{height: 30 text: "快一点" on_click: || { ui.request.set_text(L("快一点", "Quick meal")) plan_with_agent() }}
+            chip_treat := Action{height: 30 text: "吃好点" on_click: || { ui.request.set_text(L("吃好点", "Treat myself")) plan_with_agent() }}
+            chip_norepeat := Action{height: 30 text: "别重复" on_click: || { ui.request.set_text(L("别重复", "No repeats")) plan_with_agent() }}
         }
         hero_note := Label{width: Fill text: "Agent 先给建议，确认后才更新餐表。" draw_text.color: muted draw_text.text_style.font_size: 11}
     }
