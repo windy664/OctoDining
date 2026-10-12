@@ -2700,6 +2700,13 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
                 let index = day_index(journal, date)
                 let meals = []
                 if index >= 0 { meals = journal.days[index].meals }
+                // 按早餐/午餐/晚餐/加餐展示，与确认顺序无关。
+                let ordered = []
+                for slot in 4 {
+                    for m in meals {
+                        if m.slot == slot { ordered.push(m) }
+                    }
+                }
                 RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 14 right: 14 top: 12 bottom: 12} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
                     Label{width: Fill text: date + L(" · 预算占用 ¥", " · Budget used ¥") + cash(sum_meals(meals, -1)) draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 14}}
                     if meals.len() == 0 {
@@ -2707,7 +2714,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
                         else { Label{text: L("待安排", "To plan") draw_text.color: muted draw_text.text_style.font_size: 12} }
                         Action{text: L("安排这天", "Plan this day") on_click: || { ui.date.set_text(date) open_date() show_page(false) }}
                     }
-                    for m in meals {
+                    for m in ordered {
                         View{width: Fill height: Fit flow: Down spacing: 5
                             View{width: Fill height: Fit flow: Right spacing: 8
                                 View{width: Fill height: Fit flow: Down spacing: 5
