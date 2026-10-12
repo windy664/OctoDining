@@ -709,6 +709,9 @@ fn show_page(history){
     if history { ui.plans.render() }
 }
 fn clear_week_draft(){
+    // Bump the generation so any in-flight day ticks abort instead of
+    // resurrecting a discarded draft.
+    draftGen += 1
     weekAgentRequest += 1
     weekAgentBusy = false
     weekAgentOffers = []
@@ -786,10 +789,10 @@ fn refresh_language(){
     ui.setup_fixed_label.set_text(L("房租、交通等非餐饮固定开销 · 元", "Non-food essentials, such as rent and transport · CNY"))
     ui.setup_reserve_label.set_text(L("本月预留缓冲金 · 元", "Reserve for this month · CNY"))
     ui.setup_preview.set_text(L("看看如何分配", "Preview the split"))
-    ui.setup_start_title.set_text(L("03 · 从今天开始", "03 · Start today"))
+    ui.setup_start_title.set_text(L("03 · 生成一周餐表", "03 · Draft your week"))
     ui.setup_quality.set_text(L("优先挑含主食和明显蛋、肉等食材的正餐；这只依据菜名，无法判断份量、营养或过敏原。你可以检查并改餐。", "We favor meals whose names suggest a staple and a main ingredient. Names cannot prove portion size, nutrition or allergen safety. Review each choice."))
     ui.setup_existing.set_text(L("重新核算只影响之后的新安排；已确认的餐次和预算不会被悄悄改写。", "Recalculating affects future choices only. Confirmed meals and budgets stay as they are."))
-    ui.setup_start.set_text(L("使用这份菜单，开始选餐", "Use this menu and start"))
+    ui.setup_start.set_text(L("保存并生成七天餐表草案", "Save and draft seven days"))
     ui.setup_back.set_text(L("返回今天", "Back to today"))
     ui.intro_title.set_text(L("下一顿，吃点好的。", "Your next good meal."))
     ui.intro_subtitle.set_text(L("按食堂所在地时间找下一餐，可手动调整。", "Canteen time · change meal or date anytime."))
@@ -924,11 +927,10 @@ fn finish_setup(){
     if !saved { ui.setup_result.set_text(L("设置未能保存并读回；请检查存储后重试。", "Could not save and read back settings. Check storage and retry.")) return }
     profileDaily = daily
     profileReady = true
-    clear_week_draft()
     ui.date.set_text(today())
-    ui.daily.set_text(cash(daily))
-    ui.budget.set_text(cash(profile_limit(selectedSlot)))
-    go_next_meal()
+    open_date()
+    show_page(true)
+    generate_week_draft()
 }
 fn plan_with_agent(){
     find_candidates()
@@ -2412,10 +2414,10 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
             setup_result := Label{width: Fill text: "先扣除非餐饮开销与缓冲金，再按 30 天估算饭钱。" draw_text.color: ink draw_text.text_style.font_size: 12}
         }
         RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 15 bottom: 15} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 17.0
-            setup_start_title := Label{text: "03 · 从今天开始" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 15}}
+            setup_start_title := Label{text: "03 · 生成一周餐表" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 15}}
             setup_quality := Label{width: Fill text: "优先挑含主食和明显蛋、肉等食材的正餐；这只依据菜名，无法判断份量、营养或过敏原。你可以检查并改餐。" draw_text.color: ink draw_text.text_style.font_size: 12}
             setup_existing := Label{width: Fill text: "重新核算只影响之后的新安排；已确认的餐次和预算不会被悄悄改写。" draw_text.color: muted draw_text.text_style.font_size: 11}
-            setup_start := Primary{text: "使用这份菜单，开始选餐" on_click: || finish_setup()}
+            setup_start := Primary{text: "保存并生成七天餐表草案" on_click: || finish_setup()}
         }
         setup_back := Action{text: "返回今天" on_click: || show_home()}
     }

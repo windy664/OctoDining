@@ -33,6 +33,8 @@ try:
     app.fill("setup_fixed", "540.00")
     app.click("setup_preview")
     app.click("setup_start")
+    # Onboarding now lands on the generated week draft; head home first.
+    app.click("home_nav")
 
     app.click("manual")
 

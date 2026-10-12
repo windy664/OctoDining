@@ -15,3 +15,7 @@
 /build/
 __pycache__/
 *.py[cod]
+
+# Local tooling session state and review packs
+/.opencollab/
+/artifacts/

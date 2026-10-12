@@ -98,6 +98,15 @@ class App:
             actual = self.text('status')
         assert fragment in actual, (fragment, actual)
 
+    def await_text(self, key, fragment, timeout=15):
+        # Frames can stall for seconds under GPU contention; poll patiently.
+        deadline = time.monotonic() + timeout
+        actual = self.text(key)
+        while fragment not in actual and time.monotonic() < deadline:
+            time.sleep(.15)
+            actual = self.text(key)
+        assert fragment in actual, (key, fragment, actual)
+
     def quit(self):
         self.get('quit')
         time.sleep(.2)
@@ -149,12 +158,18 @@ def main():
         app.fill('setup_monthly','1500.00')
         app.fill('setup_fixed','800.00')
         app.click('看看如何分配')
-        assert '预算偏紧' in app.text('setup_result')
+        app.await_text('setup_result', '预算偏紧')
         app.fill('setup_fixed','540.00')
         app.click('看看如何分配')
-        assert '每天约 ¥32.00' in app.text('setup_result')
-        app.click('使用这份菜单，开始选餐')
+        app.await_text('setup_result', '每天约 ¥32.00')
+        app.click('保存并生成七天餐表草案')
         assert json.loads((jail/'profile.json').read_text())['daily_cents']==3200
+        app.await_text('status', '已生成七天草案')
+        assert '待确认' in app.text('draft_summary'), app.text('draft_summary')
+        assert not list(jail.glob('plans-*.json')), 'draft wrote a plan before confirmation'
+        record('Onboarding ends with a seven-day draft awaiting confirmation')
+        app.click('discard_draft')
+        app.click('home_nav')
         canteen_minute = datetime.now().hour * 60 + datetime.now().minute
         expected_slot = '早餐' if canteen_minute < 600 else '午餐' if canteen_minute < 840 else '晚餐' if canteen_minute < 1200 else '早餐'
         assert expected_slot in app.text('home_caption'), app.text('home_caption')

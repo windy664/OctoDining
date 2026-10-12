@@ -54,7 +54,7 @@ def main():
         nodes = matching()
         if not nodes:
             get("m?k=scroll&x=200&y=610&dy=-2000&wait=1")
-            for _ in range(8):
+            for _ in range(14):
                 nodes = matching()
                 if nodes:
                     break
@@ -79,8 +79,14 @@ def main():
                 return
         raise RuntimeError(f"Could not fill {widget_id}: {actual!r}")
 
-    def capture(name, previous_mtime=0):
-        # Product images arrive asynchronously after the UI frame. Give the
+    def await_status(fragment, timeout=15):
+        deadline = time.monotonic() + timeout
+        while not any(fragment in node.get("t", "") for node in snap() if node.get("i") == "status"):
+            if time.monotonic() > deadline:
+                raise RuntimeError(f"status never showed {fragment!r}: " + repr([node.get("t") for node in snap() if node.get("i") == "status"]))
+            time.sleep(.25)
+
+    def capture(name, previous_mtime=0):        # Product images arrive asynchronously after the UI frame. Give the
         # native renderer time to replace its black loading rectangle.
         if name != "00-first-run-setup.png":
             time.sleep(1.5)
@@ -115,18 +121,33 @@ def main():
         get("m?k=scroll&x=200&y=610&dy=250&wait=1")
         click(widget_id="setup_preview")
         expected_budget = "每天约 ¥32.00" if args.language == "zh" else "about ¥32.00/day"
-        if not any(expected_budget in node.get("t", "") for node in snap()):
-            raise RuntimeError("First-run budget calculation failed: " + repr([(node.get("i"), node.get("t")) for node in snap() if node.get("t")]))
+        deadline = time.monotonic() + 15
+        while not any(expected_budget in node.get("t", "") for node in snap()):
+            if time.monotonic() > deadline:
+                raise RuntimeError("First-run budget calculation failed: " + repr([(node.get("i"), node.get("t")) for node in snap() if node.get("t")]))
+            time.sleep(.25)
         click(widget_id="setup_start")
-        if not any(node.get("i") == "home_name" for node in snap()):
-            raise RuntimeError("First-run setup did not open the meal-first home")
-        capture("01-home-recommendation.png")
+        draft_ready = "已生成七天草案" if args.language == "zh" else "Seven-day draft ready"
+        await_status(draft_ready)
+        capture("01-first-week-draft.png")
+        before = framebuffer.stat().st_mtime_ns
+        click(widget_id="confirm_draft")
+        confirmed = "已确认并读回核验" if args.language == "zh" else "Confirmed and verified"
+        await_status(confirmed)
+        capture("03-week-plan-confirmed.png", before)
+        before = framebuffer.stat().st_mtime_ns
+        click(widget_id="home_nav")
+        deadline = time.monotonic() + 10
+        while not any(node.get("i") == "home_name" and node.get("t") for node in snap()):
+            if time.monotonic() > deadline:
+                raise RuntimeError("Confirmed week draft did not land on the planned-meal home")
+            time.sleep(.25)
+        capture("01b-home-planned.png", before)
         before = framebuffer.stat().st_mtime_ns
         click(widget_id="manual")
         click(widget_id="find")
         found = "找到 " if args.language == "zh" else "Found "
-        if not any(found in node.get("t", "") for node in snap() if node.get("i") == "status"):
-            raise RuntimeError("Candidate lookup did not complete: " + repr([node.get("t") for node in snap() if node.get("i") == "status"]))
+        await_status(found)
         capture("02-candidates.png", before)
         before = framebuffer.stat().st_mtime_ns
         click(label="详情 ›" if args.language == "zh" else "Details ›")
@@ -136,16 +157,13 @@ def main():
             get("m?k=scroll&x=200&y=610&dy=-280&wait=1")
             time.sleep(.25)
         time.sleep(.6)
-        before = framebuffer.stat().st_mtime_ns
         capture("02b-candidate-detail.png", before)
         click(label="收起 ↑" if args.language == "zh" else "Hide ↑")
         before = framebuffer.stat().st_mtime_ns
         click(label="确认候选 1" if args.language == "zh" else "Confirm option 1")
         verified = "已保存并读回核验" if args.language == "zh" else "Saved and read back"
-        if not any(verified in node.get("t", "") for node in snap() if node.get("i") == "status"):
-            raise RuntimeError("Plan was not saved and read back")
+        await_status(verified)
         click(widget_id="tab_history")
-        capture("03-week-plan-confirmed.png", before)
         print("card-host native capture complete; model and OctoSense Shell are outside this script")
     finally:
         if started:

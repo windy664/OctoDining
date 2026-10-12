@@ -59,6 +59,8 @@ def main():
                 break
         assert 'about ¥32.00/day' in app.text('setup_result'), app.text('setup_result')
         app.click('setup_start')
+        # Onboarding now lands on the generated week draft; head home first.
+        app.click('home_nav')
         assert app.text('intro_title') == 'Your next good meal.'
         assert app.text('home_name')
         assert any(day in app.text('home_caption') for day in ('Today', 'Tomorrow'))

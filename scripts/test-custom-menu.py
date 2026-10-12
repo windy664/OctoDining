@@ -68,6 +68,9 @@ def main():
         app.fill("setup_fixed", "540.00")
         app.click("setup_start")
         assert json.loads((jail / "profile.json").read_text())["menu"] == "custom-v1"
+        # Onboarding now lands on the generated week draft; head home to
+        # exercise per-meal recommendation with the imported menu.
+        app.click("home_nav")
         assert app.text("home_name") in {item["name"] for item in meals}
         app.click("home_cta")
         app.status("已保存并读回核验")
