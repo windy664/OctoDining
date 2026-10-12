@@ -6,7 +6,7 @@ let dinnerPool = __DINNER_POOL__.parse_json()
 let snackPool = __SNACK_POOL__.parse_json()
 let localMenuImages = __LOCAL_MENU_IMAGES__.parse_json()
 let menuKind = "gzis-snapshot"
-let menuSource = "广州软件学院食堂快照"
+let menuSource = "广州某高校食堂快照"
 let menuUpdated = "2026-09-28"
 let menuTimezone = 480
 let slotNames = ["早餐" "午餐" "晚餐" "加餐"]
@@ -771,7 +771,7 @@ fn refresh_language(){
     if menuKind == "custom-v1" {
         ui.setup_menu_info.set_text(L("已导入：", "Imported: ") + menuSource + " · " + menuUpdated + " · " + allProducts.len() + L(" 道餐品", " items"))
     } else {
-        ui.setup_menu_info.set_text(L("当前可用：广州软件学院食堂菜单快照 · 1,497 条商品。价格和营业时段可能已变化。", "Available now: a 1,497-item snapshot from Guangzhou Software Institute. Prices and hours may have changed."))
+        ui.setup_menu_info.set_text(L("当前可用：广州某高校食堂菜单快照 · 1,497 条商品。价格和营业时段可能已变化。", "Available now: a 1,497-item snapshot from a Guangzhou university canteen. Prices and hours may have changed."))
     }
     ui.setup_menu_limit.set_text(L("也可粘贴自己的 JSON 菜单；当前宿主没有文件选择器，自动采集尚未接入。", "You can paste a JSON menu; this host has no file picker. Automatic collection is not available."))
     ui.setup_import_toggle.set_text(L("导入自己的菜单 →", "Import your menu →"))
@@ -2381,7 +2381,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
         setup_intro := Label{width: Fill text: "告诉我可支配生活费和必须先付的开销，再决定每天能用多少吃饭。" draw_text.color: muted draw_text.text_style.font_size: 13}
         RoundedView{width: Fill height: Fit flow: Down spacing: 9 padding: Inset{left: 15 right: 15 top: 15 bottom: 15} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 17.0
             setup_menu_title := Label{text: "01 · 选择食堂菜单" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 15}}
-            setup_menu_info := Label{width: Fill text: "当前可用：广州软件学院食堂菜单快照 · 1,497 条商品。价格和营业时段可能已变化。" draw_text.color: ink draw_text.text_style.font_size: 12}
+            setup_menu_info := Label{width: Fill text: "当前可用：广州某高校食堂菜单快照 · 1,497 条商品。价格和营业时段可能已变化。" draw_text.color: ink draw_text.text_style.font_size: 12}
             setup_menu_limit := Label{width: Fill text: "也可粘贴自己的 JSON 菜单；当前宿主没有文件选择器，自动采集尚未接入。" draw_text.color: muted draw_text.text_style.font_size: 11}
             setup_import_toggle := Action{text: "导入自己的菜单 →" on_click: || {importCustomOpen = !importCustomOpen ui.setup_import_card.set_visible(importCustomOpen)}}
         }

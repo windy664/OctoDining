@@ -473,7 +473,7 @@ impl eframe::App for App {
                     ui.vertical_centered(|ui| {
                         ui.label(
                             RichText::new(format!(
-                                "基于广州软件学院食堂商品数据 · {} 条真实商品",
+                                "基于广州某高校食堂商品数据 · {} 条真实商品",
                                 self.products.len()
                             ))
                             .small()
