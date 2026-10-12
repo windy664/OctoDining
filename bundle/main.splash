@@ -55,6 +55,12 @@ let weekAgentChanges = []
 let weekAgentRequest = 0
 let weekAgentBusy = false
 let weekAgentStamp = ""
+let rebalancePlan = []
+let rebalanceStamp = ""
+let rebalanceOpen = false
+let rebalanceOverBy = 0
+let rebalanceCovered = 0
+let alertCanRebalance = false
 let profileReady = false
 let profileDaily = 3200
 let english = false
@@ -143,6 +149,21 @@ fn valid_date(text){
     let monthDays = [31 28 31 30 31 30 31 31 30 31 30 31]
     if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) { monthDays[1] = 29 }
     d >= 1 && d <= monthDays[m - 1]
+}
+fn date_serial(text){
+    if !valid_date(text) { return -1 }
+    let p = text.split("-")
+    let y = p[0].to_f64()
+    let m = p[1].to_f64()
+    let d = p[2].to_f64()
+    if m <= 2 { y -= 1 }
+    let era = floor(y / 400)
+    let yoe = y - era * 400
+    let mp = m + 9
+    if m > 2 { mp = m - 3 }
+    let doy = floor((153 * mp + 2) / 5) + d - 1
+    let doe = yoe * 365 + floor(yoe / 4) - floor(yoe / 100) + doy
+    era * 146097 + doe
 }
 fn clock_value(text){
     if !regex("^[0-9]{2}:[0-9]{2}$", "").test(text) { return -1 }
@@ -432,9 +453,8 @@ fn week_summary_text(){
         if index >= 0 {
             weeklyBudget += journal.days[index].daily_cents
             for m in journal.days[index].meals {
-                planned += 1
-                plannedCents += m.cents
                 if meal_eaten_at(m) != nil { eaten += 1 eatenCents += meal_actual_cents(m) }
+                else { planned += 1 plannedCents += m.cents }
             }
         }
         if index < 0 { weeklyBudget += profileDaily }
@@ -797,6 +817,7 @@ fn refresh_language(){
     ui.intro_title.set_text(L("下一顿，吃点好的。", "Your next good meal."))
     ui.intro_subtitle.set_text(L("按食堂所在地时间找下一餐，可手动调整。", "Canteen time · change meal or date anytime."))
     ui.alerts_title.set_text(L("需要留意", "Heads up"))
+    ui.alerts_rebalance.set_text(L("帮我调整超支 ›", "Rebalance ›"))
     ui.summary_title.set_text(L("当日预算", "Daily budget"))
     ui.image_note.set_text(L("菜单配图 · 仅供参考", "Menu image"))
     ui.next_pick.set_text(L("换一道", "Try another"))
@@ -830,6 +851,9 @@ fn refresh_language(){
     ui.ask_agent.set_text(L("重新请 Agent 比较", "Ask Agent again"))
     ui.week_title.set_text(L("我的一周餐表 · 从所选日期起七天", "My week · seven days from the selected date"))
     ui.make_draft.set_text(L("生成七天草案", "Draft seven days"))
+    ui.rebalance_title.set_text(L("省钱调整方案", "Cheaper swaps"))
+    ui.rebalance_apply.set_text(L("应用并核验", "Apply and verify"))
+    ui.rebalance_drop.set_text(L("忽略", "Dismiss"))
     ui.week_agent_heading.set_text(L("让 Agent 调整这周", "Ask Agent to adjust the week"))
     ui.week_agent_intro.set_text(L("先生成草案。Agent 只从已验证的换餐选项中提出改动，确认前不写入。", "Draft first. The Agent selects from verified swaps; nothing is saved before confirmation."))
     ui.week_agent_ask.set_text(L("请 Agent 提案", "Ask Agent for changes"))
@@ -860,6 +884,7 @@ fn refresh_language(){
     refresh_home_engine()
     refresh_week_budget()
     if expandedCandidate >= 0 && expandedCandidate < candidates.len() { show_candidate_detail(expandedCandidate) }
+    refresh_rebalance_summary()
     if ui.setup_monthly.text().trim() == "" || ui.setup_fixed.text().trim() == "" {
         ui.setup_result.set_text(L("先扣除非餐饮开销与缓冲金，再按 30 天估算饭钱。", "Subtract non-food costs and reserve, then estimate meals over 30 days."))
     } else { setup_calculation() }
@@ -934,6 +959,12 @@ fn plan_with_agent(){
     if candidates.len() > 0 { ask_agent() }
 }
 fn refresh_summary(){
+    if rebalanceOpen && rebalanceStamp != rebalance_stamp() {
+        rebalanceOpen = false
+        rebalancePlan = []
+        rebalanceStamp = ""
+        ui.rebalance_card.set_visible(false)
+    }
     let total = sum_meals(current_meals(), -1)
     let daily = money_value(ui.daily.text())
     let spent = 0
@@ -977,6 +1008,7 @@ fn img_src_id(id){
 // (overspend today, a dish repeated across the week) without being asked.
 fn compute_alerts(){
     let alerts = []
+    alertCanRebalance = false
     let daily = money_value(ui.daily.text())
     if daily < 0 { daily = profileDaily }
     let total = sum_meals(current_meals(), -1)
@@ -984,6 +1016,38 @@ fn compute_alerts(){
         let dayName = currentDate
         if currentDate == today() { dayName = L("今天", "Today") }
         alerts.push(dayName + L(" 已超支 ¥", " is over budget by ¥") + cash(total - daily) + L("，可在餐表取消或改餐。", "; cancel or change a meal in the week plan."))
+    }
+    let weeklyBudget = 0
+    let committed = 0
+    for offset in 7 {
+        let index = day_index(journal, week_date(currentDate, offset))
+        if index >= 0 {
+            weeklyBudget += journal.days[index].daily_cents
+            for m in journal.days[index].meals {
+                if meal_eaten_at(m) != nil { committed += meal_actual_cents(m) }
+                else { committed += m.cents }
+            }
+        }
+        if index < 0 { weeklyBudget += profileDaily }
+    }
+    if weeklyBudget > 0 && committed > weeklyBudget {
+        alerts.push(L("本周计划与实付合计 ¥", "Planned and paid this week total ¥") + cash(committed) + L("，超出周预算 ¥", ", over the week budget by ¥") + cash(committed - weeklyBudget) + L("。", "."))
+        alertCanRebalance = true
+    }
+    let todaySerial = date_serial(today())
+    let missed = 0
+    for day in journal.days {
+        let s = date_serial(day.date)
+        if s >= 0 && s < todaySerial && todaySerial - s <= 7 {
+            for m in day.meals { if meal_eaten_at(m) == nil { missed += 1 } }
+        }
+    }
+    if missed > 0 {
+        alerts.push(L("过去 7 天有 ", "Over the last 7 days, ") + missed + L(" 餐过了计划时间仍未确认；打开对应日期可取消不需要的餐次。", " planned meals were never confirmed; open that date to cancel the ones you skipped."))
+    }
+    let menuAge = todaySerial - date_serial(menuUpdated)
+    if date_serial(menuUpdated) >= 0 && menuAge > 30 {
+        alerts.push(L("菜单快照更新于 ", "Menu snapshot updated ") + menuUpdated + L("，已有 ", ", ") + menuAge + L(" 天；价格与供应可能已变化，请以食堂现场为准。", " days ago; prices and availability may have changed — trust what you see on site."))
     }
     let ids = []
     let counts = []
@@ -1012,6 +1076,7 @@ fn refresh_alerts(){
     let alerts = compute_alerts()
     if alerts.len() == 0 {
         ui.alerts.set_visible(false)
+        ui.alerts_rebalance.set_visible(false)
         return
     }
     let text = ""
@@ -1020,6 +1085,7 @@ fn refresh_alerts(){
         text += alerts[i]
     }
     ui.alerts_text.set_text(text)
+    ui.alerts_rebalance.set_visible(alertCanRebalance)
     ui.alerts.set_visible(true)
 }
 // Recommendation provenance: the home pick always comes from the local rule
@@ -1086,7 +1152,10 @@ fn refresh_week_budget(){
         let index = day_index(journal, week_date(currentDate, offset))
         if index >= 0 {
             weeklyBudget += journal.days[index].daily_cents
-            for m in journal.days[index].meals { plannedCents += m.cents }
+            for m in journal.days[index].meals {
+                if meal_eaten_at(m) != nil { plannedCents += meal_actual_cents(m) }
+                else { plannedCents += m.cents }
+            }
         }
         if index < 0 { weeklyBudget += profileDaily }
     }
@@ -1098,9 +1167,9 @@ fn refresh_week_budget(){
     }
     if filled > 8 { filled = 8 }
     if filled < 0 { filled = 0 }
-    ui.week_budget_label.set_text(L("本周预算 ¥", "Week budget ¥") + cash(weeklyBudget) + L(" · 已计划 ¥", " · planned ¥") + cash(plannedCents) + " · " + pct + "%")
-    let note = L("已计划金额占本周预算的比例；确认或取消餐次后自动更新。", "Share of the week budget already planned; updates as you confirm or cancel meals.")
-    if pct > 100 { note = L("已超出本周预算，请在餐表中取消或改餐。", "Over the week budget; cancel or change meals in the plan.") }
+    ui.week_budget_label.set_text(L("本周预算 ¥", "Week budget ¥") + cash(weeklyBudget) + L(" · 已计入 ¥", " · counted ¥") + cash(plannedCents) + " · " + pct + "%")
+    let note = L("已吃按实付、待吃按计划价计入；确认或取消餐次后自动更新。", "Eaten meals count as actually paid, the rest at plan prices; updates as you confirm or cancel meals.")
+    if pct > 100 { note = L("已超出本周预算，可在首页「需要留意」中一键调整。", "Over the week budget; use Heads up on the home page to rebalance.") }
     ui.week_budget_note.set_text(note)
     ui.wb0.set_visible(filled > 0)
     ui.wb1.set_visible(filled > 1)
@@ -1681,6 +1750,200 @@ fn apply_week_agent(){
     ui.draft_items.render()
     ui.status.set_text(L("Agent 建议已调整草案中的 ", "Agent changed ") + count + L(" 餐；尚未保存，请逐项核对后确认整周。", " draft meals. Review and confirm the week to save."))
 }
+// Week rebalance: when planned + paid exceeds the week budget, the local
+// engine proposes cheaper swaps for uneaten meals. The user reviews each
+// line, confirms, and only then is the journal rewritten and read back.
+fn rebalance_stamp(){
+    "" + journal.revision + "|" + currentDate + "|" + profileDaily + "|" + menuKind
+}
+fn build_rebalance(){
+    let weeklyBudget = 0
+    let committed = 0
+    for offset in 7 {
+        let index = day_index(journal, week_date(currentDate, offset))
+        if index >= 0 {
+            weeklyBudget += journal.days[index].daily_cents
+            for m in journal.days[index].meals {
+                if meal_eaten_at(m) != nil { committed += meal_actual_cents(m) }
+                else { committed += m.cents }
+            }
+        }
+        if index < 0 { weeklyBudget += profileDaily }
+    }
+    let overBy = committed - weeklyBudget
+    let plan = []
+    if overBy <= 0 { return {plan: plan overBy: overBy} }
+    let todaySerial = date_serial(today())
+    for offset in 7 {
+        let date = week_date(currentDate, offset)
+        if date_serial(date) < todaySerial { continue }
+        let index = day_index(journal, date)
+        if index < 0 { continue }
+        for m in journal.days[index].meals {
+            if meal_eaten_at(m) != nil { continue }
+            // 加餐可取消；预算紧时早餐也可取消（与草案"早餐从简或不吃"一致）。
+            // 午晚正餐只换更便宜的，不取消。
+            if m.slot == 3 || m.slot == 0 {
+                plan.push({date: date slot: m.slot old_id: m.product_id new_id: -1 save: m.cents})
+                continue
+            }
+            let pool = lunchPool
+            if m.slot == 2 { pool = dinnerPool }
+            let best = -1
+            for id in pool {
+                let p = allProducts[id]
+                if p.cents < m.cents && p.name != m.name && matches_meal_for(p, m.slot)
+                    && open_at(p.business_hours, clock_value(m.arrival)) {
+                    if best < 0 { best = id }
+                    if best >= 0 && p.cents < allProducts[best].cents { best = id }
+                }
+            }
+            if best >= 0 { plan.push({date: date slot: m.slot old_id: m.product_id new_id: best save: m.cents - allProducts[best].cents}) }
+        }
+    }
+    {plan: plan overBy: overBy}
+}
+fn rebalance_week(){
+    if !storageReady { ui.status.set_text(L("记录无法读取，暂不能调整。", "Records unavailable; cannot rebalance.")) return }
+    let result = build_rebalance()
+    rebalancePlan = []
+    rebalanceStamp = ""
+    rebalanceOpen = false
+    ui.rebalance_card.set_visible(false)
+    if result.overBy <= 0 {
+        ui.status.set_text(L("本周仍在预算内，无需调整。", "The week is within budget; nothing to rebalance."))
+        show_page(true)
+        return
+    }
+    let plan = result.plan
+    if plan.len() > 1 {
+        for i in plan.len() {
+            for j in plan.len() - 1 - i {
+                if plan[j].save < plan[j + 1].save {
+                    let t = plan[j]
+                    plan[j] = plan[j + 1]
+                    plan[j + 1] = t
+                }
+            }
+        }
+    }
+    let covered = 0
+    for c in plan {
+        if rebalancePlan.len() >= 6 { break }
+        rebalancePlan.push(c)
+        covered += c.save
+        if covered >= result.overBy { break }
+    }
+    if rebalancePlan.len() == 0 {
+        ui.status.set_text(L("本周超支 ¥", "Over budget by ¥") + cash(result.overBy) + L("，但菜单里没有更便宜且合时段的替换；请取消餐次或调整预算。", ", but no cheaper swaps fit the hours; cancel meals or adjust the budget."))
+        show_page(true)
+        return
+    }
+    rebalanceOverBy = result.overBy
+    rebalanceCovered = covered
+    rebalanceStamp = rebalance_stamp()
+    rebalanceOpen = true
+    refresh_rebalance_summary()
+    show_page(true)
+    ui.rebalance_card.set_visible(true)
+    ui.rebalance_items.render()
+    ui.status.set_text(L("已生成省钱调整方案，请逐条核对；确认前不会写入餐表。", "Money-saving changes ready. Review each line; nothing is saved until confirmation."))
+}
+fn refresh_rebalance_summary(){
+    if !rebalanceOpen { return }
+    let drops = 0
+    for c in rebalancePlan { if c.new_id < 0 { drops += 1 } }
+    let detail = ""
+    if drops > 0 { detail = L("，含取消 ", ", including dropping ") + drops + L(" 餐加餐或早餐", " snack/breakfast meals") }
+    ui.rebalance_summary.set_text(L("本周超支 ¥", "Over budget by ¥") + cash(rebalanceOverBy) + L("；调整 ", "; changing ") + rebalancePlan.len() + L(" 餐最多省 ¥", " meals saves up to ¥") + cash(rebalanceCovered) + detail + L("。已吃餐次不动，确认后才写入。", ". Eaten meals stay; nothing is saved until you confirm."))
+    ui.rebalance_items.render()
+}
+fn rebalance_line(change){
+    let oldP = allProducts[change.old_id]
+    let head = change.date + " · " + slot_label(change.slot) + L("：", ": ")
+    if change.new_id < 0 {
+        return head + L("取消 ", "Drop ") + oldP.name + " ¥" + cash(oldP.cents) + L("（省 ¥", " (save ¥") + cash(change.save) + L("）", ")")
+    }
+    let newP = allProducts[change.new_id]
+    head + oldP.name + " ¥" + cash(oldP.cents) + " → " + newP.name + " ¥" + cash(newP.cents) + L("（省 ¥", " (save ¥") + cash(change.save) + L("）", ")")
+}
+fn apply_rebalance(){
+    if rebalancePlan.len() == 0 || rebalanceStamp == "" || rebalanceStamp != rebalance_stamp() {
+        rebalancePlan = []
+        rebalanceStamp = ""
+        rebalanceOpen = false
+        ui.rebalance_card.set_visible(false)
+        ui.status.set_text(L("方案已失效，请重新生成。", "Proposal expired; generate it again."))
+        return
+    }
+    let next = journal.to_json().parse_json()
+    let applied = 0
+    let saved = 0
+    for change in rebalancePlan {
+        let d = day_index(next, change.date)
+        if d >= 0 {
+            let done = false
+            if change.new_id < 0 {
+                let kept = []
+                for m in next.days[d].meals {
+                    if !done && m.slot == change.slot && meal_eaten_at(m) == nil && m.product_id == change.old_id {
+                        saved += m.cents
+                        applied += 1
+                        done = true
+                    } else {
+                        kept.push(m)
+                    }
+                }
+                if done { next.days[d].meals = kept }
+            } else {
+                for m in next.days[d].meals {
+                    if !done && m.slot == change.slot && meal_eaten_at(m) == nil && m.product_id == change.old_id {
+                        let p = allProducts[change.new_id]
+                        let cap = min(week_meal_limit(next.days[d].daily_cents, change.slot), next.days[d].daily_cents - sum_meals(next.days[d].meals, change.slot))
+                        if p.cents <= cap && p.cents < m.cents && matches_meal_for(p, change.slot) && open_at(p.business_hours, clock_value(m.arrival)) {
+                            saved += m.cents - p.cents
+                            m.product_id = change.new_id
+                            m.cents = p.cents
+                            m.name = p.name
+                            m.store = p.store
+                            m.hours = p.business_hours
+                            applied += 1
+                            done = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if applied == 0 {
+        rebalancePlan = []
+        rebalanceStamp = ""
+        rebalanceOpen = false
+        ui.rebalance_card.set_visible(false)
+        ui.status.set_text(L("餐表已变化，调整未生效。", "The plan changed; no changes applied."))
+        return
+    }
+    next.last_date = currentDate
+    if store_record(next) {
+        let count = applied
+        let savedCents = saved
+        rebalancePlan = []
+        rebalanceStamp = ""
+        rebalanceOpen = false
+        ui.rebalance_card.set_visible(false)
+        refresh_summary()
+        ui.plans.render()
+        ui.status.set_text(L("已调整 ", "Adjusted ") + count + L(" 餐，省下 ¥", " meals, saving ¥") + cash(savedCents) + L("，并读回核验。", "; saved and verified."))
+        sync_glance(true)
+    }
+}
+fn discard_rebalance(){
+    rebalancePlan = []
+    rebalanceStamp = ""
+    rebalanceOpen = false
+    ui.rebalance_card.set_visible(false)
+    ui.status.set_text(L("已忽略本次调整建议。", "Swap suggestions dismissed."))
+}
 fn generate_week_draft(){
     clear_week_draft()
     if !storageReady { ui.status.set_text(L("记录无法读取，暂不能生成草案。", "Records unavailable; cannot make a draft.")) return }
@@ -2241,6 +2504,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
         alerts := RoundedView{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 15 right: 15 top: 12 bottom: 12} show_bg: true draw_bg.color: #xfbf1e4 draw_bg.border_radius: 18.0 visible: false
             alerts_title := Label{text: "需要留意" draw_text.color: #x8a4b1e draw_text.text_style: theme.font_bold{font_size: 12}}
             alerts_text := Label{width: Fill text: "" draw_text.color: #x8a4b1e draw_text.text_style.font_size: 12}
+            alerts_rebalance := Action{text: "帮我调整超支 ›" on_click: || rebalance_week() visible: false}
         }
     }
     hero := View{width: Fill height: Fit flow: Down spacing: 6 padding: Inset{left: 3 right: 3 top: 4 bottom: 2}
@@ -2386,6 +2650,19 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
                 wb7 := RoundedView{width: 24 height: 8 show_bg: true draw_bg.color: #x244a38 draw_bg.border_radius: 4.0 visible: false}
             }
             week_budget_note := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 10}
+        }
+        rebalance_card := RoundedView{width: Fill height: Fit flow: Down spacing: 6 padding: Inset{left: 12 right: 12 top: 10 bottom: 10} show_bg: true draw_bg.color: #xfbf1e4 draw_bg.border_radius: 15.0 visible: false
+            rebalance_title := Label{text: "省钱调整方案" draw_text.color: #x8a4b1e draw_text.text_style: theme.font_bold{font_size: 13}}
+            rebalance_summary := Label{width: Fill text: "" draw_text.color: #x8a4b1e draw_text.text_style.font_size: 11}
+            rebalance_items := ScrollYView{width: Fill height: 100 flow: Down spacing: 3 on_render: || {
+                for change in rebalancePlan {
+                    Label{width: Fill text: rebalance_line(change) draw_text.color: ink draw_text.text_style.font_size: 11}
+                }
+            }}
+            View{width: Fill height: Fit flow: Right spacing: 8
+                rebalance_apply := Accent{text: "应用并核验" on_click: || apply_rebalance()}
+                rebalance_drop := Action{text: "忽略" on_click: || discard_rebalance()}
+            }
         }
         draft_panel := RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 12 right: 12 top: 10 bottom: 10} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 15.0 visible: false
             draft_summary := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style.font_size: 12}

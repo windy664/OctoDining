@@ -8,15 +8,17 @@ This is a native **OctoSense / OctoScript / Makepad** prototype for students. It
 
 **For judges — the real Agent loop:** [15-second 1.2.2 evidence reel](docs/demo/octodining-122-agent-evidence-reel.mp4) · [original Shell record and three screenshots](docs/evidence/shell-ui122-minimax-20261004.json) · [judging checklist](docs/AGENTIC_JUDGING.md). MiniMax-M3 compared candidates for an existing dinner plan and suggested candidate 3. The user confirmed it; the app persisted and read back the plan. The reel edits actual screenshots; it is not a continuous recording. The separate 1.7.0 Shell run received HTTP 429 and **did not obtain a model suggestion**. **Current signed 1.9.0 week-plan Agent loop** (real MiniMax-M3 proposals, apply-to-draft, confirm and read back): [framebuffer recording and key frames](docs/evidence/shell-week-agent-190-20261011.md).
 
-**Current 1.10.0 UI** (card-host native captures, not model evidence; [bilingual captures and notes](docs/evidence/next-meal-1100-20261012.md)):
+**Current 1.11.0 UI** (card-host native captures, not model evidence; [bilingual captures and notes](docs/evidence/next-meal-1100-20261012.md)):
 
 | Onboarding | Next meal · provenance line and budget tiles | Candidates · constraint evidence |
 | :---: | :---: | :---: |
 | <img src="docs/evidence/next-meal-1100-20261012/en/00-first-run-setup.png" alt="English onboarding" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/01-home-recommendation.png" alt="Next meal with provenance line and budget tiles" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/02-candidates.png" alt="Candidates with constraint evidence" width="250"> |
 
-| Candidate · expanded detail | Week plan · weekly budget bar |
-| :---: | :---: |
-| <img src="docs/evidence/next-meal-1100-20261012/en/02b-candidate-detail.png" alt="Expanded candidate detail" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/03-week-plan-confirmed.png" alt="Week plan with weekly budget bar" width="250"> |
+| Candidate · expanded detail | Week plan · weekly budget bar | Overspend · one-tap rebalance |
+| :---: | :---: | :---: |
+| <img src="docs/evidence/next-meal-1100-20261012/en/02b-candidate-detail.png" alt="Expanded candidate detail" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/03-week-plan-confirmed.png" alt="Week plan with weekly budget bar" width="250"> | <img src="docs/evidence/week-rebalance-20261012/rebalance-proposal.png" alt="Week overspend alert and money-saving proposal" width="250"> |
+
+The rebalance frame comes from an automated acceptance run ([notes and assertions](docs/evidence/week-rebalance-20261012.md)), not a staged shot.
 
 These are actual **1.7.0 card-host captures**. They do not demonstrate a live model in OctoSense Shell. [Screenshots and checks](docs/evidence/next-meal-170-20261005.md).
 
@@ -24,7 +26,7 @@ These are actual **1.7.0 card-host captures**. They do not demonstrate a live mo
 
 Onboarding asks for monthly disposable allowance, non-food fixed costs and a reserve. It estimates a daily dining budget over 30 days. You can use the bundled menu or paste a JSON menu with a source, update date, time zone, prices and business hours; invalid records are rejected. `scripts/menu-csv-to-json.py` converts a supported CSV into pasteable JSON. The app does not yet have a file picker or automatic collection.
 
-The home screen uses canteen-local time to select the next uneaten meal. A provenance line marks whether advice comes from the local rule engine or a linked system Agent. Candidates expand into a detail panel (category, meal cap, arrival-hours check, recent repeats, on-device taste history, menu snapshot date). The weekly draft skips elapsed meals, shows any gaps and daily totals, and is written only after confirmation; a weekly budget bar tracks the planned share and flags overspend. It is **rule-generated, not Agent-generated**. Menu names and stores remain Chinese because no verified translations are available. Bundled product images ship offline in the bundle; custom menus currently use text-only cards.
+The home screen uses canteen-local time to select the next uneaten meal. A provenance line marks whether advice comes from the local rule engine or a linked system Agent. Candidates expand into a detail panel (category, meal cap, arrival-hours check, recent repeats, on-device taste history, menu snapshot date). The weekly draft skips elapsed meals, shows any gaps and daily totals, and is written only after confirmation; a weekly budget bar counts eaten meals at the amount actually paid and the rest at plan prices. When the week runs over budget, the Heads up card offers a one-tap rebalance: the local engine lists cheaper swaps, or drops snack/breakfast meals — main meals are never dropped — and nothing is written until you confirm and it is read back. Further alerts follow up on planned meals never confirmed in the last 7 days, and on menu snapshots older than 30 days. The draft is **rule-generated, not Agent-generated**. Menu names and stores remain Chinese because no verified translations are available. Bundled product images ship offline in the bundle; custom menus currently use text-only cards.
 
 Version 1.7.0 passed native card-host feature checks. A [same-version Shell run](docs/evidence/shell-170-20261005.md) verified loading, first-use Agent consent, a request entering Octos, and manual save/read-back/restart after the provider returned HTTP 429. **It did not obtain a model suggestion.** A successful real MiniMax loop remains proven for **1.2.2** only. See [contest readiness](docs/CONTEST_READINESS.md). The frozen `qualifier-2026-10-04-final` tag still points to that earlier version.
 
@@ -39,6 +41,6 @@ OCTO_CLI=/path/to/OctoScript-App-Design-Flow/tools/octo
 "$OCTO_CLI" run .local-state/preview-bundle --port 8141 --hidden --detach
 ```
 
-The preview uses an unsigned copy so card-host can run without changing the signed release. It does not prove Shell Agent integration. Run `python3 scripts/test-basic-app.py`, `python3 scripts/test-language.py`, `python3 scripts/test-week-draft.py` and `python3 scripts/test-custom-menu.py` separately for local feature checks; each uses its own unsigned copy. Code uses [Apache 2.0](LICENSE-CODE); the license does not grant rights to third-party menu data or images. See [data provenance](docs/DATA_PROVENANCE.md) and [privacy](docs/PRIVACY.md).
+The preview uses an unsigned copy so card-host can run without changing the signed release. It does not prove Shell Agent integration. Run `python3 scripts/test-basic-app.py`, `python3 scripts/test-language.py`, `python3 scripts/test-week-draft.py`, `python3 scripts/test-custom-menu.py` and `python3 scripts/test-rebalance.py` separately for local feature checks; each uses its own unsigned copy. Code uses [Apache 2.0](LICENSE-CODE); the license does not grant rights to third-party menu data or images. See [data provenance](docs/DATA_PROVENANCE.md) and [privacy](docs/PRIVACY.md).
 
 For the current App Hub process and the status of this bundle, see the [submission checklist](docs/APP_HUB_SUBMISSION.md). Version 1.7.0 is signed as `windy664` and passed the updated Hub's signed gate; the scan packet was made before signing. [App Hub submission #117](https://github.com/OctoSense-org/OctoSense-App-Hub/issues/117) uses the immutable `apphub-v1.7.0` tag and awaits maintainer review. The publisher states that they hold the rights to redistribute the menu data and photos; independent written evidence has not been attached.

@@ -19,7 +19,7 @@
     "screenshots/03-week-plan-confirmed.png",
     "screenshots/04-en-onboarding.png",
     "screenshots/05-en-home.png",
-    "screenshots/06-en-week-budget.png"
+    "screenshots/07-week-rebalance.png"
   ],
   "icon": "assets/icon.svg",
   "platforms": [
@@ -30,7 +30,7 @@
     "support": "https://github.com/windy664/OctoDining/issues",
     "privacy_policy_url": "https://github.com/windy664/OctoDining/blob/master/docs/PRIVACY.md"
   },
-  "release_notes": "1.10.0：首页推荐卡标注来源（本地规则引擎 / 系统 Agent 联调状态）；候选可展开详情面板（分类、本餐上限、到店时段、近七天重复、口味记录、快照日期）；周餐表新增本周预算进度条，超支主动提示；首页内容超窗时可滚动，底部操作不再被裁掉。 English: the home pick now shows its source (local rules / system Agent state), candidates expand into a detail panel, the week view adds a budget bar with overspend hints, and the home page scrolls so actions stay reachable.",
+  "release_notes": "1.11.0：周预算超支时可一键重平衡——本地引擎逐条给出更便宜的替换或取消加餐/早餐的方案，用户确认后才写入并读回核验，午晚正餐从不取消；本周预算条改为已吃按实付、待吃按计划价计入；新增未打卡跟进提醒（过去 7 天计划未确认）与菜单快照超过 30 天的过期提醒。 English: when the week runs over budget, one tap proposes cheaper swaps or dropping snack/breakfast meals line by line — main meals are never dropped — and only your confirmation writes and reads back; the budget bar now counts eaten meals at the amount actually paid; new alerts cover unconfirmed past meals and menu snapshots older than 30 days.",
   "age_rating": "all",
   "license": "Apache-2.0"
 }
