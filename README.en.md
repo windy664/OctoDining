@@ -6,19 +6,19 @@
 
 This is a native **OctoSense / OctoScript / Makepad** prototype for students. It bundles a 1,497-item historical canteen snapshot from Guangzhou Software Institute. On first launch, you can also paste a JSON menu for another canteen. Menu prices, hours and images are snapshots, not proof of live availability, nutrition or allergen safety.
 
-**For judges — the real Agent loop:** [15-second 1.2.2 evidence reel](docs/demo/octodining-122-agent-evidence-reel.mp4) · [original Shell record and three screenshots](docs/evidence/shell-ui122-minimax-20261004.json) · [judging checklist](docs/AGENTIC_JUDGING.md). MiniMax-M3 compared candidates for an existing dinner plan and suggested candidate 3. The user confirmed it; the app persisted and read back the plan. The reel edits actual screenshots; it is not a continuous recording. The separate 1.7.0 Shell run received HTTP 429 and **did not obtain a model suggestion**. **Current signed 1.11.0 week-plan Agent loop** (real MiniMax-M3 proposals, apply-to-draft, confirm and read back): [framebuffer recording and key frames](docs/evidence/shell-week-agent-1110-20261012.md).
+**For judges — the real Agent loop:** [15-second 1.2.2 evidence reel](docs/demo/octodining-122-agent-evidence-reel.mp4) · [original Shell record and three screenshots](docs/evidence/shell-ui122-minimax-20261004.json) · [judging checklist](docs/AGENTIC_JUDGING.md). MiniMax-M3 compared candidates for an existing dinner plan and suggested candidate 3. The user confirmed it; the app persisted and read back the plan. The reel edits actual screenshots; it is not a continuous recording. The separate 1.7.0 Shell run received HTTP 429 and **did not obtain a model suggestion**. **Current signed 1.11.1 week-plan Agent loop** (real MiniMax-M3 proposals, apply-to-draft, confirm and read back; recorded on 1.11.0 — 1.11.1 is a UI declutter plus a week-window anchoring fix, Agent calls unchanged): [framebuffer recording and key frames](docs/evidence/shell-week-agent-1110-20261012.md).
 
-**Current 1.11.0 UI** (card-host native captures, not model evidence; [bilingual captures and notes](docs/evidence/next-meal-1100-20261012.md)):
+**Current 1.11.1 UI** (card-host native captures, not model evidence; [captures and change notes](docs/evidence/ui-declutter-1111-20261012.md)):
 
 | Onboarding | Next meal · provenance line and budget tiles | Candidates · constraint evidence |
 | :---: | :---: | :---: |
-| <img src="docs/evidence/next-meal-1100-20261012/en/00-first-run-setup.png" alt="English onboarding" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/01-home-recommendation.png" alt="Next meal with provenance line and budget tiles" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/02-candidates.png" alt="Candidates with constraint evidence" width="250"> |
+| <img src="docs/evidence/ui-declutter-1111-20261012/en/00-first-run-setup.png" alt="English onboarding" width="250"> | <img src="docs/evidence/ui-declutter-1111-20261012/en/01-home-recommendation.png" alt="Next meal with provenance line and budget tiles" width="250"> | <img src="docs/evidence/ui-declutter-1111-20261012/en/03-candidates.png" alt="Candidates with constraint evidence" width="250"> |
 
-| Candidate · expanded detail | Week plan · weekly budget bar | Overspend · one-tap rebalance |
+| Meal settings · daily budget card | Week plan · weekly budget bar | Overspend · one-tap rebalance |
 | :---: | :---: | :---: |
-| <img src="docs/evidence/next-meal-1100-20261012/en/02b-candidate-detail.png" alt="Expanded candidate detail" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/en/03-week-plan-confirmed.png" alt="Week plan with weekly budget bar" width="250"> | <img src="docs/evidence/week-rebalance-20261012/rebalance-proposal.png" alt="Week overspend alert and money-saving proposal" width="250"> |
+| <img src="docs/evidence/ui-declutter-1111-20261012/en/02-selection-summary.png" alt="Meal settings with the merged daily budget card" width="250"> | <img src="docs/evidence/ui-declutter-1111-20261012/en/04-week-plan-decluttered.png" alt="Week plan with weekly budget bar" width="250"> | <img src="docs/evidence/week-rebalance-20261012/rebalance-proposal.png" alt="Week overspend alert and money-saving proposal" width="250"> |
 
-The rebalance frame comes from an automated acceptance run ([notes and assertions](docs/evidence/week-rebalance-20261012.md)), not a staged shot.
+The rebalance frame comes from an automated acceptance run ([notes and assertions](docs/evidence/week-rebalance-20261012.md)), not a staged shot; that panel is unchanged in 1.11.1.
 
 These are actual **1.7.0 card-host captures**. They do not demonstrate a live model in OctoSense Shell. [Screenshots and checks](docs/evidence/next-meal-170-20261005.md).
 

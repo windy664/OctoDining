@@ -104,6 +104,13 @@ fn week_date(start, offset){
     }
     "" + y + "-" + pad(m) + "-" + pad(d)
 }
+fn week_anchor(){
+    // 周预算、超支预警与重平衡的窗口始终覆盖今天：浏览未来日期时锚定今天，
+    // 回看过去日期时跟随所选日期。
+    let t = today()
+    if date_serial(currentDate) > date_serial(t) { return t }
+    currentDate
+}
 fn canteen_time(){
     // The bundled canteen is in Guangzhou (UTC+8). card-host defaults to UTC,
     // while a Shell may provide its own local offset. Infer that offset from
@@ -442,32 +449,6 @@ fn taste_profile(){
     }
     text + L("。只能引用这些真实记录，不要编造偏好。", ". Cite only these records; do not invent preferences.")
 }
-fn week_summary_text(){
-    let planned = 0
-    let plannedCents = 0
-    let eaten = 0
-    let eatenCents = 0
-    let weeklyBudget = 0
-    for offset in 7 {
-        let index = day_index(journal, week_date(currentDate, offset))
-        if index >= 0 {
-            weeklyBudget += journal.days[index].daily_cents
-            for m in journal.days[index].meals {
-                if meal_eaten_at(m) != nil { eaten += 1 eatenCents += meal_actual_cents(m) }
-                else { planned += 1 plannedCents += m.cents }
-            }
-        }
-        if index < 0 { weeklyBudget += profileDaily }
-    }
-    let likes = 0
-    let dislikes = 0
-    for item in taste.items { likes += item.likes dislikes += item.dislikes }
-    if planned == 0 && likes == 0 && dislikes == 0 { return "" }
-    let text = L("本周可用 ¥", "This week available ¥") + cash(weeklyBudget) + L(" · 已计划 ", " · planned ") + planned + L(" 餐 · ¥", " meals · ¥") + cash(plannedCents)
-    if eaten > 0 { text += L("；已吃 ", "; eaten ") + eaten + L(" 餐 · 实付 ¥", " meals · paid ¥") + cash(eatenCents) + L(" · 按已吃还剩 ¥", " · left after eaten ¥") + cash(weeklyBudget - eatenCents) }
-    if likes + dislikes > 0 { text += L("；口味记录 好评 ", "; taste: liked ") + likes + L(" · 差评 ", " · disliked ") + dislikes }
-    text
-}
 fn load_settings(){
     let raw = nil
     try { raw = fs.read("settings.json") } { raw = nil }
@@ -677,7 +658,6 @@ fn show_settings(){
     ui.home.set_visible(false)
     ui.home_actions.set_visible(false)
     ui.hero.set_visible(false)
-    ui.date_bar.set_visible(false)
     ui.tabs.set_visible(false)
     ui.selection.set_visible(false)
     ui.history.set_visible(false)
@@ -701,7 +681,6 @@ fn show_home(){
     ui.hero_title.set_visible(true)
     ui.hero_subtitle.set_visible(false)
     ui.hero_note.set_visible(true)
-    ui.date_bar.set_visible(false)
     ui.tabs.set_visible(false)
     ui.selection.set_visible(false)
     ui.history.set_visible(false)
@@ -723,7 +702,6 @@ fn show_page(history){
     ui.hero_title.set_visible(false)
     ui.hero_subtitle.set_visible(false)
     ui.hero_note.set_visible(false)
-    ui.date_bar.set_visible(true)
     ui.tabs.set_visible(true)
     ui.selection.set_visible(!history)
     ui.history.set_visible(history)
@@ -778,7 +756,6 @@ fn show_setup(){
     ui.home.set_visible(false)
     ui.home_actions.set_visible(false)
     ui.hero.set_visible(false)
-    ui.date_bar.set_visible(false)
     ui.tabs.set_visible(false)
     ui.selection.set_visible(false)
     ui.history.set_visible(false)
@@ -903,7 +880,6 @@ fn switch_language(){
     ui.draft_items.render()
     ui.settings_taste_list.render()
     ui.agent_result.set_text(L("语言已切换；如需 Agent 建议，请重新比较候选。", "Language changed. Ask the Agent again for an explanation."))
-    ui.status.set_text(L("语言已切换。", "Language changed."))
 }
 fn profile_limit(slot){
     let daily = money_value(ui.daily.text())
@@ -1019,8 +995,9 @@ fn compute_alerts(){
     }
     let weeklyBudget = 0
     let committed = 0
+    let anchor = week_anchor()
     for offset in 7 {
-        let index = day_index(journal, week_date(currentDate, offset))
+        let index = day_index(journal, week_date(anchor, offset))
         if index >= 0 {
             weeklyBudget += journal.days[index].daily_cents
             for m in journal.days[index].meals {
@@ -1052,7 +1029,7 @@ fn compute_alerts(){
     let ids = []
     let counts = []
     for offset in 7 {
-        let idx = day_index(journal, week_date(currentDate, offset))
+        let idx = day_index(journal, week_date(anchor, offset))
         if idx >= 0 {
             for m in journal.days[idx].meals {
                 let found = false
@@ -1148,12 +1125,15 @@ fn toggle_candidate_detail(i){
 fn refresh_week_budget(){
     let weeklyBudget = 0
     let plannedCents = 0
+    let mealCount = 0
+    let eatenCents = 0
     for offset in 7 {
-        let index = day_index(journal, week_date(currentDate, offset))
+        let index = day_index(journal, week_date(week_anchor(), offset))
         if index >= 0 {
             weeklyBudget += journal.days[index].daily_cents
             for m in journal.days[index].meals {
-                if meal_eaten_at(m) != nil { plannedCents += meal_actual_cents(m) }
+                mealCount += 1
+                if meal_eaten_at(m) != nil { plannedCents += meal_actual_cents(m) eatenCents += meal_actual_cents(m) }
                 else { plannedCents += m.cents }
             }
         }
@@ -1167,8 +1147,15 @@ fn refresh_week_budget(){
     }
     if filled > 8 { filled = 8 }
     if filled < 0 { filled = 0 }
-    ui.week_budget_label.set_text(L("本周预算 ¥", "Week budget ¥") + cash(weeklyBudget) + L(" · 已计入 ¥", " · counted ¥") + cash(plannedCents) + " · " + pct + "%")
-    let note = L("已吃按实付、待吃按计划价计入；确认或取消餐次后自动更新。", "Eaten meals count as actually paid, the rest at plan prices; updates as you confirm or cancel meals.")
+    let label = L("本周预算 ¥", "Week budget ¥") + cash(weeklyBudget) + L(" · 已计入 ¥", " · counted ¥") + cash(plannedCents) + " · " + pct + "%"
+    if mealCount > 0 {
+        let mealWord = L(" 餐", " meals")
+        if mealCount == 1 { mealWord = L(" 餐", " meal") }
+        label += L(" · ", " · ") + mealCount + mealWord
+    }
+    if eatenCents > 0 { label += L("；已吃实付 ¥", "; paid ¥") + cash(eatenCents) }
+    ui.week_budget_label.set_text(label)
+    let note = L("八格进度为整周预算占用比例；已吃按实付、待吃按计划价计入。", "The eight bars show how much of the week budget is used; eaten meals count as paid, the rest at plan prices.")
     if pct > 100 { note = L("已超出本周预算，可在首页「需要留意」中一键调整。", "Over the week budget; use Heads up on the home page to rebalance.") }
     ui.week_budget_note.set_text(note)
     ui.wb0.set_visible(filled > 0)
@@ -1445,7 +1432,6 @@ fn find_candidates(){
         ui.home.set_visible(false)
         ui.home_actions.set_visible(false)
         ui.hero.set_visible(false)
-        ui.date_bar.set_visible(false)
         ui.tabs.set_visible(true)
         ui.selection.set_visible(false)
         ui.history.set_visible(false)
@@ -1754,13 +1740,14 @@ fn apply_week_agent(){
 // engine proposes cheaper swaps for uneaten meals. The user reviews each
 // line, confirms, and only then is the journal rewritten and read back.
 fn rebalance_stamp(){
-    "" + journal.revision + "|" + currentDate + "|" + profileDaily + "|" + menuKind
+    "" + journal.revision + "|" + week_anchor() + "|" + profileDaily + "|" + menuKind
 }
 fn build_rebalance(){
     let weeklyBudget = 0
     let committed = 0
+    let anchor = week_anchor()
     for offset in 7 {
-        let index = day_index(journal, week_date(currentDate, offset))
+        let index = day_index(journal, week_date(anchor, offset))
         if index >= 0 {
             weeklyBudget += journal.days[index].daily_cents
             for m in journal.days[index].meals {
@@ -1775,7 +1762,7 @@ fn build_rebalance(){
     if overBy <= 0 { return {plan: plan overBy: overBy} }
     let todaySerial = date_serial(today())
     for offset in 7 {
-        let date = week_date(currentDate, offset)
+        let date = week_date(anchor, offset)
         if date_serial(date) < todaySerial { continue }
         let index = day_index(journal, date)
         if index < 0 { continue }
@@ -2436,8 +2423,12 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
         intro_title := Label{text: "下一顿，吃点好的。" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 24}}
         intro_subtitle := Label{width: Fill text: "按食堂所在地时间找下一餐，可手动调整。" draw_text.color: muted draw_text.text_style.font_size: 11}
     }
-    summary_card := RoundedView{width: Fill height: Fit flow: Down spacing: 3 padding: Inset{left: 14 right: 14 top: 10 bottom: 10} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
-        summary_title := Label{text: "当前计划" draw_text.color: muted draw_text.text_style.font_size: 11}
+    summary_card := RoundedView{width: Fill height: Fit flow: Down spacing: 5 padding: Inset{left: 14 right: 14 top: 10 bottom: 10} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 15.0
+        View{width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5}
+            summary_title := Label{width: Fill text: "当前计划" draw_text.color: muted draw_text.text_style.font_size: 11}
+            date := Field{width: 122 height: 38 text: "" empty_text: "YYYY-MM-DD" on_change: |text| invalidate()}
+            open_day := Action{height: 38 text: "打开日期" on_click: || open_date()}
+        }
         summary := Label{width: Fill text: "正在读取计划…" draw_text.color: ink draw_text.text_style.font_size: 13}
     }
     settings := View{width: Fill height: Fill flow: Down spacing: 10 visible: false
@@ -2528,10 +2519,6 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
         manual := Action{text: "调整预算与时间 →" on_click: || show_page(false)}
         recalc := Action{text: "重新核算生活费" on_click: || show_setup()}
         settings_nav := Action{text: "设置" on_click: || show_settings()}
-    }
-    date_bar := RoundedView{width: Fill height: Fit flow: Right spacing: 8 padding: Inset{left: 10 right: 10 top: 8 bottom: 8} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 14.0
-        date := Field{text: "" empty_text: "YYYY-MM-DD" on_change: |text| invalidate()}
-        open_day := Action{text: "打开日期" on_click: || open_date()}
     }
     tabs := View{width: Fill height: Fit flow: Right spacing: 8
         tab_choose := Action{width: Fill text: "调整这餐" on_click: || show_page(false)}
@@ -2708,8 +2695,6 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
             }
         }
         plans := ScrollYView{width: Fill height: Fit flow: Down spacing: 10 on_render: || {
-            let summary = week_summary_text()
-            if summary != "" { Label{width: Fill text: summary draw_text.color: blue draw_text.text_style.font_size: 11} }
             for offset in 7 {
                 let date = week_date(currentDate, offset)
                 let index = day_index(journal, date)
@@ -2743,11 +2728,11 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
                                 if allProducts[m.product_id].image_url != "" { Image{width: 60 height: 60 src: img_src_id(m.product_id) fit: ImageFit.CropToFill} }
                             }
                             if date == currentDate {
-                                View{width: Fill height: Fit flow: Right spacing: 8
+                                View{width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5}
                                     if meal_eaten_at(m) == nil {
+                                        if date == today() { Accent{width: Fill text: if english { "Mark eaten" } else { "记录已吃" + slot_label(m.slot) } on_click: || begin_checkin(m.slot)} }
                                         Action{text: L("修改", "Edit ") + slot_label(m.slot) on_click: || edit_meal(m.slot)}
                                         Action{text: L("取消", "Cancel ") + slot_label(m.slot) on_click: || cancel_meal(m.slot)}
-                                        if date == today() { Action{text: if english { "Mark eaten" } else { "记录已吃" + slot_label(m.slot) } on_click: || begin_checkin(m.slot)} }
                                     } else {
                                         Action{text: if english { "Undo eaten" } else { "撤销已吃" + slot_label(m.slot) } on_click: || undo_checkin(m.slot)}
                                     }

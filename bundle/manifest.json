@@ -12,10 +12,10 @@
   },
   "id": "org.octosense.octodining",
   "integrity": {
-    "bundle_blake3": "02e77affa60dfc410273504ec9bedfb8e259d77d8576f83884f763845d3ca524",
+    "bundle_blake3": "941364c0d04b8cd317c7ac55ca19f4e7f368fe91ed75840d1473ac8599b39219",
     "signature": {
       "key_id": "windy664",
-      "value": "c3bf0d995923955b19e3239b6f1449049b2d016ea145a2e046895f21a7483ba340c5e0ebb57510efce383b513337aac27b0fa441257d3fbf7fe01da3b4622b09"
+      "value": "7124f00d7c288af5053a2c608367fbf3b6b530e5526823d59ba83fd363e08177d5f732997349d36e4d7e0611beabd020b807000287f79b556aa3a85e29eb0c06"
     }
   },
   "name": "OctoDining · 好好吃饭",
@@ -28,5 +28,5 @@
   "storage": {
     "max_bytes": null
   },
-  "version": "1.11.0"
+  "version": "1.11.1"
 }

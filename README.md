@@ -6,19 +6,19 @@
 
 这是面向学生的 **OctoSense / OctoScript / Makepad** 原生应用原型。随包菜单是广州软件学院的 1,497 条历史快照；也可在首次引导粘贴自己食堂的菜单 JSON。价格、时段和配图不代表实时可售、营养或过敏安全。
 
-**评委先看 Agent 闭环：** [15 秒 1.2.2 真实 Agent 证据剪辑](docs/demo/octodining-122-agent-evidence-reel.mp4) · [同一次 Shell 联调原始记录和三张截图](docs/evidence/shell-ui122-minimax-20261004.json) · [按评分项核验](docs/AGENTIC_JUDGING.md)。MiniMax-M3 在已有晚餐计划上比较候选并建议候选 3；用户亲自确认，应用保存计划并读回核验。剪辑由真实截图制成，并非连续录屏。**1.7.0 的 Shell 测试遭遇 429，没有取得同版模型建议**；下方 1.7.0 画面用于展示后续产品功能，不能与 1.2.2 Agent 证据视作同一次运行。**当前签名版 1.11.0 的整周 Agent 闭环录屏**（真实 MiniMax-M3 提议、应用到草案、确认读回）：[帧缓冲录屏与关键帧](docs/evidence/shell-week-agent-1110-20261012.md)。
+**评委先看 Agent 闭环：** [15 秒 1.2.2 真实 Agent 证据剪辑](docs/demo/octodining-122-agent-evidence-reel.mp4) · [同一次 Shell 联调原始记录和三张截图](docs/evidence/shell-ui122-minimax-20261004.json) · [按评分项核验](docs/AGENTIC_JUDGING.md)。MiniMax-M3 在已有晚餐计划上比较候选并建议候选 3；用户亲自确认，应用保存计划并读回核验。剪辑由真实截图制成，并非连续录屏。**1.7.0 的 Shell 测试遭遇 429，没有取得同版模型建议**；下方 1.7.0 画面用于展示后续产品功能，不能与 1.2.2 Agent 证据视作同一次运行。**当前签名版 1.11.1 的整周 Agent 闭环录屏**（真实 MiniMax-M3 提议、应用到草案、确认读回；录于 1.11.0，1.11.1 为界面精简与周窗口锚点修复、Agent 调用逻辑相同）：[帧缓冲录屏与关键帧](docs/evidence/shell-week-agent-1110-20261012.md)。
 
-**当前 1.11.0 界面**（card-host 原生截图，非模型证据；[中英画面与说明](docs/evidence/next-meal-1100-20261012.md)）：
+**当前 1.11.1 界面**（card-host 原生截图，非模型证据；[画面与改动说明](docs/evidence/ui-declutter-1111-20261012.md)）：
 
 | 首次使用 | 下一餐 · 来源行与预算指标 | 候选 · 约束证据 |
 | :---: | :---: | :---: |
-| <img src="docs/evidence/next-meal-1100-20261012/zh/00-first-run-setup.png" alt="首次引导" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/zh/01-home-recommendation.png" alt="下一餐推荐、来源行与预算指标" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/zh/02-candidates.png" alt="候选与约束证据" width="250"> |
+| <img src="docs/evidence/ui-declutter-1111-20261012/00-first-run-setup.png" alt="首次引导" width="250"> | <img src="docs/evidence/ui-declutter-1111-20261012/01-home-recommendation.png" alt="下一餐推荐、来源行与预算指标" width="250"> | <img src="docs/evidence/ui-declutter-1111-20261012/03-candidates.png" alt="候选与约束证据" width="250"> |
 
-| 候选 · 详情展开 | 周餐表 · 本周预算进度 | 超支 · 一键重平衡 |
+| 选餐 · 当日预算卡 | 周餐表 · 本周预算进度 | 超支 · 一键重平衡 |
 | :---: | :---: | :---: |
-| <img src="docs/evidence/next-meal-1100-20261012/zh/02b-candidate-detail.png" alt="候选详情展开" width="250"> | <img src="docs/evidence/next-meal-1100-20261012/zh/03-week-plan-confirmed.png" alt="周餐表与本周预算进度条" width="250"> | <img src="docs/evidence/week-rebalance-20261012/rebalance-proposal.png" alt="周超支预警与省钱调整方案" width="250"> |
+| <img src="docs/evidence/ui-declutter-1111-20261012/02-selection-summary.png" alt="选餐页与合并后的当日预算卡" width="250"> | <img src="docs/evidence/ui-declutter-1111-20261012/04-week-plan-decluttered.png" alt="周餐表与本周预算进度条" width="250"> | <img src="docs/evidence/week-rebalance-20261012/rebalance-proposal.png" alt="周超支预警与省钱调整方案" width="250"> |
 
-重平衡画面来自自动化验收运行（[说明与断言](docs/evidence/week-rebalance-20261012.md)），不是摆拍。
+重平衡画面来自自动化验收运行（[说明与断言](docs/evidence/week-rebalance-20261012.md)），不是摆拍；该面板在 1.11.1 未变动。
 
 以下为 1.7.0 **card-host 原生运行截图**；不是 OctoSense Shell 的模型联调证据。[更多截图与验证](docs/evidence/next-meal-170-20261005.md)。
 
