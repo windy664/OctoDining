@@ -8,7 +8,8 @@
 
 | 范围 | 已验证 | 尚需完成 |
 | --- | --- | --- |
-| 1.11.0 card-host | 周超支重平衡全链路（超支预警 → 逐条方案 → 确认 → 写入并读回，已吃餐次不动）、预算条实付计入、未打卡提醒、快照过期提醒（一次性驱动验证）；七套本地回归全部通过（basic 17、language 2、week-draft 2、week-agent 2、taste 3、custom-menu 3、rebalance 5）；提案帧缓冲截图经人工查看；[画面与验收](evidence/week-rebalance-20261012.md) | card-host 不能证明 Shell 模型调用；Shell 真实模型闭环证据仍属 1.9.0 录屏 |
+| 1.11.0 OctoSense Shell | 当前签名版整周 Agent 闭环：草案 → 真实 MiniMax-M3 提议 5 处替换（应用核算节省 ¥7.70）→ 应用到草案不落盘 → 确认读回 21 餐，计划文件与提议一致；272 帧帧缓冲录屏与 5 张关键帧经人工查看；[录屏与证据](evidence/shell-week-agent-1110-20261012.md) | 授权拒绝/429 等异常路径在本版未复验；非 App Hub 正式上架环境 |
+| 1.11.0 card-host | 周超支重平衡全链路（超支预警 → 逐条方案 → 确认 → 写入并读回，已吃餐次不动）、预算条实付计入、未打卡提醒、快照过期提醒（一次性驱动验证）；七套本地回归全部通过（basic 17、language 2、week-draft 2、week-agent 2、taste 3、custom-menu 3、rebalance 5）；提案帧缓冲截图经人工查看；[画面与验收](evidence/week-rebalance-20261012.md) | card-host 不能证明 Shell 模型调用；Shell 真实模型闭环见上行 1.11.0 录屏 |
 | 1.10.0 card-host | 推荐来源行、候选详情面板、本周预算进度条、首页可滚动化；六套本地回归全部通过（basic 17 项、language 2、week-draft 2、week-agent 2、taste 3、custom-menu 3）；中英原生截图经人工查看；[画面与验收](evidence/next-meal-1100-20261012.md) | card-host 不能证明 Shell 模型调用；Shell 真实模型闭环证据仍属 1.9.0 录屏 |
 | 1.9.0 OctoSense Shell | 当前签名版整周 Agent 闭环：草案 → 真实 MiniMax-M3 提议 5 处替换（应用核算节省 ¥7.70）→ 应用到草案不落盘 → 确认读回 21 餐，计划文件与提议一致；帧缓冲录屏与关键帧经人工查看；[录屏与证据](evidence/shell-week-agent-190-20261011.md) | 授权拒绝/429 等异常路径在本版未复验；非 App Hub 正式上架环境 |
 | 1.8.13 OctoSense Shell | 七日草案 Agent 换餐全链路：真实 MiniMax-M3 提案 → 校验通过 → 应用到草案（不落盘）→ 人工确认整周 → 保存并读回，Agent 所选菜品出现在计划文件；[本版记录](evidence/shell-week-agent-1813-20261010.md) | 拒绝授权、无效 JSON、过期回复等异常路径在本版未验；帧截图未人工核验 |
