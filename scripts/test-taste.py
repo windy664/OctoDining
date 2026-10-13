@@ -95,10 +95,13 @@ def main():
         time.sleep(1)
         assert get("taste_title") == "这顿怎么样？", get("taste_title")
         app.click("taste_dislike")
+        time.sleep(.4)
+        app.click("taste_reason_bored")
         time.sleep(.6)
         data = json.loads((jail / "taste.json").read_text())
         entry = next((i for i in data["items"] if i["name"] == confirmed), None)
-        assert entry and entry["dislikes"] == 1, data
+        assert entry and entry["dislikes"] == 1 and entry.get("reason") == "bored", data
+        assert "已记住" in (get("status") or ""), get("status")
         scroll(-2400)
         wait_button("撤销已吃" + slot)
         texts = [n.get("t", "") for n in app.snap() if n.get("t")]
@@ -116,6 +119,18 @@ def main():
         changed = get("home_name")
         assert changed and changed != confirmed, (confirmed, changed)
         print(f"PASS disliked dish {confirmed} no longer recommended (now {changed})", flush=True)
+
+        # Settings per-item removal (撤销入口).
+        app.click("settings_nav")
+        time.sleep(.8)
+        data = json.loads((jail / "taste.json").read_text())
+        before = len(data["items"])
+        assert before >= 2, data
+        app.click("移除")
+        time.sleep(.6)
+        data = json.loads((jail / "taste.json").read_text())
+        assert len(data["items"]) == before - 1, data
+        print("PASS settings per-item taste removal works", flush=True)
         print("Evidence:", work, flush=True)
     finally:
         if running:

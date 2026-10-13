@@ -31,6 +31,7 @@ let agentState = 0
 let expandedCandidate = -1
 let homePick = -1
 let homeSkip = -1
+let homeExploreOnly = false
 let homeShowingSaved = false
 let homeSeen = []
 let onHome = true
@@ -391,6 +392,7 @@ fn record_taste(id, verdict){
             if verdict == "like" { item.likes = item.likes + 1 }
             if verdict == "dislike" { item.dislikes = item.dislikes + 1 }
             if verdict == "skip" { item.skips = item.skips + 1 }
+            if verdict == "block" { item.dislikes = item.dislikes + 1 item.blocked = true }
             item.last = today()
             found = true
         }
@@ -399,32 +401,75 @@ fn record_taste(id, verdict){
         let likes = 0
         let dislikes = 0
         let skips = 0
+        let blocked = false
         if verdict == "like" { likes = 1 }
         if verdict == "dislike" { dislikes = 1 }
         if verdict == "skip" { skips = 1 }
-        taste.items.push({key: key name: allProducts[id].name store: allProducts[id].store cents: allProducts[id].cents likes: likes dislikes: dislikes skips: skips last: today()})
+        if verdict == "block" { dislikes = 1 blocked = true }
+        taste.items.push({key: key name: allProducts[id].name store: allProducts[id].store cents: allProducts[id].cents likes: likes dislikes: dislikes skips: skips blocked: blocked reason: "" last: today()})
     }
     save_taste()
 }
+fn set_taste_reason(id, reason){
+    if id < 0 || id >= allProducts.len() { return }
+    let key = taste_key(allProducts[id])
+    for item in taste.items { if item.key == key { item.reason = reason } }
+    save_taste()
+}
+// 换一道是中性动作（"今天不想吃"），不累积长期惩罚；拉黑直接压到最底。
 fn taste_score(id){
     let key = taste_key(allProducts[id])
     for item in taste.items {
         if item.key == key {
+            let blocked = false
+            try { blocked = item.blocked } { blocked = false }
+            if blocked { return 99999 }
             let s = 0
             if item.likes > item.dislikes { s = -500 * item.likes }
             if item.dislikes > item.likes { s = s + 4000 }
-            s = s + item.skips * 300
             return s
         }
     }
     0
 }
+fn taste_blocked(id){
+    if id < 0 || id >= allProducts.len() { return false }
+    let key = taste_key(allProducts[id])
+    for item in taste.items {
+        if item.key == key {
+            let blocked = false
+            try { blocked = item.blocked } { blocked = false }
+            if blocked { return true }
+        }
+    }
+    false
+}
+fn taste_has_record(id){
+    let key = taste_key(allProducts[id])
+    for item in taste.items { if item.key == key { return true } }
+    false
+}
+fn taste_reason_label(key){
+    if key == "price" { return L("太贵", "too pricey") }
+    if key == "oily" { return L("太油", "too greasy") }
+    if key == "bored" { return L("吃腻了", "tired of it") }
+    ""
+}
 fn taste_badge(id){
     let key = taste_key(allProducts[id])
     for item in taste.items {
         if item.key == key {
+            let blocked = false
+            try { blocked = item.blocked } { blocked = false }
+            if blocked { return L(" · ✗ 已拉黑", " · ✗ blocked") }
             if item.likes > item.dislikes && item.likes > 0 { return L(" · ♥ 你的好评 ×", " · ♥ You liked ×") + item.likes }
-            if item.dislikes > item.likes { return L(" · ✗ 你给过差评 ×", " · ✗ You disliked ×") + item.dislikes }
+            if item.dislikes > item.likes {
+                let badge = L(" · ✗ 你给过差评 ×", " · ✗ You disliked ×") + item.dislikes
+                let reason = ""
+                try { reason = item.reason } { reason = "" }
+                if reason != "" { badge += L("（", " (") + taste_reason_label(reason) + L("）", ")") }
+                return badge
+            }
         }
     }
     ""
@@ -480,12 +525,65 @@ fn open_taste(id){
     tastePick = id
     ui.taste_title.set_text(L("这顿怎么样？", "How was it?"))
     ui.taste_hint.set_text(L("你的评价只留在本机，用来让下次推荐更合口味。", "Your verdict stays on this device and tunes future picks."))
+    ui.taste_reasons.set_visible(false)
     ui.taste_card.set_visible(true)
 }
 fn close_taste(){
     tastePick = -1
+    ui.taste_reasons.set_visible(false)
     ui.taste_card.set_visible(false)
     ui.plans.render()
+}
+fn like_with_echo(){
+    if tastePick < 0 { return }
+    let name = allProducts[tastePick].name
+    record_taste(tastePick, "like")
+    close_taste()
+    ui.status.set_text(L("已记住：「", "Noted: “") + name + L("」合口味，以后会更常出现。", "” works for you — expect it more often."))
+}
+// 差评追问理由：理由只作为偏好元数据留在本机，并即时给出回声。
+fn dislike_with_reason(reason){
+    if tastePick < 0 { return }
+    let name = allProducts[tastePick].name
+    record_taste(tastePick, "dislike")
+    if reason != "" { set_taste_reason(tastePick, reason) }
+    close_taste()
+    let note = L("已记住：以后少推荐「", "Got it — less of “") + name + L("」", "”")
+    if reason != "" { note += L("（", " (") + taste_reason_label(reason) + L("）", ")") }
+    ui.status.set_text(note + L("。设置里可随时撤销。", ". Undo anytime in Settings."))
+}
+fn block_dish(){
+    if tastePick < 0 { return }
+    let name = allProducts[tastePick].name
+    record_taste(tastePick, "block")
+    close_taste()
+    refresh_home()
+    ui.status.set_text(L("已拉黑「", "Blocked “") + name + L("」：不再出现在推荐、候选与草案里。设置里可撤销。", "”: out of picks, options and drafts. Undo in Settings."))
+}
+fn remove_taste(key){
+    let kept = []
+    let removed = ""
+    for item in taste.items {
+        if item.key == key { removed = item.name } else { kept.push(item) }
+    }
+    if removed == "" { return }
+    taste.items = kept
+    save_taste()
+    ui.settings_taste_list.render()
+    refresh_home()
+    ui.status.set_text(L("已移除「", "Removed the taste record for “") + removed + L("」的口味记录。", "”."))
+}
+// 探索位：只在还没评价过的餐品里挑，防止推荐越用越窄。
+fn explore_home_pick(){
+    if homePick >= 0 { homeSeen.push(homePick) homeSkip = homePick }
+    homeExploreOnly = true
+    refresh_home()
+    if homePick < 0 && homeSeen.len() > 0 {
+        homeSeen = []
+        homeSkip = -1
+        refresh_home()
+    }
+    if homePick < 0 { homeExploreOnly = false refresh_home() }
 }
 let GLANCE_CARD = "# octodining next-meal\n# level: L0\n# profile: ui/l0\n\nsource meal sys.dataset(fields: [title, metric1_label, metric1_value, metric2_label, metric2_value, summary])\n\ncopy app { class: vocabulary, en: \"OctoDining\" }\n\nview root Surface(pad: .tight) {\n  Col(gap: 10) {\n    TextCaption(text: copy.app, width: .fill)\n    TextTitle(text: meal.title, width: .fill)\n    Row(gap: 8) {\n      Tile(label: meal.metric1_label, value: meal.metric1_value)\n      Tile(label: meal.metric2_label, value: meal.metric2_value)\n    }\n    TextBody(text: meal.summary, width: .fill)\n  }\n}\n"
 fn slot_end_minute(slot){
@@ -639,6 +737,7 @@ fn hide_candidates(){
 fn invalidate(){
     hide_candidates()
     homeSkip = -1
+    homeExploreOnly = false
     homeSeen = []
     clear_week_draft()
     if onHome { show_home() } else { show_page(false) }
@@ -735,6 +834,7 @@ fn clear_week_agent_proposal(){
     weekAgentBusy = false
     weekAgentChanges = []
     weekAgentStamp = ""
+    ui.week_agent_diff.render()
     ui.week_agent_result.set_text(L("写下想调整的口味或安排，再请 Agent 提案。", "Describe a preference, then ask the Agent for changes."))
 }
 fn go_next_meal(){
@@ -743,6 +843,7 @@ fn go_next_meal(){
     ui.date.set_text(target.date)
     ui.arrival.set_text(defaultTimes[target.slot])
     homeSkip = -1
+    homeExploreOnly = false
     homeSeen = []
     open_date()
     show_home()
@@ -791,6 +892,11 @@ fn refresh_language(){
     ui.setup_fixed_label.set_text(L("房租、交通等非餐饮固定开销 · 元", "Non-food essentials, such as rent and transport · CNY"))
     ui.setup_reserve_label.set_text(L("本月预留缓冲金 · 元", "Reserve for this month · CNY"))
     ui.setup_preview.set_text(L("看看如何分配", "Preview the split"))
+    ui.setup_preset_tight.set_text(L("紧一点 · ¥1200", "Tight · ¥1200"))
+    ui.setup_preset_std.set_text(L("标准 · ¥1800", "Standard · ¥1800"))
+    ui.setup_preset_loose.set_text(L("宽松 · ¥2500", "Comfortable · ¥2500"))
+    ui.setup_preset_note.set_text(L("预设为每月生活费总额，一键填充后仍可逐格修改。", "Presets set the monthly total; adjust any field after."))
+    ui.setup_demo.set_text(L("先逛逛，晚点再核算 →", "Look around first →"))
     ui.setup_start_title.set_text(L("03 · 生成一周餐表", "03 · Draft your week"))
     ui.setup_quality.set_text(L("优先挑含主食和明显蛋、肉等食材的正餐；这只依据菜名，无法判断份量、营养或过敏原。你可以检查并改餐。", "We favor meals whose names suggest a staple and a main ingredient. Names cannot prove portion size, nutrition or allergen safety. Review each choice."))
     ui.setup_existing.set_text(L("重新核算只影响之后的新安排；已确认的餐次和预算不会被悄悄改写。", "Recalculating affects future choices only. Confirmed meals and budgets stay as they are."))
@@ -807,6 +913,7 @@ fn refresh_language(){
     ui.home_m2_label.set_text(L("今日可用", "Left today"))
     ui.chip_spicy.set_text(L("少辣", "Less spicy"))
     ui.chip_quick.set_text(L("快一点", "Quick"))
+    ui.chip_save.set_text(L("省一点", "Cheaper"))
     ui.chip_treat.set_text(L("吃好点", "Treat myself"))
     ui.chip_norepeat.set_text(L("别重复", "No repeats"))
     ui.hero_title.set_text(L("想换一个？", "Want a change?"))
@@ -861,6 +968,12 @@ fn refresh_language(){
     ui.taste_like.set_text(L("好吃", "Good"))
     ui.taste_mid.set_text(L("一般", "OK"))
     ui.taste_dislike.set_text(L("不行", "Bad"))
+    ui.taste_reason_price.set_text(L("太贵", "Too pricey"))
+    ui.taste_reason_oily.set_text(L("太油", "Too greasy"))
+    ui.taste_reason_bored.set_text(L("吃腻了", "Tired of it"))
+    ui.taste_reason_plain.set_text(L("不想说", "No reason"))
+    ui.taste_reason_block.set_text(L("以后都不要这道菜", "Never suggest this dish"))
+    ui.explore_pick.set_text(L("🎲 探索", "🎲 Explore"))
     ui.actual_price_label.set_text(L("实际支付 · 元", "Amount paid · CNY"))
     ui.checkin_confirm.set_text(L("确认已吃并保存", "Save meal eaten"))
     ui.checkin_cancel.set_text(L("暂不记录", "Not now"))
@@ -887,6 +1000,7 @@ fn switch_language(){
     ui.plans.render()
     ui.choices.render()
     ui.draft_items.render()
+    ui.week_agent_diff.render()
     ui.settings_taste_list.render()
     ui.agent_result.set_text(L("语言已切换；如需 Agent 建议，请重新比较候选。", "Language changed. Ask the Agent again for an explanation."))
 }
@@ -919,6 +1033,12 @@ fn setup_calculation(){
     else { note += L(" 这只是分配起点；份量和营养仍须人工核对。", " This is a starting split; check portions and nutrition yourself.") }
     ui.setup_result.set_text(note)
     daily
+}
+fn setup_preset(monthly, fixed, reserve){
+    ui.setup_monthly.set_text(cash(monthly))
+    ui.setup_fixed.set_text(cash(fixed))
+    ui.setup_reserve.set_text(cash(reserve))
+    setup_calculation()
 }
 fn finish_setup(){
     let daily = setup_calculation()
@@ -1028,7 +1148,7 @@ fn compute_alerts(){
         }
     }
     if missed > 0 {
-        alerts.push(L("过去 7 天有 ", "Over the last 7 days, ") + missed + L(" 餐过了计划时间仍未确认；打开对应日期可取消不需要的餐次。", " planned meals were never confirmed; open that date to cancel the ones you skipped."))
+        alerts.push(L("过去 7 天有 ", "Over the last 7 days, ") + missed + L(" 餐过了计划时间仍未确认；打开对应日期可补记实付或取消不需要的餐次。", " planned meals were never confirmed; open that date to backfill the amount paid or cancel the ones you skipped."))
     }
     let menuAge = todaySerial - date_serial(menuUpdated)
     if date_serial(menuUpdated) >= 0 && menuAge > 30 {
@@ -1258,6 +1378,8 @@ fn refresh_home(){
     for sample in sampleCount {
         let i = pool[(sample * 479) % pool.len()]
         let p = allProducts[i]
+        if taste_blocked(i) { continue }
+        if homeExploreOnly && taste_has_record(i) { continue }
         let seen = i == homeSkip
         for previous in homeSeen { if previous == i { seen = true } }
         if !seen && p.cents <= cap && matches_meal(p) && open_at(p.business_hours, arrival) {
@@ -1280,7 +1402,12 @@ fn refresh_home(){
         ui.home_cta.set_text(L("调整条件", "Edit settings"))
         ui.home_price.set_text("")
         ui.home_meta.set_text(L("请调整预算、到店时间或口味", "Change budget, arrival time or taste"))
-        ui.home_reason.set_text(L("推荐只使用当前已核验的菜单记录。", "Suggestions use only the current verified menu records."))
+        if homeExploreOnly {
+            ui.home_reason.set_text(L("🎲 探索完成：候选都评过了；点“换一道”回到常规推荐。", "🎲 Everything fitting is rated; Try another returns to normal picks."))
+            homeExploreOnly = false
+        } else {
+            ui.home_reason.set_text(L("推荐只使用当前已核验的菜单记录。", "Suggestions use only the current verified menu records."))
+        }
         ui.home_taste.set_text("")
         return
     }
@@ -1290,11 +1417,20 @@ fn refresh_home(){
     ui.home_price.set_text("¥" + cash(pick.cents))
     ui.home_meta.set_text(pick.store + " · " + ui.arrival.text().trim() + L(" 可到店", " arrival"))
     set_home_metrics(pick.cents)
-    if recentIds.len() == 0 {
-        ui.home_reason.set_text(L("根据菜单价格、餐次和到店时段推荐；暂无已存历史计划。", "Based on menu price, meal type and hours; no saved history yet."))
-    } else {
-        ui.home_reason.set_text(L("预算内、到店时段匹配；参考近七条已存日期的选择，尽量减少重复。", "Within budget and open at arrival; recent saved choices help reduce repeats."))
+    let facts = ""
+    let headroom = cap - pick.cents
+    if headroom > 0 { facts = L("低于本餐上限 ¥", "¥") + cash(headroom) + L("", " under the meal limit") }
+    if headroom == 0 { facts = L("正好用满本餐上限", "Exactly at the meal limit") }
+    facts += L(" · 到店时段营业中", " · open at arrival")
+    if recentIds.len() == 0 { facts += L(" · 暂无历史计划", " · no saved history yet") }
+    if recentIds.len() > 0 {
+        let pickedRecent = 0
+        for id in recentIds { if id == homePick { pickedRecent += 1 } }
+        if pickedRecent == 0 { facts += L(" · 近七天未吃", " · not eaten in 7 days") }
+        if pickedRecent > 0 { facts += L(" · 近七天已排 ", " · planned ") + pickedRecent + L(" 次", "× lately") }
     }
+    if homeExploreOnly { facts = L("🎲 探索：这道还没评价过 · ", "🎲 Explore: unrated so far · ") + facts }
+    ui.home_reason.set_text(facts)
     ui.home_taste.set_text(taste_badge(homePick))
 }
 fn next_home_pick(){
@@ -1303,6 +1439,7 @@ fn next_home_pick(){
         homeSeen.push(homePick)
     }
     homeSkip = homePick
+    homeExploreOnly = false
     refresh_home()
     if homePick < 0 && homeSeen.len() > 0 {
         homeSeen = []
@@ -1389,7 +1526,7 @@ fn find_candidates(){
     if homePick >= 0 {
         let first = allProducts[homePick]
         let spicy = regex("辣|麻|椒", "").test(first.name + " " + first.category)
-        if first.cents <= condition.cap && matches_meal(first) && open_at(first.business_hours, condition.arrival) && (!condition.avoid || !spicy) {
+        if first.cents <= condition.cap && matches_meal(first) && open_at(first.business_hours, condition.arrival) && (!condition.avoid || !spicy) && !taste_blocked(homePick) {
             candidates.push(homePick)
             stores.push(first.store)
         }
@@ -1399,7 +1536,7 @@ fn find_candidates(){
         for i in allProducts.len() {
             if candidates.len() >= 3 { break }
             let p = allProducts[i]
-            if p.name.search(searchText) >= 0 && p.cents <= condition.cap {
+            if !taste_blocked(i) && p.name.search(searchText) >= 0 && p.cents <= condition.cap {
                 let dup = false
                 for s in stores { if s == p.store { dup = true } }
                 let spicy = regex("辣|麻|椒", "").test(p.name + " " + p.category)
@@ -1416,7 +1553,7 @@ fn find_candidates(){
         searchCursor += 1
         examined += 1
         let p = allProducts[idx]
-        if p.cents <= condition.cap && matches_meal(p) && open_at(p.business_hours, condition.arrival) {
+        if !taste_blocked(idx) && p.cents <= condition.cap && matches_meal(p) && open_at(p.business_hours, condition.arrival) {
             let duplicate = false
             for store in stores { if store == p.store { duplicate = true } }
             let spicy = regex("辣|麻|椒", "").test(p.name + " " + p.category)
@@ -1514,7 +1651,7 @@ fn prepare_week_agent_offers(){
             let id = (choice.product_id + sample * 479 + i * 31) % allProducts.len()
             let p = allProducts[id]
             if p.cents <= original.cents && p.name != original.name && matches_meal_for(p, choice.slot)
-                && open_at(p.business_hours, clock_value(defaultTimes[choice.slot])) {
+                && open_at(p.business_hours, clock_value(defaultTimes[choice.slot])) && !taste_blocked(id) {
                 let duplicate = false
                 for old in alternatives { if allProducts[old].name == p.name { duplicate = true } }
                 if !duplicate { alternatives.push(id) }
@@ -1721,21 +1858,18 @@ fn ask_week_agent(){
         if selected.len() == 0 {
             ui.week_agent_result.set_text(L("Agent 建议不换餐：", "Agent suggests no swap: ") + reason + L("。草案未改变。", ". Draft unchanged."))
         } else {
-            let changes = ""
             let saved = 0
             for change in selected {
                 let offer = weekAgentOffers[change.meal - 1]
                 let choice = weekDraft[offer.draft_index]
-                let originalCents = allProducts[choice.product_id].cents
-                let newCents = allProducts[offer.alternatives[change.option - 1]].cents
-                saved += originalCents - newCents
-                changes += choice.date + " " + slot_label(choice.slot) + ": " + allProducts[choice.product_id].name
-                    + " → " + allProducts[offer.alternatives[change.option - 1]].name + "\n"
+                saved += allProducts[choice.product_id].cents - allProducts[offer.alternatives[change.option - 1]].cents
             }
             let impact = ""
-            if saved > 0 { impact = L("预计节省 ¥", "Estimated savings ¥") + cash(saved) + L("；", "; ") }
-            ui.week_agent_result.set_text(L("Agent 提议：\n", "Agent proposes:\n") + changes + impact + L("理由：", "Reason: ") + reason
+            if saved > 0 { impact = L("预计共省 ¥", "estimated savings ¥") + cash(saved) + L("；", "; ") }
+            ui.week_agent_result.set_text(L("Agent 提议 ", "Agent proposes ") + selected.len() + L(" 处换餐（逐条见下方卡片）；", " swap(s), one card each below; ") + impact
+                + L("理由：", "reason: ") + reason
                 + L("\n先应用到草案并核对，再确认整周保存。", "\nApply to the draft, review, then confirm the week."))
+            ui.week_agent_diff.render()
         }
     })
 }
@@ -1813,7 +1947,7 @@ fn build_rebalance(){
             for id in pool {
                 let p = allProducts[id]
                 if p.cents < m.cents && p.name != m.name && matches_meal_for(p, m.slot)
-                    && open_at(p.business_hours, clock_value(m.arrival)) {
+                    && open_at(p.business_hours, clock_value(m.arrival)) && !taste_blocked(id) {
                     if best < 0 { best = id }
                     if best >= 0 && p.cents < allProducts[best].cents { best = id }
                 }
@@ -2032,7 +2166,7 @@ fn draft_day_tick(gen, offset){
                     for sample in sampleCount {
                         let id = pool[(sample * 479 + offset * 31 + slot * 17) % pool.len()]
                         let p = allProducts[id]
-                        if p.cents <= cap {
+                        if !taste_blocked(id) && p.cents <= cap {
                             let score = abs(p.cents - round(cap * 0.75))
                             if p.name.search("饭") >= 0 { score -= 800 }
                             score += taste_score(id)
@@ -2270,13 +2404,16 @@ fn edit_meal(slot){
 }
 fn begin_checkin(slot){
     let index = day_index(journal, currentDate)
-    if index < 0 || currentDate != today() { return }
+    if index < 0 { return }
+    // 允许补记：过去 7 天内的过期餐次也能核对实付金额。
+    let gap = date_serial(today()) - date_serial(currentDate)
+    if gap < 0 || gap > 7 { return }
     for meal in journal.days[index].meals {
         if meal.slot == slot && meal_eaten_at(meal) == nil {
             checkinDate = currentDate
             checkinSlot = slot
             ui.actual_price.set_text(cash(meal.cents))
-            ui.checkin_hint.set_text(slot_label(slot) + " · " + meal.name + L("。请核对实际支付金额。", ". Check the amount you actually paid."))
+            ui.checkin_hint.set_text(currentDate + " · " + slot_label(slot) + " · " + meal.name + L("。请核对实际支付金额。", ". Check the amount you actually paid."))
             ui.checkin.set_visible(true)
             ui.status.set_text(L("请核对金额，再点确认已吃。", "Check the amount, then save the eaten meal."))
             return
@@ -2284,7 +2421,9 @@ fn begin_checkin(slot){
     }
 }
 fn confirm_checkin(){
-    if checkinSlot < 0 || checkinDate != currentDate || currentDate != today() { return }
+    if checkinSlot < 0 || checkinDate != currentDate { return }
+    let gap = date_serial(today()) - date_serial(checkinDate)
+    if gap < 0 || gap > 7 { return }
     let actual = money_value(ui.actual_price.text())
     if actual < 0 { ui.status.set_text(L("实际支付金额须为 ¥1–500，最多两位小数。", "Amount paid must be ¥1–500 with at most two decimals.")) return }
     let next = journal.to_json().parse_json()
@@ -2470,6 +2609,12 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
             setup_fixed := Field{text: "" empty_text: "400.00"}
             setup_reserve_label := Label{text: "本月预留缓冲金 · 元" draw_text.color: muted draw_text.text_style.font_size: 11}
             setup_reserve := Field{text: "0.00" empty_text: "100.00"}
+            View{width: Fill height: Fit flow: Right spacing: 6
+                setup_preset_tight := Action{height: 30 text: "紧一点 · ¥1200" on_click: || setup_preset(120000, 30000, 10000)}
+                setup_preset_std := Action{height: 30 text: "标准 · ¥1800" on_click: || setup_preset(180000, 50000, 10000)}
+                setup_preset_loose := Action{height: 30 text: "宽松 · ¥2500" on_click: || setup_preset(250000, 70000, 20000)}
+            }
+            setup_preset_note := Label{width: Fill text: "预设为每月生活费总额，一键填充后仍可逐格修改。" draw_text.color: muted draw_text.text_style.font_size: 10}
             setup_preview := Action{text: "看看如何分配" on_click: || setup_calculation()}
             setup_result := Label{width: Fill text: "先扣除非餐饮开销与缓冲金，再按 30 天估算饭钱。" draw_text.color: ink draw_text.text_style.font_size: 12}
         }
@@ -2478,6 +2623,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
             setup_quality := Label{width: Fill text: "优先挑含主食和明显蛋、肉等食材的正餐；这只依据菜名，无法判断份量、营养或过敏原。你可以检查并改餐。" draw_text.color: ink draw_text.text_style.font_size: 12}
             setup_existing := Label{width: Fill text: "重新核算只影响之后的新安排；已确认的餐次和预算不会被悄悄改写。" draw_text.color: muted draw_text.text_style.font_size: 11}
             setup_start := Primary{text: "保存并生成七天餐表草案" on_click: || finish_setup()}
+            setup_demo := Action{text: "先逛逛，晚点再核算 →" on_click: || go_next_meal()}
         }
         setup_back := Action{text: "返回今天" on_click: || show_home()}
     }
@@ -2510,10 +2656,20 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
             settings_taste_list := View{width: Fill height: Fit flow: Down spacing: 4 on_render: || {
                 if taste.items.len() == 0 { Label{width: Fill text: L("暂无记录。", "Nothing recorded yet.") draw_text.color: muted draw_text.text_style.font_size: 12} }
                 for item in taste.items {
-                    let mark = L(" · 好评 ×", " · liked ×") + item.likes
+                    let mark = ""
+                    let blocked = false
+                    try { blocked = item.blocked } { blocked = false }
+                    if item.likes > 0 { mark += L(" · 好评 ×", " · liked ×") + item.likes }
                     if item.dislikes > 0 { mark += L(" · 差评 ×", " · disliked ×") + item.dislikes }
-                    if item.skips > 0 { mark += L(" · 跳过 ×", " · skipped ×") + item.skips }
-                    Label{width: Fill text: item.name + " · " + item.store + mark draw_text.color: ink draw_text.text_style.font_size: 12}
+                    if item.skips > 0 { mark += L(" · 换过 ×", " · swapped ×") + item.skips }
+                    let reason = ""
+                    try { reason = item.reason } { reason = "" }
+                    if reason != "" { mark += L(" · ", " · ") + taste_reason_label(reason) }
+                    if blocked { mark += L(" · 已拉黑", " · blocked") }
+                    View{width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5}
+                        Label{width: Fill text: item.name + " · " + item.store + mark draw_text.color: ink draw_text.text_style.font_size: 12}
+                        Action{height: 28 text: L("移除", "Remove") on_click: || remove_taste(item.key)}
+                    }
                 }
             }}
             settings_taste_clear := Action{text: "清空口味记录" on_click: || clear_taste_records()}
@@ -2552,6 +2708,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
             View{width: Fill height: Fit flow: Right spacing: 8
                 home_cta := Primary{width: Fill text: "就吃这道 · 加入餐表" on_click: || confirm_home_pick()}
                 next_pick := Action{text: "换一道" on_click: || next_home_pick()}
+                explore_pick := Action{text: "🎲 探索" on_click: || explore_home_pick()}
             }
         }
         alerts := RoundedView{width: Fill height: Fit flow: Down spacing: 4 padding: Inset{left: 15 right: 15 top: 12 bottom: 12} show_bg: true draw_bg.color: #xfbf1e4 draw_bg.border_radius: 18.0 visible: false
@@ -2564,16 +2721,21 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
         hero_title := Label{text: "想换一个？" draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 16}}
         hero_subtitle := Label{width: Fill text: "" draw_text.color: muted draw_text.text_style.font_size: 12}
         RoundedView{width: Fill height: Fit flow: Right spacing: 2 padding: Inset{left: 6 right: 5 top: 5 bottom: 5} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 17.0
-            request := TextInput{width: Fill height: 43 text: "" empty_text: "少辣 / Less spicy…" on_change: |text| invalidate()
+            request := TextInput{width: Fill height: 43 text: "" empty_text: "如：想吃辣、预算 12 内… / Try: spicy, under ¥12…" on_change: |text| invalidate()
                 draw_bg +: {color: #xffffff color_hover: #xffffff color_focus: #xffffff color_empty: #xffffff border_radius: 12.0 border_size: 0.0}
                 draw_text +: {color: ink color_hover: ink color_focus: ink color_empty: muted color_empty_hover: muted}}
             agent_start := Primary{width: 46 height: 43 text: "→" on_click: || plan_with_agent()}
         }
-        View{width: Fill height: Fit flow: Right spacing: 6
-            chip_spicy := Action{height: 30 text: "少辣" on_click: || { ui.request.set_text(L("少辣", "Less spicy")) plan_with_agent() }}
-            chip_quick := Action{height: 30 text: "快一点" on_click: || { ui.request.set_text(L("快一点", "Quick meal")) plan_with_agent() }}
-            chip_treat := Action{height: 30 text: "吃好点" on_click: || { ui.request.set_text(L("吃好点", "Treat myself")) plan_with_agent() }}
-            chip_norepeat := Action{height: 30 text: "别重复" on_click: || { ui.request.set_text(L("别重复", "No repeats")) plan_with_agent() }}
+        View{width: Fill height: Fit flow: Down spacing: 6
+            View{width: Fill height: Fit flow: Right spacing: 6
+                chip_spicy := Action{height: 30 text: "少辣" on_click: || { ui.request.set_text(L("少辣", "Less spicy")) plan_with_agent() }}
+                chip_quick := Action{height: 30 text: "快一点" on_click: || { ui.request.set_text(L("快一点", "Quick meal")) plan_with_agent() }}
+                chip_save := Action{height: 30 text: "省一点" on_click: || { ui.request.set_text(L("省一点", "Cheaper")) plan_with_agent() }}
+            }
+            View{width: Fill height: Fit flow: Right spacing: 6
+                chip_treat := Action{height: 30 text: "吃好点" on_click: || { ui.request.set_text(L("吃好点", "Treat myself")) plan_with_agent() }}
+                chip_norepeat := Action{height: 30 text: "别重复" on_click: || { ui.request.set_text(L("别重复", "No repeats")) plan_with_agent() }}
+            }
         }
         hero_note := Label{width: Fill text: "Agent 先给建议，确认后才更新餐表。" draw_text.color: muted draw_text.text_style.font_size: 11}
     }
@@ -2651,6 +2813,11 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
                 let detailLabel = L("详情 ›", "Details ›")
                 if expandedCandidate == i { detailLabel = L("收起 ↑", "Hide ↑") }
                 let evidence = L("证据：¥", "Evidence: ¥") + cash(p.cents) + L(" ≤ 本餐上限 ¥", " ≤ meal limit ¥") + cash(cap)
+                let dayDaily = money_value(ui.daily.text())
+                if dayDaily < 0 { dayDaily = profileDaily }
+                let afterPick = dayDaily - sum_meals(current_meals(), selectedSlot) - p.cents
+                if afterPick >= 0 { evidence += L(" · 选它后今日余 ¥", " · leaves ¥") + cash(afterPick) + L("", " today") }
+                if afterPick < 0 { evidence += L(" · 会超今日预算 ¥", " · exceeds today by ¥") + cash(0 - afterPick) }
                 if open_at(p.business_hours, clock_value(ui.arrival.text().trim())) { evidence += L(" · 到店时段营业中", " · open at arrival") }
                 if regex("辣|麻|椒", "").test(p.name + " " + p.category) { evidence += L(" · 菜名含辣味词", " · spicy keyword in name") }
                 if !regex("辣|麻|椒", "").test(p.name + " " + p.category) { evidence += L(" · 菜名无辣味词", " · no spicy keyword") }
@@ -2729,13 +2896,30 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
             ScrollYView{width: Fill height: 135 flow: Down
                 week_agent_options := Label{width: Fill text: "" draw_text.color: ink draw_text.text_style.font_size: 11}
             }
-            week_agent_request := TextInput{width: Fill height: 40 text: "" empty_text: "少辣 / Less spicy…" on_change: |text| clear_week_agent_proposal()}
+            week_agent_request := TextInput{width: Fill height: 40 text: "" empty_text: "如：周四有聚餐、这周清淡点… / e.g. lighter this week…" on_change: |text| clear_week_agent_proposal()}
             View{width: Fill height: Fit flow: Right spacing: 8
                 week_agent_ask := Action{text: "请 Agent 提案" on_click: || ask_week_agent()}
                 week_agent_apply := Action{text: "应用建议到草案" on_click: || apply_week_agent()}
                 week_agent_cancel := Action{text: "取消" visible: false on_click: || cancel_week_agent()}
             }
             week_agent_result := Label{width: Fill text: "写下想调整的口味或安排，再请 Agent 提案。" draw_text.color: ink draw_text.text_style.font_size: 11}
+            week_agent_diff := View{width: Fill height: Fit flow: Down spacing: 5 on_render: || {
+                if weekAgentChanges.len() > 0 && weekAgentStamp == week_draft_stamp() {
+                    for change in weekAgentChanges {
+                        let offer = weekAgentOffers[change.meal - 1]
+                        let choice = weekDraft[offer.draft_index]
+                        let oldP = allProducts[choice.product_id]
+                        let newP = allProducts[offer.alternatives[change.option - 1]]
+                        let diff = oldP.cents - newP.cents
+                        RoundedView{width: Fill height: Fit flow: Down spacing: 2 padding: Inset{left: 10 right: 10 top: 7 bottom: 7} show_bg: true draw_bg.color: #xffffff draw_bg.border_radius: 10.0
+                            Label{width: Fill text: choice.date + " · " + slot_label(choice.slot) draw_text.color: muted draw_text.text_style.font_size: 10}
+                            Label{width: Fill text: oldP.name + " ¥" + cash(oldP.cents) + "  →  " + newP.name + " ¥" + cash(newP.cents) draw_text.color: ink draw_text.text_style.font_size: 12}
+                            if diff > 0 { Label{width: Fill text: L("省 ¥", "Save ¥") + cash(diff) draw_text.color: #x2e7d43 draw_text.text_style.font_size: 10} }
+                            if diff == 0 { Label{width: Fill text: L("同价换口味", "Same price, new taste") draw_text.color: muted draw_text.text_style.font_size: 10} }
+                        }
+                    }
+                }
+            }}
             View{width: Fill height: Fit flow: Right spacing: 8
                 confirm_draft := Accent{text: "确认整周草案" on_click: || confirm_week_draft()}
                 discard_draft := Action{text: "舍弃草案" on_click: || clear_week_draft()}
@@ -2755,9 +2939,18 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
             taste_title := Label{text: "这顿怎么样？" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 14}}
             taste_hint := Label{width: Fill text: "你的评价只留在本机，用来让下次推荐更合口味。" draw_text.color: muted draw_text.text_style.font_size: 11}
             View{width: Fill height: Fit flow: Right spacing: 8
-                taste_like := Accent{text: "好吃" on_click: || { record_taste(tastePick, "like") close_taste() }}
+                taste_like := Accent{text: "好吃" on_click: || like_with_echo()}
                 taste_mid := Action{text: "一般" on_click: || close_taste()}
-                taste_dislike := Action{text: "不行" on_click: || { record_taste(tastePick, "dislike") close_taste() }}
+                taste_dislike := Action{text: "不行" on_click: || { ui.taste_reasons.set_visible(true) ui.taste_hint.set_text(L("为什么不行？挑一个理由，我会记住；也可以从此不再推荐它。", "Why not? Pick a reason and I'll remember, or hide this dish for good.")) }}
+            }
+            taste_reasons := View{width: Fill height: Fit flow: Down spacing: 6 visible: false
+                View{width: Fill height: Fit flow: Right spacing: 6
+                    taste_reason_price := Action{height: 30 text: "太贵" on_click: || dislike_with_reason("price")}
+                    taste_reason_oily := Action{height: 30 text: "太油" on_click: || dislike_with_reason("oily")}
+                    taste_reason_bored := Action{height: 30 text: "吃腻了" on_click: || dislike_with_reason("bored")}
+                    taste_reason_plain := Action{height: 30 text: "不想说" on_click: || dislike_with_reason("")}
+                }
+                taste_reason_block := Action{height: 30 text: "以后都不要这道菜" on_click: || block_dish()}
             }
         }
         plans := ScrollYView{width: Fill height: Fit flow: Down spacing: 10 on_render: || {
@@ -2803,7 +2996,10 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
                             if date == currentDate {
                                 View{width: Fill height: Fit flow: Right spacing: 8 align: Align{y: 0.5}
                                     if meal_eaten_at(m) == nil {
-                                        if date == today() { Accent{width: Fill text: if english { "Mark eaten" } else { "记录已吃" + slot_label(m.slot) } on_click: || begin_checkin(m.slot)} }
+                                        let checkinGap = date_serial(today()) - date_serial(date)
+                                        if checkinGap >= 0 && checkinGap <= 7 {
+                                            Accent{width: Fill text: if english { if checkinGap == 0 { "Mark eaten " } else { "Backfill " } + slot_label(m.slot) } else { if checkinGap == 0 { "记录已吃" } else { "补记" } + slot_label(m.slot) } on_click: || begin_checkin(m.slot)}
+                                        }
                                         Action{text: L("修改", "Edit ") + slot_label(m.slot) on_click: || edit_meal(m.slot)}
                                         Action{text: L("取消", "Cancel ") + slot_label(m.slot) on_click: || cancel_meal(m.slot)}
                                     } else {
