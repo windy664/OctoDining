@@ -131,7 +131,8 @@ def main():
 
         app.click("week_nav")
         app.click("make_draft")
-        app.status("已生成七天草案")
+        # Framebuffer capture throttles the render loop; generation ticks need patience.
+        app.await_text("status", "已生成七天草案", timeout=30)
         app.click("confirm_draft")
         app.status("已确认并读回核验")
         plan = newest_plan(jail)

@@ -16,6 +16,10 @@ spec.loader.exec_module(basic)
 App = basic.App
 
 
+def visible(app, key):
+    return [x for x in app.snap() if x.get("i") == key and x.get("r", [0, 0, 0, 0])[2] > 0 and x["r"][3] > 0]
+
+
 def main():
     port = 8274
     work = ROOT / ".local-state" / ("week-agent-" + datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -52,6 +56,7 @@ def main():
         options = app.text("week_agent_options")
         assert "¥" in options and ". " in options, f"swap options not populated: {options[:80]!r}"
         assert not list(jail.glob("plans-*.json")), "draft wrote a plan before confirmation"
+        assert not visible(app, "week_agent_cancel"), "cancel visible before any request"
 
         app.fill("week_agent_request", "本周少辣，避免重复")
         app.click("week_agent_ask")
@@ -63,6 +68,7 @@ def main():
                 break
             time.sleep(.2)
         assert "暂不可用" in result, result
+        assert not visible(app, "week_agent_cancel"), "cancel still visible after the failure"
         print("PASS agent request fails honestly without a host agent service", flush=True)
 
         assert not list(jail.glob("plans-*.json")), "agent failure wrote a plan"

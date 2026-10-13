@@ -623,6 +623,7 @@ fn store_record(next){
 fn hide_candidates(){
     // Invalidate any outstanding assistant callback when its inputs/results
     // cease to be usable. A late callback must not lock a newer request.
+    if agentBusy { host.request("octos.turn.interrupt", {}, fn(r){}) }
     agentRequest += 1
     agentBusy = false
     candidates = []
@@ -631,6 +632,7 @@ fn hide_candidates(){
     ui.detail_card.set_visible(false)
     agentChoice = -1
     agentStamp = ""
+    ui.agent_cancel.set_visible(false)
     ui.agent_result.set_text(L("先生成候选，再请系统 Agent 比较。", "Find options, then ask the system Agent to compare."))
     ui.choices.render()
 }
@@ -829,6 +831,7 @@ fn refresh_language(){
     ui.next_batch.set_text(L("换一批候选", "More options"))
     ui.agent_heading.set_text(L("Agent 的建议", "Agent suggestion"))
     ui.ask_agent.set_text(L("重新请 Agent 比较", "Ask Agent again"))
+    ui.agent_cancel.set_text(L("取消", "Cancel"))
     ui.week_title.set_text(L("我的一周餐表 · 从所选日期起七天", "My week · seven days from the selected date"))
     ui.make_draft.set_text(L("生成七天草案", "Draft seven days"))
     ui.rebalance_title.set_text(L("省钱调整方案", "Cheaper swaps"))
@@ -838,6 +841,7 @@ fn refresh_language(){
     ui.week_agent_intro.set_text(L("先生成草案。Agent 只从已验证的换餐选项中提出改动，确认前不写入。", "Draft first. The Agent selects from verified swaps; nothing is saved before confirmation."))
     ui.week_agent_ask.set_text(L("请 Agent 提案", "Ask Agent for changes"))
     ui.week_agent_apply.set_text(L("应用建议到草案", "Apply to draft"))
+    ui.week_agent_cancel.set_text(L("取消", "Cancel"))
     ui.confirm_draft.set_text(L("确认整周草案", "Confirm week draft"))
     ui.discard_draft.set_text(L("舍弃草案", "Discard draft"))
     ui.checkin_title.set_text(L("记录实际用餐", "Record a meal eaten"))
@@ -871,10 +875,12 @@ fn refresh_language(){
 }
 fn switch_language(){
     english = !english
+    if agentBusy { host.request("octos.turn.interrupt", {}, fn(r){}) }
     agentRequest += 1
     agentBusy = false
     agentChoice = -1
     agentStamp = ""
+    ui.agent_cancel.set_visible(false)
     try { fs.write("language.json", {lang: L("zh", "en")}.to_json()) } { }
     refresh_language()
     refresh_summary()
@@ -1541,6 +1547,23 @@ fn day_planned_cents(date){
     if index >= 0 { total += sum_meals(journal.days[index].meals, -1) }
     total
 }
+fn cancel_week_agent(){
+    if !weekAgentBusy { return }
+    weekAgentRequest += 1
+    weekAgentBusy = false
+    ui.week_agent_cancel.set_visible(false)
+    ui.week_agent_result.set_text(L("已取消这次 Agent 请求，草案未改变。", "Agent request cancelled; the draft is unchanged."))
+    host.request("octos.turn.interrupt", {}, fn(r){})
+}
+fn week_agent_timeout(requestId){
+    if requestId != weekAgentRequest || !weekAgentBusy { return }
+    weekAgentBusy = false
+    agentState = 2
+    refresh_home_engine()
+    ui.week_agent_cancel.set_visible(false)
+    ui.week_agent_result.set_text(L("Agent 响应超时，已停止等待。草案未改变，可直接重试。", "Agent timed out and was stopped. The draft is unchanged; retry when ready."))
+    host.request("octos.turn.interrupt", {}, fn(r){})
+}
 fn ask_week_agent(){
     if weekAgentBusy { return }
     if weekDraft.len() == 0 || weekAgentOffers.len() == 0 || weekDraftRevision != journal.revision
@@ -1562,11 +1585,14 @@ fn ask_week_agent(){
     weekAgentRequest += 1
     let requestId = weekAgentRequest
     weekAgentBusy = true
+    ui.week_agent_cancel.set_visible(true)
+    start_timeout(90.0, || week_agent_timeout(requestId))
     weekAgentChanges = []
     weekAgentStamp = ""
     ui.week_agent_result.set_text(L("正在请 OctoSense Agent 比较本周换餐…", "Asking the OctoSense Agent to compare swaps…"))
     host.request("octos.turn.start", {text: prompt}, fn(r){
         if requestId != weekAgentRequest { return }
+        ui.week_agent_cancel.set_visible(false)
         weekAgentBusy = false
         if stamp != week_draft_stamp() || weekDraftRevision != journal.revision {
             ui.week_agent_result.set_text(L("草案或需求已变化，旧建议已丢弃。", "Draft or request changed; old advice discarded."))
@@ -1575,7 +1601,12 @@ fn ask_week_agent(){
         if !r.is_ok {
             agentState = 2
             refresh_home_engine()
-            ui.week_agent_result.set_text(L("系统 Agent 暂不可用：", "System Agent unavailable: ") + r.error + L("。原草案可继续人工核对。", ". The original draft remains available."))
+            let errText = "" + r.error
+            if regex("429|rate limit|Rate limit|too many|Too many|quota|Quota|限流", "").test(errText) {
+                ui.week_agent_result.set_text(L("系统 Agent 请求已达上限（限流），稍等片刻后可直接重试；原草案未改变。", "The Agent is rate-limited right now. Wait a moment and retry; the draft is unchanged."))
+            } else {
+                ui.week_agent_result.set_text(L("系统 Agent 暂不可用：", "System Agent unavailable: ") + r.error + L("。原草案可继续人工核对。", ". The original draft remains available."))
+            }
             return
         }
         agentState = 1
@@ -2084,6 +2115,27 @@ fn confirm_week_draft(){
         sync_glance(true)
     }
 }
+fn cancel_agent(){
+    if !agentBusy { return }
+    agentRequest += 1
+    agentBusy = false
+    agentChoice = -1
+    agentStamp = ""
+    ui.agent_cancel.set_visible(false)
+    ui.agent_result.set_text(L("已取消这次 Agent 请求，候选仍然有效。", "Agent request cancelled; your options are unchanged."))
+    host.request("octos.turn.interrupt", {}, fn(r){})
+}
+fn agent_timeout(requestId){
+    if requestId != agentRequest || !agentBusy { return }
+    agentBusy = false
+    agentChoice = -1
+    agentStamp = ""
+    agentState = 2
+    refresh_home_engine()
+    ui.agent_cancel.set_visible(false)
+    ui.agent_result.set_text(L("Agent 响应超时，已停止等待。可直接重试，或自行选择候选。", "Agent timed out and was stopped. Retry, or choose an option yourself."))
+    host.request("octos.turn.interrupt", {}, fn(r){})
+}
 fn ask_agent(){
     if agentBusy { return }
     if candidates.len() == 0 || candidateStamp == "" || candidateStamp != selection_stamp() {
@@ -2119,8 +2171,11 @@ fn ask_agent(){
     agentStamp = ""
     ui.agent_result.set_text(L("正在请求 OctoSense 系统 Agent…", "Asking the OctoSense system Agent…"))
     agentBusy = true
+    ui.agent_cancel.set_visible(true)
+    start_timeout(90.0, || agent_timeout(requestId))
     host.request("octos.turn.start", {text: prompt}, fn(r){
         if requestId != agentRequest { return }
+        ui.agent_cancel.set_visible(false)
         agentBusy = false
         if stamp != candidateStamp || stamp != selection_stamp() {
             agentChoice = -1
@@ -2133,7 +2188,12 @@ fn ask_agent(){
             agentStamp = ""
             agentState = 2
             refresh_home_engine()
-            ui.agent_result.set_text(L("系统 Agent 暂不可用：", "System Agent unavailable: ") + r.error + L("。你仍可自行选择候选。", ". You can still choose an option yourself."))
+            let errText = "" + r.error
+            if regex("429|rate limit|Rate limit|too many|Too many|quota|Quota|限流", "").test(errText) {
+                ui.agent_result.set_text(L("系统 Agent 请求已达上限（限流），稍等片刻后可直接重试；候选仍然有效。", "The Agent is rate-limited right now. Wait a moment and retry; your options are unchanged."))
+            } else {
+                ui.agent_result.set_text(L("系统 Agent 暂不可用：", "System Agent unavailable: ") + r.error + L("。你仍可自行选择候选。", ". You can still choose an option yourself."))
+            }
             return
         }
         agentState = 1
@@ -2572,7 +2632,10 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
         RoundedView{width: Fill height: Fit flow: Down spacing: 8 padding: Inset{left: 14 right: 14 top: 13 bottom: 13} show_bg: true draw_bg.color: #xe9ede6 draw_bg.border_radius: 16.0
             agent_heading := Label{text: "Agent 的建议" draw_text.color: blue draw_text.text_style: theme.font_bold{font_size: 14}}
             agent_result := Label{width: Fill text: "先生成候选，再请系统 Agent 比较。" draw_text.color: ink draw_text.text_style.font_size: 12}
-            ask_agent := Action{text: "重新请 Agent 比较" on_click: || ask_agent()}
+            View{width: Fill height: Fit flow: Right spacing: 8
+                ask_agent := Action{text: "重新请 Agent 比较" on_click: || ask_agent()}
+                agent_cancel := Action{text: "取消" visible: false on_click: || cancel_agent()}
+            }
         }
         choices := View{width: Fill height: Fit flow: Down spacing: 10 on_render: || {
             if candidates.len() == 0 { Label{width: Fill text: L("填写条件后查找候选。价格和时段来自菜单快照。", "Set your preferences to find options. Prices and hours are from a menu snapshot.") draw_text.color: muted draw_text.text_style.font_size: 13} }
@@ -2670,6 +2733,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
             View{width: Fill height: Fit flow: Right spacing: 8
                 week_agent_ask := Action{text: "请 Agent 提案" on_click: || ask_week_agent()}
                 week_agent_apply := Action{text: "应用建议到草案" on_click: || apply_week_agent()}
+                week_agent_cancel := Action{text: "取消" visible: false on_click: || cancel_week_agent()}
             }
             week_agent_result := Label{width: Fill text: "写下想调整的口味或安排，再请 Agent 提案。" draw_text.color: ink draw_text.text_style.font_size: 11}
             View{width: Fill height: Fit flow: Right spacing: 8
