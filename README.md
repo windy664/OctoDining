@@ -8,17 +8,17 @@
 
 **评委先看 Agent 闭环：** [15 秒 1.2.2 真实 Agent 证据剪辑](docs/demo/octodining-122-agent-evidence-reel.mp4) · [同一次 Shell 联调原始记录和三张截图](docs/evidence/shell-ui122-minimax-20261004.json) · [按评分项核验](docs/AGENTIC_JUDGING.md)。MiniMax-M3 在已有晚餐计划上比较候选并建议候选 3；用户亲自确认，应用保存计划并读回核验。剪辑由真实截图制成，并非连续录屏。**1.7.0 的 Shell 测试遭遇 429，没有取得同版模型建议**；下方 1.7.0 画面用于展示后续产品功能，不能与 1.2.2 Agent 证据视作同一次运行。**当前签名版 1.11.1 的整周 Agent 闭环录屏**（真实 MiniMax-M3 提议、应用到草案、确认读回；录于 1.11.0，1.11.1 为界面精简与周窗口锚点修复、Agent 调用逻辑相同）：[帧缓冲录屏与关键帧](docs/evidence/shell-week-agent-1110-20261012.md)。
 
-**当前 1.11.4 界面**（card-host 原生截图，非模型证据；[画面与改动说明](docs/evidence/ui-planfirst-1114-20261012.md)）：
+**当前 1.11.5 界面**（card-host 原生截图，非模型证据；[画面与改动说明](docs/evidence/ui-nav-1115-20261013.md)）：
 
 | 首次使用 | 引导完成 · 首周餐表草案 | 确认后的一周餐表 |
 | :---: | :---: | :---: |
-| <img src="docs/evidence/ui-planfirst-1114-20261012/00-first-run-setup.png" alt="首次引导" width="250"> | <img src="docs/evidence/ui-planfirst-1114-20261012/01-first-week-draft.png" alt="引导结束即生成待确认的一周餐表草案" width="250"> | <img src="docs/evidence/ui-planfirst-1114-20261012/03-week-plan-confirmed.png" alt="确认后写入并读回的一周餐表" width="250"> |
+| <img src="docs/evidence/ui-nav-1115-20261013/00-first-run-setup.png" alt="首次引导" width="250"> | <img src="docs/evidence/ui-nav-1115-20261013/01-first-week-draft.png" alt="引导结束即生成待确认的一周餐表草案" width="250"> | <img src="docs/evidence/ui-nav-1115-20261013/03-week-plan-confirmed.png" alt="确认后写入并读回的一周餐表，顶栏为「主页」返回按钮" width="250"> |
 
 | 首页 · 餐表中的下一餐 | 候选 · 约束证据 | 超支 · 一键重平衡 |
 | :---: | :---: | :---: |
-| <img src="docs/evidence/ui-planfirst-1114-20261012/01b-home-planned.png" alt="首页显示餐表里的下一餐" width="250"> | <img src="docs/evidence/ui-planfirst-1114-20261012/02-candidates.png" alt="候选与约束证据" width="250"> | <img src="docs/evidence/week-rebalance-20261012/rebalance-proposal.png" alt="周超支预警与省钱调整方案" width="250"> |
+| <img src="docs/evidence/ui-nav-1115-20261013/01b-home-planned.png" alt="首页显示餐表里的下一餐" width="250"> | <img src="docs/evidence/ui-nav-1115-20261013/02-candidates.png" alt="候选与约束证据" width="250"> | <img src="docs/evidence/ui-nav-1115-20261013/rebalance-proposal.png" alt="周超支预警与省钱调整方案" width="250"> |
 
-重平衡画面来自自动化验收运行（[说明与断言](docs/evidence/week-rebalance-20261012.md)），不是摆拍；该面板在 1.11.4 未变动。
+1.11.5 改动仅一处：餐表与设置页的返回按钮由「下一顿」改名为「主页」（英文 "Home"），导航行为不变；重平衡画面取自当日验收运行（[说明与断言](docs/evidence/week-rebalance-20261012.md)），不是摆拍。1.11.4 的引导即规划改动见[上一版界面说明](docs/evidence/ui-planfirst-1114-20261012.md)。
 
 以下为 1.7.0 **card-host 原生运行截图**；不是 OctoSense Shell 的模型联调证据。[更多截图与验证](docs/evidence/next-meal-170-20261005.md)。
 

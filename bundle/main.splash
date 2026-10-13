@@ -766,7 +766,7 @@ fn show_setup(){
 }
 fn refresh_language(){
     ui.lang_toggle.set_text(L("EN", "中文"))
-    ui.home_nav.set_text(L("下一顿", "Next meal"))
+    ui.home_nav.set_text(L("主页", "Home"))
     ui.week_nav.set_text(L("餐表", "Week"))
     ui.setup_title.set_text(L("先把饭钱留出来。", "Set aside meal money."))
     ui.setup_intro.set_text(L("告诉我可支配生活费和必须先付的开销，再决定每天能用多少吃饭。", "Start with your monthly allowance and essential non-food costs."))
@@ -2375,7 +2375,7 @@ SolidView{width: Fill height: Fill flow: Down padding: 14 spacing: 8 draw_bg.col
         Label{text: "✳" draw_text.color: ink draw_text.text_style.font_size: 20}
         Label{text: "octodining." draw_text.color: ink draw_text.text_style: theme.font_bold{font_size: 17}}
         lang_toggle := Action{text: "EN" on_click: || switch_language()}
-        home_nav := Action{text: "下一顿" on_click: || go_next_meal()}
+        home_nav := Action{text: "主页" on_click: || go_next_meal()}
         week_nav := Action{text: "餐表" on_click: || show_page(true)}
     }
     setup := ScrollYView{width: Fill height: Fill flow: Down spacing: 14
