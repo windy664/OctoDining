@@ -6,7 +6,7 @@
 
 这是面向学生的 **OctoSense / OctoScript / Makepad** 原生应用原型。随包菜单是广州某高校食堂的 1,497 条历史快照；也可在首次引导粘贴自己食堂的菜单 JSON。价格、时段和配图不代表实时可售、营养或过敏安全。
 
-**评委先看 Agent 闭环：** [15 秒 1.2.2 真实 Agent 证据剪辑](docs/demo/octodining-122-agent-evidence-reel.mp4) · [同一次 Shell 联调原始记录和三张截图](docs/evidence/shell-ui122-minimax-20261004.json) · [按评分项核验](docs/AGENTIC_JUDGING.md)。MiniMax-M3 在已有晚餐计划上比较候选并建议候选 3；用户亲自确认，应用保存计划并读回核验。剪辑由真实截图制成，并非连续录屏。**1.7.0 的 Shell 测试遭遇 429，没有取得同版模型建议**；下方 1.7.0 画面用于展示后续产品功能，不能与 1.2.2 Agent 证据视作同一次运行。**当前签名版 1.11.1 的整周 Agent 闭环录屏**（真实 MiniMax-M3 提议、应用到草案、确认读回；录于 1.11.0，1.11.1 为界面精简与周窗口锚点修复、Agent 调用逻辑相同）：[帧缓冲录屏与关键帧](docs/evidence/shell-week-agent-1110-20261012.md)。
+**评委先看 Agent 闭环：** [当前签名版 1.12.0 整周 Agent 闭环录屏（约 63 秒）](docs/evidence/shell-week-agent-1120-20261013/octodining-1120-shell-week-agent.mp4)：真实 MiniMax-M3 提议 5 处换餐 → 逐条 diff 卡（各笔节省由应用按菜单价核算，共 ¥9.30）→ 应用到草案不落盘 → 人工确认整周 → 读回核验 20 餐，计划文件与提议逐条一致；[关键帧与读回说明](docs/evidence/shell-week-agent-1120-20261013.md)。另有 [15 秒 1.2.2 单餐 Agent 证据剪辑](docs/demo/octodining-122-agent-evidence-reel.mp4) 与 [1.11.0 录屏](docs/evidence/shell-week-agent-1110-20261012.md)；[按评分项核验](docs/AGENTIC_JUDGING.md)。**1.7.0 的 Shell 测试遭遇 429，没有取得同版模型建议**，其画面仅用于展示当时的产品功能。
 
 **当前 1.12.0 界面**（card-host 原生截图，非模型证据；[画面与改动说明](docs/evidence/ux-1120-20261013.md)）：
 
