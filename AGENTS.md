@@ -44,9 +44,10 @@ Rules:
   dining task. Do not confuse `tools/octo`, `card-host`, octos and OctoSense.
 - Continue in this order: basic functionality (now implemented), runtime Agent
   validation, then UI polish. Record host blockers without overstating evidence.
-- Preserve the original menu data, A1–A6 tiers, weekly planner and design assets.
-  HTML and Rust/egui remain reference implementations; do not replace the
-  competition app with an unrelated GUI framework.
+- Preserve the original menu data and A1–A6 tiers (`menu.csv`,
+  `products_clean.json`, `meal_plan_A1`–`A5.csv`). The early HTML page and the
+  Rust/egui prototype were removed after the 2026 contest ended; see git
+  history if they are ever needed again.
 - Treat `scripts/main.splash.in` as the source and `bundle/main.splash` as generated
   output. Rebuild and check after every app or manifest edit.
 - Distinguish source presence, runtime verification and planned work. A model
@@ -57,6 +58,5 @@ Rules:
   allergy data. Never invent unsupported facts. Confirmed plans are not orders.
 - Historical notes in `docs/CONTINUATION.md` and `docs/HANDOFF-2026-10-03.md`
   are context only. Current task instructions take precedence.
-- Do not run the historical `start-demo.sh` as the default launcher. It controls
-  Rinx processes. `scripts/preview.sh` runs a local unsigned copy and stops a
+- `scripts/preview.sh` runs a local unsigned copy and stops a
   previous preview on port 8141; set `OCTO_CLI` if the harness is elsewhere.

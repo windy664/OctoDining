@@ -5,6 +5,9 @@
 > Rinx 是可选宿主。当前计划见 [ROADMAP](ROADMAP.md)，实际缺口见
 > [CONTEST_READINESS](CONTEST_READINESS.md)。当前 bundle 权限与源码不一致，
 > 旧文中的通过记录不能作为新版本验收证据。
+> 2026-10-25 赛事结束后清理：文中提到的 Rust/egui 原型（`src/`、`Cargo.*`）、
+> 网页冒烟测试、原始抓取中间产物（`all_menus.json`、`menus/`）、网页设计资源
+> （`assets/`）和 Rinx 历史启动脚本已从工作区移除，均见 git 历史。
 
 接续 OpenCode 会话：参与 agenticapp26 比赛和 OctoSense 项目研究。
 
