@@ -1,3 +1,9 @@
+<div align="center">
+
+<img src="assets/banner.svg" alt="OctoDining" width="100%">
+
+</div>
+
 # OctoDining
 
 [中文说明](README.md) · **English**

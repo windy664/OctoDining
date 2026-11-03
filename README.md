@@ -1,3 +1,9 @@
+<div align="center">
+
+<img src="assets/banner.svg" alt="OctoDining" width="100%">
+
+</div>
+
 # OctoDining · 好好吃饭
 
 **中文** · [English](README.en.md)
